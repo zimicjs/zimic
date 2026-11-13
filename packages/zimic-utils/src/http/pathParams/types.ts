@@ -1,4 +1,4 @@
-import { IfNever, Prettify } from '../../types';
+import { IfNever, Prettify, UnionHasMoreThanOneType } from '../../types';
 
 export interface HttpPathParamsSchema {
   [paramName: string]: string | undefined;
@@ -56,33 +56,76 @@ export type HttpPathParamsSerialized<Type> = [Type] extends [never]
 type RepeatingPathParamModifier = '+';
 type OptionalPathParamModifier = '?' | '*';
 
-type ConvertPathParamToRecord<PathParam extends string> = PathParam extends `${infer PathParamWithoutSlash}/`
-  ? ConvertPathParamToRecord<PathParamWithoutSlash>
-  : PathParam extends `${infer PathParamWithoutSlash}\\:`
-    ? ConvertPathParamToRecord<PathParamWithoutSlash>
-    : PathParam extends `${infer PathParamWithoutModifier}${OptionalPathParamModifier}`
-      ? { [Name in PathParamWithoutModifier]?: string }
-      : PathParam extends `${infer PathParamWithoutModifier}${RepeatingPathParamModifier}`
-        ? { [Name in PathParamWithoutModifier]: string }
-        : { [Name in PathParam]: string };
+type ConvertPathParamToRecord<PathParam extends string> =
+  PathParam extends `${infer PathParamWithoutModifier}${OptionalPathParamModifier}`
+    ? { [Name in PathParamWithoutModifier]?: string }
+    : PathParam extends `${infer PathParamWithoutModifier}${RepeatingPathParamModifier}`
+      ? { [Name in PathParamWithoutModifier]: string }
+      : { [Name in PathParam]: string };
+
+type SplitPathParamFromSegment<
+  Segment extends string,
+  PathAfterSegment extends string,
+> = Segment extends `${infer PathParam}:${infer RemainingSegment}`
+  ? PathParam extends `${infer PathParamWithoutBackslash}\\`
+    ? [PathParamWithoutBackslash, `\\:${RemainingSegment}${PathAfterSegment}`]
+    : [PathParam, `:${RemainingSegment}${PathAfterSegment}`]
+  : [Segment, PathAfterSegment];
+
+/** Splits a path starting at a path param into the param and the remaining path, which keeps its leading delimiter. */
+type SplitPathParam<PathParamWithRemainingPath extends string> =
+  PathParamWithRemainingPath extends `${infer Segment}/${infer PathAfterSegment}`
+    ? SplitPathParamFromSegment<Segment, `/${PathAfterSegment}`>
+    : SplitPathParamFromSegment<PathParamWithRemainingPath, ''>;
 
 type RecursiveInferPathParams<Path extends string> = Path extends `${infer Prefix}:${infer PathParamWithRemainingPath}`
-  ? PathParamWithRemainingPath extends `${infer PathParam}/${infer RemainingPath}`
-    ? Prefix extends `${string}\\`
-      ? RecursiveInferPathParams<RemainingPath>
-      : ConvertPathParamToRecord<PathParam> & RecursiveInferPathParams<RemainingPath>
-    : PathParamWithRemainingPath extends `${infer PathParam}\\:${infer RemainingPath}`
-      ? Prefix extends `${string}\\`
-        ? RecursiveInferPathParams<`\\:${RemainingPath}`>
-        : ConvertPathParamToRecord<PathParam> & RecursiveInferPathParams<`\\:${RemainingPath}`>
-      : PathParamWithRemainingPath extends `${infer PathParam}:${infer RemainingPath}`
-        ? Prefix extends `${string}\\`
-          ? RecursiveInferPathParams<RemainingPath>
-          : ConvertPathParamToRecord<PathParam> & RecursiveInferPathParams<`:${RemainingPath}`>
-        : Prefix extends `${string}\\`
-          ? {}
-          : ConvertPathParamToRecord<PathParamWithRemainingPath>
+  ? SplitPathParam<PathParamWithRemainingPath> extends [
+      infer PathParam extends string,
+      infer RemainingPath extends string,
+    ]
+    ? (Prefix extends `${string}\\` ? {} : ConvertPathParamToRecord<PathParam>) &
+        RecursiveInferPathParams<RemainingPath>
+    : never
   : {};
 
 /** @see {@link https://zimic.dev/docs/http/api/http-schema#inferpathparams `InferPathParams` API reference} */
 export type InferPathParams<Path extends string> = Prettify<RecursiveInferPathParams<Path>>;
+
+type LargestPathPrefix<Path extends string> = Path extends `${infer Prefix}/${infer Suffix}`
+  ? `${Prefix}/${Suffix extends `${string}/${string}` ? LargestPathPrefix<Suffix> : ''}`
+  : Path;
+
+type ExcludeNonLiteralPathsSupersededByLiteralPath<Path extends string> =
+  Path extends `${LargestPathPrefix<Path>}:${string}` ? never : Path;
+
+export type PreferMostStaticLiteralPath<Path extends string> =
+  UnionHasMoreThanOneType<Path> extends true ? ExcludeNonLiteralPathsSupersededByLiteralPath<Path> : Path;
+
+export type WithoutEscapedColons<Path extends string> = Path extends `${infer Prefix}\\:${infer Suffix}`
+  ? WithoutEscapedColons<`${Prefix}:${Suffix}`>
+  : Path;
+
+type ConvertPathParamToString<PathParam extends string> = PathParam extends `${infer PathParamWithoutSlash}/`
+  ? `${ConvertPathParamToString<PathParamWithoutSlash>}/`
+  : PathParam extends `${infer PathParamWithoutSlash}\\:`
+    ? `${ConvertPathParamToString<PathParamWithoutSlash>}:`
+    : string;
+
+export type AllowAnyStringInPathParams<Path extends string> =
+  Path extends `${infer Prefix}:${infer PathParamWithRemainingPath}`
+    ? PathParamWithRemainingPath extends `${infer PathParam}/${infer RemainingPath}`
+      ? Prefix extends `${infer PrefixPrefix}\\`
+        ? `${PrefixPrefix}:${AllowAnyStringInPathParams<PathParamWithRemainingPath>}`
+        : `${Prefix}${ConvertPathParamToString<PathParam>}/${AllowAnyStringInPathParams<RemainingPath>}`
+      : PathParamWithRemainingPath extends `${infer PathParam}\\:${infer RemainingPath}`
+        ? Prefix extends `${infer PrefixPrefix}\\`
+          ? `${PrefixPrefix}:${AllowAnyStringInPathParams<PathParamWithRemainingPath>}`
+          : `${Prefix}${ConvertPathParamToString<PathParam>}:${AllowAnyStringInPathParams<RemainingPath>}`
+        : PathParamWithRemainingPath extends `${infer PathParam}:${infer RemainingPath}`
+          ? Prefix extends `${infer PrefixPrefix}\\`
+            ? `${PrefixPrefix}:${AllowAnyStringInPathParams<PathParamWithRemainingPath>}`
+            : `${Prefix}${ConvertPathParamToString<PathParam>}${AllowAnyStringInPathParams<`:${RemainingPath}`>}`
+          : Prefix extends `${infer PrefixPrefix}\\`
+            ? `${PrefixPrefix}:${PathParamWithRemainingPath}`
+            : `${Prefix}${ConvertPathParamToString<PathParamWithRemainingPath>}`
+    : Path;

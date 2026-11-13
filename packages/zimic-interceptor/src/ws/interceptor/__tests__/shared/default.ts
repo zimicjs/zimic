@@ -28,7 +28,13 @@ import {
 import WebSocketInterceptorStore from '../../WebSocketInterceptorStore';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
-type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
+type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
+
+type MessageSchema = WebSocketSchema<{
+  '/': {
+    message: Message;
+  };
+}>;
 
 export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
@@ -457,12 +463,12 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
         expect(runningWorker).toBe(worker);
         expect(worker!.isRunning).toBe(true);
 
-        const reply: MessageSchema = { type: 'server', index: 1 };
+        const reply: Message = { type: 'server', index: 1 };
         await promiseIfRemote(otherInterceptor.message().respond(reply), otherInterceptor);
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
           const messagePromise = waitForWebSocketClientMessage(client);
-          client.send(JSON.stringify({ type: 'client', index: 1 } satisfies MessageSchema));
+          client.send(JSON.stringify({ type: 'client', index: 1 } satisfies Message));
           await expect(messagePromise).resolves.toBe(JSON.stringify(reply));
         });
       });

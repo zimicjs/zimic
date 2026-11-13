@@ -3,7 +3,7 @@ import { HttpSearchParams } from '@zimic/utils/http';
 import { waitFor } from '@zimic/utils/time';
 import { joinURL } from '@zimic/utils/url';
 import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
-import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+import { WebSocketClient, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 import { describe, expect, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
@@ -22,9 +22,34 @@ import type { WebSocketInterceptorType } from '../../types/options';
 import type { LocalWebSocketInterceptor, RemoteWebSocketInterceptor, WebSocketInterceptor } from '../../types/public';
 import { MAX_CLOSE_REASON_BYTE_LENGTH } from '../../WebSocketInterceptorHandle';
 
-type ChatMessage = WebSocketSchema<{ type: 'server'; text: string }>;
-type BinaryMessage = WebSocketSchema<ArrayBuffer>;
-type BinaryOrTextMessage = WebSocketSchema<Blob | string>;
+type ChatSchema = WebSocketSchema<{
+  '/': {
+    message: { type: 'server'; text: string };
+  };
+  '/rooms/:roomId': {
+    message: { type: 'server'; text: string };
+  };
+  '/other': {
+    message: { type: 'server'; text: string };
+  };
+  '/decided': {
+    message: { type: 'server'; text: string };
+  };
+}>;
+
+type ChatMessage = WebSocketSchemaMessage<ChatSchema>;
+
+type BinaryMessage = WebSocketSchema<{
+  '/': {
+    message: ArrayBuffer;
+  };
+}>;
+
+type BinaryOrTextMessage = WebSocketSchema<{
+  '/': {
+    message: Blob | string;
+  };
+}>;
 
 interface SharedWebSocketInterceptorConnectionsTestsOptions {
   type: WebSocketInterceptorType;
@@ -39,11 +64,11 @@ export function declareConnectionsWebSocketInterceptorTests(
   it('should track clients when they open and close', async () => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
       const clients = interceptor.clients;
       expect(interceptor.clients).toHaveLength(0);
 
-      await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+      await usingWebSocketClient<ChatSchema, '/'>(baseURL, async (client) => {
         await waitFor(() => {
           expect(interceptor.clients).toBe(clients);
           expect(interceptor.clients).toHaveLength(1);
@@ -70,12 +95,12 @@ export function declareConnectionsWebSocketInterceptorTests(
     async ({ requestedProtocols, expectedProtocols }) => {
       const baseURL = getBaseURL();
 
-      await usingWebSocketInterceptor<ChatMessage>(
+      await usingWebSocketInterceptor<ChatSchema>(
         { type, baseURL, messageSaving: { enabled: true } },
         async (interceptor) => {
           const handler = await promiseIfRemote(interceptor.message(), interceptor);
 
-          const client = new WebSocketClient<ChatMessage>(baseURL, requestedProtocols);
+          const client = new WebSocketClient<ChatSchema, '/'>(baseURL, requestedProtocols);
 
           try {
             await client.open();
@@ -103,13 +128,13 @@ export function declareConnectionsWebSocketInterceptorTests(
   it.each([
     {
       condition: 'a matching connection handler',
-      declare: (interceptor: LocalWebSocketInterceptor<ChatMessage> | RemoteWebSocketInterceptor<ChatMessage>) => {
+      declare: (interceptor: LocalWebSocketInterceptor<ChatSchema> | RemoteWebSocketInterceptor<ChatSchema>) => {
         return promiseIfRemote(interceptor.connection('/rooms/:roomId').times(1), interceptor);
       },
     },
     {
       condition: 'no matching connection handler',
-      declare: (interceptor: LocalWebSocketInterceptor<ChatMessage> | RemoteWebSocketInterceptor<ChatMessage>) => {
+      declare: (interceptor: LocalWebSocketInterceptor<ChatSchema> | RemoteWebSocketInterceptor<ChatSchema>) => {
         return promiseIfRemote(interceptor.connection('/other').times(0), interceptor);
       },
     },
@@ -120,12 +145,12 @@ export function declareConnectionsWebSocketInterceptorTests(
   ])('should expose the search params of clients accepted with $condition', async ({ declare }) => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
       await declare(interceptor);
 
       const connectionURL = `${joinURL(baseURL, '/rooms/1')}?room=1&tag=a&tag=b`;
 
-      await usingWebSocketClient<ChatMessage>(connectionURL, async () => {
+      await usingWebSocketClient<ChatSchema, '/'>(connectionURL, async () => {
         await waitFor(() => {
           expect(interceptor.clients).toHaveLength(1);
         });
@@ -138,10 +163,10 @@ export function declareConnectionsWebSocketInterceptorTests(
   it('should accept connections without handlers after started and after cleared', async () => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
       const message = JSON.stringify({ type: 'server', text: 'welcome' } satisfies ChatMessage);
 
-      await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+      await usingWebSocketClient<ChatSchema, '/'>(baseURL, async (client) => {
         await waitFor(() => {
           expect(interceptor.clients).toHaveLength(1);
         });
@@ -153,7 +178,7 @@ export function declareConnectionsWebSocketInterceptorTests(
 
       await interceptor.clear();
 
-      await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+      await usingWebSocketClient<ChatSchema, '/'>(baseURL, async (client) => {
         await waitFor(() => {
           expect(interceptor.clients).toHaveLength(1);
         });
@@ -171,7 +196,7 @@ export function declareConnectionsWebSocketInterceptorTests(
     it('should close rejected connections with an abnormal closure code', async () => {
       const baseURL = getBaseURL();
 
-      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
         interceptor.connection().respond({ action: 'reject' });
 
         const socket = new WebSocket(baseURL);
@@ -188,9 +213,9 @@ export function declareConnectionsWebSocketInterceptorTests(
   it('should share connections with the same base URL between running interceptors', async () => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (firstInterceptor) => {
-      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (secondInterceptor) => {
-        await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (firstInterceptor) => {
+      await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (secondInterceptor) => {
+        await usingWebSocketClient<ChatSchema, '/'>(baseURL, async (client) => {
           await waitFor(() => {
             expect(firstInterceptor.clients).toHaveLength(1);
             expect(secondInterceptor.clients).toHaveLength(1);
@@ -215,8 +240,8 @@ export function declareConnectionsWebSocketInterceptorTests(
   it('should route new connections to the previous interceptor after the last started one stops', async () => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (firstInterceptor) => {
-      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (secondInterceptor) => {
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (firstInterceptor) => {
+      await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (secondInterceptor) => {
         await promiseIfRemote(firstInterceptor.message().respond({ type: 'server', text: 'first' }), firstInterceptor);
         await promiseIfRemote(
           secondInterceptor.message().respond({ type: 'server', text: 'second' }),
@@ -225,7 +250,7 @@ export function declareConnectionsWebSocketInterceptorTests(
 
         await secondInterceptor.stop();
 
-        await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+        await usingWebSocketClient<ChatSchema, '/'>(baseURL, async (client) => {
           await waitFor(() => {
             expect(firstInterceptor.clients).toHaveLength(1);
           });
@@ -249,10 +274,10 @@ export function declareConnectionsWebSocketInterceptorTests(
     async ({ firstSuffix, lastSuffix }) => {
       const baseURL = `${getBaseURL()}/path`;
 
-      await usingWebSocketInterceptor<ChatMessage>(
+      await usingWebSocketInterceptor<ChatSchema>(
         { type, baseURL: `${baseURL}${firstSuffix}` },
         async (firstInterceptor) => {
-          await usingWebSocketInterceptor<ChatMessage>(
+          await usingWebSocketInterceptor<ChatSchema>(
             { type, baseURL: `${baseURL}${lastSuffix}` },
             async (lastInterceptor) => {
               await promiseIfRemote(
@@ -265,7 +290,7 @@ export function declareConnectionsWebSocketInterceptorTests(
               );
 
               // Only a URL with the trailing slash starts with both base URLs.
-              await usingWebSocketClient<ChatMessage>(`${baseURL}/`, async (client) => {
+              await usingWebSocketClient<ChatSchema, '/'>(`${baseURL}/`, async (client) => {
                 await waitFor(() => {
                   expect(firstInterceptor.clients).toHaveLength(1);
                   expect(lastInterceptor.clients).toHaveLength(1);
@@ -288,11 +313,11 @@ export function declareConnectionsWebSocketInterceptorTests(
   it('should not share connections with interceptors started after they open', async () => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (firstInterceptor) => {
-      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, { start: false }, async (secondInterceptor) => {
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (firstInterceptor) => {
+      await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, { start: false }, async (secondInterceptor) => {
         await promiseIfRemote(firstInterceptor.message().respond({ type: 'server', text: 'first' }), firstInterceptor);
 
-        await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+        await usingWebSocketClient<ChatSchema, '/'>(baseURL, async (client) => {
           await waitFor(() => {
             expect(firstInterceptor.clients).toHaveLength(1);
           });
@@ -322,20 +347,20 @@ export function declareConnectionsWebSocketInterceptorTests(
   it.each([
     {
       action: 'cleared',
-      release: (interceptor: WebSocketInterceptor<ChatMessage>) => promiseIfRemote(interceptor.clear(), { type }),
+      release: (interceptor: WebSocketInterceptor<ChatSchema>) => promiseIfRemote(interceptor.clear(), { type }),
     },
     {
       action: 'stopped',
-      release: (interceptor: WebSocketInterceptor<ChatMessage>) => interceptor.stop(),
+      release: (interceptor: WebSocketInterceptor<ChatSchema>) => interceptor.stop(),
     },
   ])(
     'should not send messages from clients of an interceptor $action while another one shares their connection',
     async ({ release }) => {
       const baseURL = getBaseURL();
 
-      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (firstInterceptor) => {
-        await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (secondInterceptor) => {
-          await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+      await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (firstInterceptor) => {
+        await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (secondInterceptor) => {
+          await usingWebSocketClient<ChatSchema, '/'>(baseURL, async (client) => {
             await waitFor(() => {
               expect(firstInterceptor.clients).toHaveLength(1);
               expect(secondInterceptor.clients).toHaveLength(1);
@@ -420,8 +445,8 @@ export function declareConnectionsWebSocketInterceptorTests(
   it('should close clients with a code and reason', async () => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
-      await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatSchema, '/'>(baseURL, async (client) => {
         await waitFor(() => {
           expect(interceptor.clients).toHaveLength(1);
         });
@@ -447,8 +472,8 @@ export function declareConnectionsWebSocketInterceptorTests(
   it('should close clients with no status code if no code is provided', async () => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
-      await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatSchema, '/'>(baseURL, async (client) => {
         await waitFor(() => {
           expect(interceptor.clients).toHaveLength(1);
         });
@@ -495,9 +520,9 @@ export function declareConnectionsWebSocketInterceptorTests(
   it('should remove closed clients from every interceptor holding them', async () => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (firstInterceptor) => {
-      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (secondInterceptor) => {
-        await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (firstInterceptor) => {
+      await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (secondInterceptor) => {
+        await usingWebSocketClient<ChatSchema, '/'>(baseURL, async (client) => {
           await waitFor(() => {
             expect(firstInterceptor.clients).toHaveLength(1);
             expect(secondInterceptor.clients).toHaveLength(1);
@@ -522,8 +547,8 @@ export function declareConnectionsWebSocketInterceptorTests(
   it('should allow a connection effect to close its client immediately', async () => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
-      const client = new WebSocketClient<ChatMessage>(baseURL);
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
+      const client = new WebSocketClient<ChatSchema, '/'>(baseURL);
       const closeEventPromise = waitForWebSocketClientClose(client);
 
       const closeCode = 4000;
@@ -558,8 +583,8 @@ export function declareConnectionsWebSocketInterceptorTests(
   ])('should close clients with code $code rounded to $expectedCode', async ({ code, expectedCode }) => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
-      await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatSchema, '/'>(baseURL, async (client) => {
         await waitFor(() => {
           expect(interceptor.clients).toHaveLength(1);
         });
@@ -582,8 +607,8 @@ export function declareConnectionsWebSocketInterceptorTests(
     async (code) => {
       const baseURL = getBaseURL();
 
-      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
-        await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+      await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
+        await usingWebSocketClient<ChatSchema, '/'>(baseURL, async (client) => {
           await waitFor(() => {
             expect(interceptor.clients).toHaveLength(1);
           });
@@ -602,8 +627,8 @@ export function declareConnectionsWebSocketInterceptorTests(
   it(`should throw an error when closing clients with a reason longer than ${MAX_CLOSE_REASON_BYTE_LENGTH} bytes`, async () => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
-      await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatSchema, '/'>(baseURL, async (client) => {
         await waitFor(() => {
           expect(interceptor.clients).toHaveLength(1);
         });
@@ -625,9 +650,9 @@ export function declareConnectionsWebSocketInterceptorTests(
   it('should not affect other clients when closing a client already closed', async () => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
-      await usingWebSocketClient<ChatMessage>(baseURL, async (closedClient) => {
-        await usingWebSocketClient<ChatMessage>(baseURL, async (openClient) => {
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatSchema, '/'>(baseURL, async (closedClient) => {
+        await usingWebSocketClient<ChatSchema, '/'>(baseURL, async (openClient) => {
           await waitFor(() => {
             expect(interceptor.clients).toHaveLength(2);
           });
@@ -665,13 +690,13 @@ export function declareConnectionsWebSocketInterceptorTests(
   it.each([
     {
       action: 'clearing',
-      release: async (interceptor: WebSocketInterceptor<ChatMessage>) => {
+      release: async (interceptor: WebSocketInterceptor<ChatSchema>) => {
         await interceptor.clear();
       },
     },
     {
       action: 'restarting',
-      release: async (interceptor: WebSocketInterceptor<ChatMessage>) => {
+      release: async (interceptor: WebSocketInterceptor<ChatSchema>) => {
         await interceptor.stop();
         await interceptor.start();
       },
@@ -679,8 +704,8 @@ export function declareConnectionsWebSocketInterceptorTests(
   ])('should not affect other clients when closing a client after $action the interceptor', async ({ release }) => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
-      await usingWebSocketClient<ChatMessage>(baseURL, async (releasedClient) => {
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatSchema, '/'>(baseURL, async (releasedClient) => {
         await waitFor(() => {
           expect(interceptor.clients).toHaveLength(1);
         });
@@ -691,7 +716,7 @@ export function declareConnectionsWebSocketInterceptorTests(
         await release(interceptor);
         await closeEventPromise;
 
-        await usingWebSocketClient<ChatMessage>(baseURL, async (openClient) => {
+        await usingWebSocketClient<ChatSchema, '/'>(baseURL, async (openClient) => {
           await waitFor(() => {
             expect(interceptor.clients).toHaveLength(1);
           });
@@ -721,7 +746,7 @@ export function declareConnectionsWebSocketInterceptorTests(
       const restrictionStartedPromise = createPromiseWithResolvers<void>();
       const restrictionReleasedPromise = createPromiseWithResolvers<void>();
 
-      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
         await promiseIfRemote(
           interceptor.connection().with(async () => {
             restrictionStartedPromise.resolve();
@@ -731,7 +756,7 @@ export function declareConnectionsWebSocketInterceptorTests(
           interceptor,
         );
 
-        const client = new WebSocketClient<ChatMessage>(baseURL);
+        const client = new WebSocketClient<ChatSchema, '/'>(baseURL);
         const receivedMessages = collectWebSocketClientMessages(client);
 
         try {
@@ -764,7 +789,7 @@ export function declareConnectionsWebSocketInterceptorTests(
     it('should deliver server messages sent by connection effects', async () => {
       const baseURL = getBaseURL();
 
-      await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
         const message = JSON.stringify({ type: 'server', text: 'welcome' } satisfies ChatMessage);
 
         await promiseIfRemote(
@@ -774,7 +799,7 @@ export function declareConnectionsWebSocketInterceptorTests(
           interceptor,
         );
 
-        const client = new WebSocketClient<ChatMessage>(baseURL);
+        const client = new WebSocketClient<ChatSchema, '/'>(baseURL);
         const receivedMessages = collectWebSocketClientMessages(client);
 
         try {
@@ -796,7 +821,7 @@ export function declareConnectionsWebSocketInterceptorTests(
       const restrictionReleasedPromise = createPromiseWithResolvers<void>();
       const effect = vi.fn();
 
-      await usingWebSocketInterceptor<ChatMessage>(
+      await usingWebSocketInterceptor<ChatSchema>(
         { type, baseURL, connectionSaving: { enabled: true } },
         async (interceptor) => {
           const handler = await promiseIfRemote(

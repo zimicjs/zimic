@@ -26,8 +26,27 @@ import RemoteWebSocketMessageHandler from '../../../messageHandler/RemoteWebSock
 import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
-type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
-type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
+type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
+
+type MessageSchema = WebSocketSchema<{
+  '/': {
+    connection: { searchParams: { value?: string }; protocols: 'legacy' };
+    message: Message;
+  };
+  '/users': {
+    connection: { searchParams: { value?: string } };
+    message: Message;
+  };
+  '/:resource': {
+    message: Message;
+  };
+}>;
+
+type ChatMessage = WebSocketSchema<{
+  '/': {
+    message: { type: 'client'; text: string } | { type: 'server'; text: string };
+  };
+}>;
 
 export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { type, getBaseURL, getInterceptorOptions } = options;
@@ -52,7 +71,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         let closeEvent: WebSocketClient.CloseEvent<MessageSchema> | undefined;
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           client.addEventListener('close', (event) => {
             closeEvent = event;
           });
@@ -84,7 +103,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
           interceptor,
         );
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           const probeResponse = waitForWebSocketClientMessage(client);
 
           client.send(JSON.stringify({ type: 'client', index: 2 }));
@@ -112,7 +131,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         const handler = await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 2 }), interceptor);
         expect(handler.messages).toHaveLength(0);
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: 2 }));
           await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
@@ -138,7 +157,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         expect(handler.messages).toHaveLength(0);
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', index: 2 }));
           await expect(messagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 2 }));
@@ -178,7 +197,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
             interceptor,
           );
 
-          await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
             const messagePromise = waitForWebSocketClientMessage(client);
             client.send(JSON.stringify({ type: 'client', index: 1 }));
             await restrictionStartedPromise;
@@ -226,7 +245,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
               interceptor,
             );
 
-            await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+            await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
               await waitFor(() => {
                 expect(otherInterceptor.clients).toHaveLength(1);
                 expect(interceptor.clients).toHaveLength(1);
@@ -278,7 +297,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         await usingWebSocketInterceptor<MessageSchema>(
           { ...interceptorOptions, onUnhandledMessage: otherOnUnhandledMessage },
           async (otherInterceptor) => {
-            await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+            await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
               await waitFor(() => {
                 expect(interceptor.clients).toHaveLength(1);
                 expect(otherInterceptor.clients).toHaveLength(1);
@@ -316,8 +335,8 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
             await promiseIfRemote(firstInterceptor.message().respond({ type: 'server', index: 1 }), firstInterceptor);
             await promiseIfRemote(secondInterceptor.message().respond({ type: 'server', index: 2 }), secondInterceptor);
 
-            await usingWebSocketClient<MessageSchema>(firstBaseURL, async (firstClient) => {
-              await usingWebSocketClient<MessageSchema>(secondBaseURL, async (secondClient) => {
+            await usingWebSocketClient<MessageSchema, '/'>(firstBaseURL, async (firstClient) => {
+              await usingWebSocketClient<MessageSchema, '/'>(secondBaseURL, async (secondClient) => {
                 await waitFor(() => {
                   expect(firstInterceptor.clients).toHaveLength(1);
                   expect(secondInterceptor.clients).toHaveLength(1);
@@ -350,7 +369,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         interceptorOptions,
         { start: false },
         async (secondInterceptor) => {
-          await usingWebSocketClient<MessageSchema>(baseURL, async (firstClient) => {
+          await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (firstClient) => {
             await waitFor(() => {
               expect(firstInterceptor.clients).toHaveLength(1);
             });
@@ -358,7 +377,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
             await secondInterceptor.start();
             await promiseIfRemote(secondInterceptor.message().respond({ type: 'server', index: 2 }), secondInterceptor);
 
-            await usingWebSocketClient<MessageSchema>(baseURL, async (secondClient) => {
+            await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (secondClient) => {
               await waitFor(() => {
                 expect(firstInterceptor.clients).toHaveLength(2);
                 expect(secondInterceptor.clients).toHaveLength(1);
@@ -391,7 +410,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (secondInterceptor) => {
         await promiseIfRemote(secondInterceptor.message().respond({ type: 'server', index: 2 }), secondInterceptor);
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           await waitFor(() => {
             expect(firstInterceptor.clients).toHaveLength(1);
             expect(secondInterceptor.clients).toHaveLength(1);
@@ -407,7 +426,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
           client.send(JSON.stringify({ type: 'client', index: 1 }));
           await expect(handledMessagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
 
-          const sentMessage = JSON.stringify({ type: 'server', index: 3 } satisfies MessageSchema);
+          const sentMessage = JSON.stringify({ type: 'server', index: 3 } satisfies Message);
 
           const sentMessagePromise = waitForWebSocketClientMessage(client);
           firstInterceptor.server.send(sentMessage);
@@ -429,7 +448,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
           async (secondInterceptor) => {
             await promiseIfRemote(secondInterceptor.message().respond({ type: 'server', index: 2 }), secondInterceptor);
 
-            await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+            await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
               await waitFor(() => {
                 expect(firstInterceptor.clients).toHaveLength(1);
                 expect(secondInterceptor.clients).toHaveLength(1);
@@ -454,7 +473,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
   it('should close connections shared with other interceptors after all of them are cleared', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
       await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (secondInterceptor) => {
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           await waitFor(() => {
             expect(firstInterceptor.clients).toHaveLength(1);
             expect(secondInterceptor.clients).toHaveLength(1);
@@ -488,7 +507,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         await promiseIfRemote(firstInterceptor.message().respond({ type: 'server', index: 1 }), firstInterceptor);
         await promiseIfRemote(firstInterceptor.connection().effect(firstConnectionEffect), firstInterceptor);
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           await waitFor(() => {
             expect(firstConnectionEffect).toHaveBeenCalledTimes(1);
           });
@@ -517,7 +536,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
       });
       await promiseIfRemote(interceptor.connection().effect(connectionEffect), interceptor);
 
-      const client = new WebSocketClient<MessageSchema>(baseURL);
+      const client = new WebSocketClient<MessageSchema, '/'>(baseURL);
       const closeEventPromise = waitForWebSocketClientClose(client);
 
       // The interceptor server completes the handshake of connections let go while they are set up and then closes
@@ -633,7 +652,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
                 interceptor,
               );
 
-              await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+              await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
                 await waitFor(() => {
                   expect(olderInterceptor.clients).toHaveLength(1);
                   expect(interceptor.clients).toHaveLength(1);
@@ -705,7 +724,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
               interceptor,
             );
 
-            await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+            await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
               await waitFor(() => {
                 expect(olderInterceptor.clients).toHaveLength(1);
                 expect(interceptor.clients).toHaveLength(1);
@@ -785,7 +804,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
           interceptor,
         );
 
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           const closeEventPromise = waitForWebSocketClientClose(client);
 
           client.send(JSON.stringify({ type: 'client', index: 1 }));
@@ -802,7 +821,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
 
         // The cleared message finishes being handled once its restriction is released, so the strategy being applied
         // only to an unhandled message from a new client means that it was not applied to the cleared message.
-        await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+        await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
           client.send(JSON.stringify({ type: 'client', index: 2 }));
 
           await waitFor(() => {
@@ -956,7 +975,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
                 clearedInterceptor,
               );
 
-              const client = new WebSocketClient<MessageSchema>(baseURL);
+              const client = new WebSocketClient<MessageSchema, '/'>(baseURL);
 
               try {
                 const openPromise = client.open();
@@ -1014,7 +1033,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
               void clearedInterceptor.clear();
             });
 
-            await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+            await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
               await waitFor(() => {
                 expect(remainingInterceptor.clients).toHaveLength(1);
               });

@@ -20,7 +20,13 @@ import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../typ
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../WebSocketInterceptorImplementation';
 import { RuntimeSharedWebSocketInterceptorTestsOptions, verifyUnhandledMessageWarning } from './utils';
 
-type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
+type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
+
+// These tests connect to generated URLs under each base URL, so the schema accepts any path.
+
+type MessageSchema = WebSocketSchema<{
+  [path: string]: { message: Message };
+}>;
 
 export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getOtherBaseURL, getInterceptorOptions } = options;
@@ -778,7 +784,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
                 const messageListener = vi.fn();
                 client.addEventListener('message', messageListener);
 
-                const message: MessageSchema = { type: 'client', index: 1 };
+                const message: Message = { type: 'client', index: 1 };
                 client.send(JSON.stringify(message));
 
                 await waitFor(() => {

@@ -27,7 +27,13 @@ import type {
 import type { WebSocketInterceptorConnectionRequest } from '../../types/messages';
 import type { UnhandledMessageStrategy, WebSocketInterceptorType } from '../../types/options';
 
-type MessageSchema = WebSocketSchema<{ type: 'create'; body: { text: string } } | { type: 'delete'; id: string }>;
+type Message = { type: 'create'; body: { text: string } } | { type: 'delete'; id: string };
+
+type MessageSchema = WebSocketSchema<{
+  '/': {
+    message: Message;
+  };
+}>;
 
 type DelayableHandler =
   LocalWebSocketMessageHandler<MessageSchema> | PendingRemoteWebSocketMessageHandler<MessageSchema>;

@@ -1,3 +1,5 @@
+import { HttpSearchParams } from '@zimic/utils/http';
+import { WebSocketMessageData, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 import { describe, expectTypeOf, it } from 'vitest';
 
 import { WebSocketInterceptorClient, WebSocketInterceptorConnectionRequest } from '../../interceptor/types/messages';
@@ -9,12 +11,205 @@ import type {
 } from '../types/public';
 import { Schema } from './shared/utils';
 
+type PathKeyedSchema = WebSocketSchema<{
+  '/rooms/:roomId': {
+    connection: { searchParams: { token: string }; protocols: 'chat' | 'json' };
+    message: { type: 'chat'; text: string };
+  };
+  '/health': {
+    message: { type: 'ping' };
+  };
+}>;
+
 // The handlers below are only type-checked. The functions declaring them are never called.
 describe('WebSocketConnectionHandler > Types', () => {
+  it('should accept only declared paths and their concrete forms', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      interceptor.connection('/rooms/:roomId');
+      interceptor.connection('/rooms/1');
+      interceptor.connection('/health');
+      interceptor.connection();
+
+      // @ts-expect-error The path is not declared in the schema.
+      interceptor.connection('/unknown');
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
+  it('should type search params from the declared path', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      const handler = interceptor.connection('/rooms/:roomId');
+
+      handler.with({ searchParams: { token: 'value' } });
+
+      // @ts-expect-error The search param is not declared in the schema.
+      handler.with({ searchParams: { undeclared: 'value' } });
+
+      handler.with((request) => {
+        expectTypeOf(request.searchParams.get('token')).toEqualTypeOf<string>();
+
+        // @ts-expect-error The search param is not declared in the schema.
+        return request.searchParams.has('undeclared');
+      });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
+  it('should type protocols from the declared path', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      const handler = interceptor.connection('/rooms/:roomId');
+
+      handler.with({ protocols: ['chat', 'json'] });
+
+      // @ts-expect-error The subprotocol is not declared in the schema.
+      handler.with({ protocols: ['undeclared'] });
+
+      handler.with((request) => {
+        expectTypeOf(request.protocols).toEqualTypeOf<readonly ('chat' | 'json')[]>();
+        return true;
+      });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
+  it('should not accept search params or protocols on paths that declare no connection', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      const handler = interceptor.connection('/health');
+
+      // @ts-expect-error The path declares no search params.
+      handler.with({ searchParams: { token: 'value' } });
+
+      // @ts-expect-error The path declares no subprotocols.
+      handler.with({ protocols: ['chat'] });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
+  it('should type client search params from the declared path', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      interceptor.connection('/rooms/:roomId').effect((client) => {
+        expectTypeOf(client.searchParams.get('token')).toEqualTypeOf<string>();
+
+        // @ts-expect-error The search param is not declared in the schema.
+        client.searchParams.has('undeclared');
+      });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
+  it('should type client search params as declared if no path is declared in a schema with one path', () => {
+    type SinglePathSchema = WebSocketSchema<{
+      '/rooms/:roomId': {
+        connection: { searchParams: { token: string } };
+        message: { type: 'chat'; text: string };
+      };
+    }>;
+
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<SinglePathSchema>) {
+      interceptor.connection().effect((client) => {
+        expectTypeOf(client.searchParams.get('token')).toEqualTypeOf<string>();
+      });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
+  it('should type client search params of all paths as optional if no path is declared in a schema with multiple paths', () => {
+    type MultiplePathSchema = WebSocketSchema<{
+      '/rooms/:roomId': {
+        connection: { searchParams: { token: string } };
+        message: { type: 'chat'; text: string };
+      };
+      '/logs': {
+        connection: { searchParams: { level: string } };
+        message: { type: 'log' };
+      };
+      '/health': {
+        message: { type: 'ping' };
+      };
+    }>;
+
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<MultiplePathSchema>) {
+      const handler = interceptor.connection();
+
+      handler.with({ searchParams: { token: 'value' } });
+      handler.with({ searchParams: { level: 'debug' } });
+
+      // @ts-expect-error The search param is not declared in the schema.
+      handler.with({ searchParams: { undeclared: 'value' } });
+
+      handler.effect((client) => {
+        expectTypeOf(client.searchParams.get('token')).toEqualTypeOf<string | null>();
+        expectTypeOf(client.searchParams.get('level')).toEqualTypeOf<string | null>();
+
+        // @ts-expect-error The search param is not declared in the schema.
+        client.searchParams.has('undeclared');
+      });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
+  it('should type client protocols from the declared path', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      interceptor.connection('/rooms/:roomId').effect((client) => {
+        expectTypeOf(client.protocols).toEqualTypeOf<readonly ('chat' | 'json')[]>();
+      });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
+  it('should type concrete paths from their declared path', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      interceptor.connection('/rooms/1').effect((client) => {
+        expectTypeOf(client).toEqualTypeOf<WebSocketInterceptorClient<PathKeyedSchema, '/rooms/:roomId'>>();
+      });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
+  it('should type clients with the messages of the declared path', () => {
+    function declareHandlers(
+      interceptor: LocalWebSocketInterceptor<PathKeyedSchema>,
+      healthMessage: WebSocketMessageData<{ type: 'ping' }>,
+    ) {
+      interceptor.connection('/rooms/:roomId').effect((client) => {
+        expectTypeOf<Parameters<typeof client.send>[0]>().toEqualTypeOf<
+          WebSocketMessageData<{ type: 'chat'; text: string }>
+        >();
+
+        // @ts-expect-error The message belongs to another path.
+        client.send(healthMessage);
+      });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
+  it('should type clients with the messages of all paths if no path is declared', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      interceptor.connection().effect((client) => {
+        expectTypeOf(client).toEqualTypeOf<WebSocketInterceptorClient<PathKeyedSchema>>();
+        expectTypeOf<Parameters<typeof client.send>[0]>().toEqualTypeOf<
+          WebSocketMessageData<WebSocketSchemaMessage<PathKeyedSchema>>
+        >();
+      });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
   it('should type connections in computed restrictions', () => {
     function declareLocalHandler(handler: LocalWebSocketConnectionHandler<Schema>) {
       handler.with((request) => {
-        expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
+        expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest<Schema>>();
         return request.protocols.includes('chat');
       });
     }
@@ -25,7 +220,7 @@ describe('WebSocketConnectionHandler > Types', () => {
   it('should type connections in computed delays', () => {
     function declareLocalHandler(handler: LocalWebSocketConnectionHandler<Schema>) {
       handler.delay((request) => {
-        expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
+        expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest<Schema>>();
         return 0;
       });
     }
@@ -36,7 +231,7 @@ describe('WebSocketConnectionHandler > Types', () => {
   it('should type connections in computed responses', () => {
     function declareLocalHandler(handler: LocalWebSocketConnectionHandler<Schema>) {
       handler.respond((request) => {
-        expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
+        expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest<Schema>>();
         return { action: 'accept' };
       });
     }
@@ -48,7 +243,7 @@ describe('WebSocketConnectionHandler > Types', () => {
     function declareLocalHandler(handler: LocalWebSocketConnectionHandler<Schema>) {
       handler.effect((client, request) => {
         expectTypeOf(client).toEqualTypeOf<WebSocketInterceptorClient<Schema>>();
-        expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
+        expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest<Schema>>();
       });
     }
 
@@ -57,7 +252,7 @@ describe('WebSocketConnectionHandler > Types', () => {
 
   it('should type saved connections', () => {
     function declareLocalHandler(handler: LocalWebSocketConnectionHandler<Schema>) {
-      expectTypeOf(handler.connections).toEqualTypeOf<readonly WebSocketInterceptorConnectionRequest[]>();
+      expectTypeOf(handler.connections).toEqualTypeOf<readonly WebSocketInterceptorConnectionRequest<Schema>[]>();
     }
 
     expectTypeOf(declareLocalHandler).toBeFunction();
@@ -92,7 +287,7 @@ describe('WebSocketConnectionHandler > Types', () => {
         });
 
       expectTypeOf(localInterceptor.connection('/rooms/:roomId').connections).toEqualTypeOf<
-        readonly WebSocketInterceptorConnectionRequest<'/rooms/:roomId'>[]
+        readonly WebSocketInterceptorConnectionRequest<Schema, '/rooms/:roomId'>[]
       >();
 
       remoteInterceptor
@@ -121,7 +316,7 @@ describe('WebSocketConnectionHandler > Types', () => {
       async function awaitRemoteHandler() {
         const syncedHandler = await remoteInterceptor.connection('/rooms/:roomId');
         expectTypeOf(syncedHandler.connections).toEqualTypeOf<
-          readonly WebSocketInterceptorConnectionRequest<'/rooms/:roomId'>[]
+          readonly WebSocketInterceptorConnectionRequest<Schema, '/rooms/:roomId'>[]
         >();
       }
 
@@ -130,7 +325,7 @@ describe('WebSocketConnectionHandler > Types', () => {
       const roomId = '1' as string;
 
       localInterceptor.connection(`/rooms/${roomId}`).with((request) => {
-        expectTypeOf(request.pathParams).toEqualTypeOf<{}>();
+        expectTypeOf(request.pathParams).toEqualTypeOf<{ roomId: string }>();
         return true;
       });
 
@@ -159,7 +354,7 @@ describe('WebSocketConnectionHandler > Types', () => {
   it('should accept static restrictions with search params, protocols, and exact', () => {
     function declareStaticRestrictions(handler: LocalWebSocketConnectionHandler<Schema>) {
       handler.with({ searchParams: { room: '1', tag: ['a', 'b'] } });
-      handler.with({ searchParams: new URLSearchParams('room=1'), exact: true });
+      handler.with({ searchParams: new HttpSearchParams('room=1'), exact: true });
       handler.with({ protocols: ['chat'], exact: false });
 
       // @ts-expect-error Search param values must be strings.
@@ -181,14 +376,14 @@ describe('WebSocketConnectionHandler > Types', () => {
       remoteHandler: PendingRemoteWebSocketConnectionHandler<Schema>,
     ) {
       const restrictedLocalHandler = localHandler.with({ protocols: ['chat'] }).with((request) => {
-        expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
+        expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest<Schema>>();
         return true;
       });
       expectTypeOf(restrictedLocalHandler).toEqualTypeOf<LocalWebSocketConnectionHandler<Schema>>();
 
       const restrictedRemoteHandler = remoteHandler
         .with((request) => {
-          expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
+          expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest<Schema>>();
           return true;
         })
         .with({ protocols: ['chat'] });

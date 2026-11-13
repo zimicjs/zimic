@@ -63,7 +63,7 @@ export function declareRestrictionWebSocketMessageHandlerTests(
       await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
         await interceptor.message().respond({ type: 'delete', id: 'fallback' });
 
-        const restriction: Schema = { type: 'create', body: { text: 'hello' } };
+        const restriction: ChatMessage = { type: 'create', body: { text: 'hello' } };
 
         await interceptor.message().with(restriction, { exact }).respond({ type: 'delete', id: 'restricted' });
 
@@ -94,7 +94,7 @@ export function declareRestrictionWebSocketMessageHandlerTests(
       await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
         await interceptor.message().respond({ type: 'delete', id: 'fallback' });
 
-        const restriction: Schema = { type: 'create', body: { text: 'hello' } };
+        const restriction: ChatMessage = { type: 'create', body: { text: 'hello' } };
 
         await interceptor.message().with(restriction, { exact }).respond({ type: 'delete', id: 'restricted' });
 
@@ -124,7 +124,11 @@ export function declareRestrictionWebSocketMessageHandlerTests(
   it.each([{ exact: true }])(
     'should match only specific messages if contains a static text restriction and exact $exact',
     async ({ exact }) => {
-      type TextSchema = WebSocketSchema<string>;
+      type TextSchema = WebSocketSchema<{
+        '/': {
+          message: string;
+        };
+      }>;
 
       await usingWebSocketInterceptor<TextSchema>({ type, baseURL }, async (interceptor) => {
         await interceptor.message().respond('fallback');
@@ -149,7 +153,11 @@ export function declareRestrictionWebSocketMessageHandlerTests(
   it.each([{ exact: false }, { exact: undefined }])(
     'should match only specific messages if contains a static text restriction and exact $exact',
     async ({ exact }) => {
-      type TextSchema = WebSocketSchema<string>;
+      type TextSchema = WebSocketSchema<{
+        '/': {
+          message: string;
+        };
+      }>;
 
       await usingWebSocketInterceptor<TextSchema>({ type, baseURL }, async (interceptor) => {
         await interceptor.message().respond('fallback');
@@ -176,7 +184,11 @@ export function declareRestrictionWebSocketMessageHandlerTests(
   it.each([{ exact: true }, { exact: false }])(
     'should not match JSON messages if contains a static text restriction and exact $exact',
     async ({ exact }) => {
-      type MixedSchema = WebSocketSchema<string | { type: string }>;
+      type MixedSchema = WebSocketSchema<{
+        '/': {
+          message: string | { type: string };
+        };
+      }>;
 
       await usingWebSocketInterceptor<MixedSchema>({ type, baseURL }, async (interceptor) => {
         await interceptor.message().respond('fallback');
@@ -197,7 +209,11 @@ export function declareRestrictionWebSocketMessageHandlerTests(
   );
 
   it('should not match JSON messages if contains static binary restrictions', async () => {
-    type BinarySchema = WebSocketSchema<{ type: 'a' | 'b' } | ArrayBuffer>;
+    type BinarySchema = WebSocketSchema<{
+      '/': {
+        message: { type: 'a' | 'b' } | ArrayBuffer;
+      };
+    }>;
 
     await usingWebSocketInterceptor<BinarySchema>({ type, baseURL }, async (interceptor) => {
       await interceptor.message().respond({ type: 'a' });
@@ -215,7 +231,11 @@ export function declareRestrictionWebSocketMessageHandlerTests(
   });
 
   it('should not match binary messages if contains static JSON restrictions', async () => {
-    type BinarySchema = WebSocketSchema<{ type: 'a' | 'b' } | ArrayBuffer>;
+    type BinarySchema = WebSocketSchema<{
+      '/': {
+        message: { type: 'a' | 'b' } | ArrayBuffer;
+      };
+    }>;
 
     await usingWebSocketInterceptor<BinarySchema>({ type, baseURL }, async (interceptor) => {
       await interceptor.message().respond({ type: 'a' });
@@ -275,7 +295,7 @@ export function declareRestrictionWebSocketMessageHandlerTests(
 
       const handler = await interceptor
         .message()
-        .with((message: Schema): boolean => message.type === 'create' && message.body.text.startsWith('hello'))
+        .with((message: ChatMessage): boolean => message.type === 'create' && message.body.text.startsWith('hello'))
         .effect(effect)
         .respond({ type: 'delete', id: 'restricted' })
         .times(1);
@@ -370,7 +390,7 @@ export function declareRestrictionWebSocketMessageHandlerTests(
         .message()
         .with({ type: 'create' })
         .with(
-          (message: Schema): message is Extract<Schema, { type: 'create' }> =>
+          (message: ChatMessage): message is Extract<ChatMessage, { type: 'create' }> =>
             message.type === 'create' && message.body.text.startsWith('hello'),
         )
         .effect(effect)

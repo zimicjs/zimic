@@ -1,5 +1,5 @@
 import { excludeNonPathParams, validateURLProtocol } from '@zimic/utils/url';
-import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 
 import { removeArrayElement } from '@/utils/arrays';
 import { isServerSide } from '@/utils/environment';
@@ -29,6 +29,7 @@ import type {
 } from './types/messages';
 import type { UnhandledMessageStrategy } from './types/options';
 import type { WebSocketInterceptorConnectionSaving, WebSocketInterceptorMessageSaving } from './types/public';
+import type { WebSocketInterceptorPathMessage } from './types/schema';
 import {
   createWebSocketInterceptorServer,
   InternalWebSocketInterceptorClient,
@@ -289,19 +290,22 @@ class WebSocketInterceptorImplementation<
     return this._clients;
   }
 
-  message() {
-    return this.createWebSocketMessageHandler();
+  // As in HTTP, handlers declared with a concrete path are typed with the declared path it belongs to.
+  message<Path extends string>(path: string | undefined) {
+    return this.createWebSocketMessageHandler<Path>(path as Path | undefined);
   }
 
-  private createWebSocketMessageHandler(): WebSocketMessageHandler<Schema> {
-    const handler = new this.MessageHandler<Schema>(this);
+  private createWebSocketMessageHandler<Path extends string>(
+    path: Path | undefined,
+  ): WebSocketMessageHandler<Schema, Path> {
+    const handler = new this.MessageHandler<Schema, Path>(this, path);
     this.registerMessageHandler(handler);
 
     return handler;
   }
 
-  registerMessageHandler<RestrictedSchema extends Schema>(
-    handler: InternalWebSocketMessageHandler<Schema, RestrictedSchema>,
+  registerMessageHandler<Path extends string, RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path>>(
+    handler: InternalWebSocketMessageHandler<Schema, Path, RestrictedMessage>,
   ) {
     if (!this.isRunning || this.isStopping) {
       throw new NotRunningWebSocketInterceptorError();
@@ -318,8 +322,9 @@ class WebSocketInterceptorImplementation<
     this.workerOrThrow.useMessageHandler(this, handler.implementation);
   }
 
-  connection<Path extends string = string>(path?: Path) {
-    return this.createWebSocketConnectionHandler<Path>(path);
+  // As in HTTP, handlers declared with a concrete path are typed with the declared path it belongs to.
+  connection<Path extends string>(path: string | undefined) {
+    return this.createWebSocketConnectionHandler<Path>(path as Path | undefined);
   }
 
   private createWebSocketConnectionHandler<Path extends string>(
@@ -384,7 +389,7 @@ class WebSocketInterceptorImplementation<
 
   async handleMatchedMessage(
     handler: AnyWebSocketMessageHandlerImplementation,
-    message: ReceivedWebSocketMessageData<WebSocketSchema>,
+    message: ReceivedWebSocketMessageData<WebSocketMessageSchema>,
     context: WebSocketMessageHandlerApplyContext<Schema>,
   ) {
     const messageSavingGeneration = this.messageSavingGeneration;
@@ -410,7 +415,7 @@ class WebSocketInterceptorImplementation<
 
   // Unlike HTTP, unhandled messages have no bypass or reject action. WebSocket is not request-response, so a message
   // needs no reply and the connection stays open.
-  async logUnhandledMessageIfNecessary(data: WebSocketMessageData<Schema>, url: string) {
+  async logUnhandledMessageIfNecessary(data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>, url: string) {
     const message = await normalizeWebSocketMessageData(data);
     const strategy = await this.getUnhandledMessageStrategy(message);
 
@@ -420,7 +425,7 @@ class WebSocketInterceptorImplementation<
   }
 
   private async getUnhandledMessageStrategy(
-    message: ReceivedWebSocketMessageData<Schema>,
+    message: ReceivedWebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   ): Promise<UnhandledMessageStrategy.Declaration> {
     try {
       if (typeof this.onUnhandledMessage === 'function') {

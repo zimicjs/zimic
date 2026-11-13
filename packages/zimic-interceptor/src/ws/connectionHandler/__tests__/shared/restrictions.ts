@@ -112,7 +112,7 @@ export function declareRestrictionWebSocketConnectionHandlerTests(
           async (interceptor) => {
             const handler = await interceptor
               .connection()
-              .with({ searchParams: new URLSearchParams({ room: '1' }), exact })
+              .with({ searchParams: new HttpSearchParams({ room: '1' }), exact })
               .respond({ action: 'reject' });
 
             await expectWebSocketConnectionToBeRefused(`${baseURL}?room=1`);
@@ -139,7 +139,7 @@ export function declareRestrictionWebSocketConnectionHandlerTests(
           const handler = await interceptor
             .connection()
             .with((request) => {
-              expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest>();
+              expectTypeOf(request).toEqualTypeOf<WebSocketInterceptorConnectionRequest<Schema>>();
               expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
               return request.searchParams.get('room') === '1';

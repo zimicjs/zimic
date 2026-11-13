@@ -12,7 +12,13 @@ import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInter
 import { createWebSocketInterceptor } from '../../factory';
 import { WebSocketInterceptorAuthOptions, WebSocketInterceptorPlatform } from '../../types/options';
 
-type ChatMessage = WebSocketSchema<{ type: 'client'; text: string } | { type: 'server'; text: string }>;
+type ChatMessage = { type: 'client'; text: string } | { type: 'server'; text: string };
+
+type ChatSchema = WebSocketSchema<{
+  '/': {
+    message: ChatMessage;
+  };
+}>;
 
 interface SharedAuthenticationWebSocketInterceptorTestsOptions {
   platform: WebSocketInterceptorPlatform;
@@ -34,7 +40,7 @@ export function declareAuthenticationWebSocketInterceptorTests(
   });
 
   it('should allow starting with valid authentication', async () => {
-    await usingWebSocketInterceptor<ChatMessage>(
+    await usingWebSocketInterceptor<ChatSchema>(
       { type: 'remote', baseURL, auth: { token: validToken }, messageSaving: { enabled: true } },
       async (interceptor) => {
         const handler = await promiseIfRemote(
@@ -42,7 +48,7 @@ export function declareAuthenticationWebSocketInterceptorTests(
           interceptor,
         );
 
-        await usingWebSocketClient<ChatMessage>(baseURL, async (client) => {
+        await usingWebSocketClient<ChatSchema>(baseURL, async (client) => {
           const messagePromise = waitForWebSocketClientMessage(client);
           client.send(JSON.stringify({ type: 'client', text: 'ping' } satisfies ChatMessage));
 

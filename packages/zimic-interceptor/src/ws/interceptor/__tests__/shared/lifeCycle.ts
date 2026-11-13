@@ -35,8 +35,18 @@ import { WebSocketInterceptorOptions } from '../../types/options';
 import WebSocketInterceptorStore from '../../WebSocketInterceptorStore';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
-type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
-type BinaryMessageSchema = WebSocketSchema<ArrayBuffer>;
+type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
+
+type MessageSchema = WebSocketSchema<{
+  '/': {
+    message: Message;
+  };
+}>;
+type BinaryMessageSchema = WebSocketSchema<{
+  '/': {
+    message: ArrayBuffer;
+  };
+}>;
 
 export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions, startServer, stopServer } = options;
@@ -326,7 +336,7 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
           client.send(JSON.stringify({ type: 'client', index: 1 }));
           await expect(handledMessagePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
 
-          const sentMessage = JSON.stringify({ type: 'server', index: 3 } satisfies MessageSchema);
+          const sentMessage = JSON.stringify({ type: 'server', index: 3 } satisfies Message);
 
           const sentMessagePromise = waitForWebSocketClientMessage(client);
           firstInterceptor.server.send(sentMessage);

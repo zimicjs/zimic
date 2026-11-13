@@ -10,4 +10,12 @@ export interface SharedWebSocketConnectionHandlerTestOptions {
   getBaseURL: (type: WebSocketInterceptorType) => PossiblePromise<string>;
 }
 
-export type Schema = WebSocketSchema<{ type: 'chat'; text: string }>;
+export type Schema = WebSocketSchema<{
+  '/rooms/:roomId': {
+    connection: {
+      searchParams: { room?: string; tag?: string[]; token?: string; ignored?: string };
+      protocols: 'chat' | 'json';
+    };
+    message: { type: 'chat'; text: string };
+  };
+}>;

@@ -2,13 +2,15 @@ import { JSONSerialized } from '@zimic/http';
 import {
   createWebSocketInterceptor,
   InterceptedWebSocketInterceptorMessage,
-  WebSocketInterceptor,
+  LocalWebSocketInterceptor,
+  RemoteWebSocketInterceptor,
   WebSocketInterceptorClient,
   WebSocketInterceptorType,
   WebSocketTimesCheckError,
 } from '@zimic/interceptor/experimental/ws';
 import { waitFor, waitForNot } from '@zimic/utils/time';
 import { closeWebSocketClient, WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
+import { WebSocketSchemaMessage } from '@zimic/ws';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { ZIMIC_SERVER_PORT } from '@tests/constants';
@@ -22,9 +24,12 @@ import {
   ValidationError,
 } from '@tests/types/schema/entities';
 import {
+  BinaryWebSocketMessage,
   BinaryWebSocketSchema,
   UserWebSocketSchema,
   NotificationWebSocketSchema,
+  UserWebSocketMessageOfType,
+  NotificationWebSocketMessageOfType,
   UserWebSocketMessage,
   NotificationWebSocketMessage,
 } from '@tests/types/schema/webSocket';
@@ -53,11 +58,14 @@ function getBinaryBaseURL(type: WebSocketInterceptorType) {
 
 async function waitForResponseMessage<
   Schema extends UserWebSocketSchema | NotificationWebSocketSchema,
-  ResponseMessageType extends Schema['type'],
+  ResponseMessageType extends Extract<WebSocketSchemaMessage<Schema>, { type: string }>['type'],
 >(socket: ClientTestWebSocket<Schema>, responseMessageType: ResponseMessageType) {
-  return new Promise<Extract<Schema, { type: ResponseMessageType }>>((resolve) => {
+  return new Promise<Extract<WebSocketSchemaMessage<Schema>, { type: ResponseMessageType }>>((resolve) => {
     function messageListener(event: ClientTestWebSocketMessageEvent<Schema>) {
-      const message = JSON.parse(event.data);
+      const message = JSON.parse(event.data as string) as Extract<
+        WebSocketSchemaMessage<Schema>,
+        { type: ResponseMessageType }
+      >;
 
       if (message.type === responseMessageType) {
         socket.removeEventListener('message', messageListener);
@@ -69,9 +77,9 @@ async function waitForResponseMessage<
   });
 }
 
-async function sendAndWaitForResponse<ResponseMessageType extends UserWebSocketSchema['type']>(
+async function sendAndWaitForResponse<ResponseMessageType extends UserWebSocketMessage['type']>(
   socket: ClientTestWebSocket<UserWebSocketSchema>,
-  message: UserWebSocketSchema,
+  message: UserWebSocketMessage,
   responseMessageType: ResponseMessageType,
 ) {
   const responsePromise = waitForResponseMessage(socket, responseMessageType);
@@ -80,7 +88,7 @@ async function sendAndWaitForResponse<ResponseMessageType extends UserWebSocketS
 }
 
 async function waitForBinaryMessage(socket: ClientTestWebSocket<BinaryWebSocketSchema>) {
-  return new Promise<BinaryWebSocketSchema>((resolve) => {
+  return new Promise<BinaryWebSocketMessage>((resolve) => {
     function messageListener(event: ClientTestWebSocketMessageEvent<BinaryWebSocketSchema>) {
       socket.removeEventListener('message', messageListener);
       resolve(event.data);
@@ -91,7 +99,7 @@ async function waitForBinaryMessage(socket: ClientTestWebSocket<BinaryWebSocketS
 }
 
 // Node `Buffer`s, received by `ws` sockets with their default binary type, are `Uint8Array`s.
-async function readBytes(data: BinaryWebSocketSchema) {
+async function readBytes(data: BinaryWebSocketMessage) {
   if (data instanceof Blob) {
     return Array.from(new Uint8Array(await data.arrayBuffer()));
   }
@@ -180,9 +188,9 @@ export function declareWebSocketInterceptorTests({
   let binarySocket: ClientTestWebSocket<BinaryWebSocketSchema>;
 
   function expectMessagedClients<Schema extends UserWebSocketSchema | NotificationWebSocketSchema>(
-    interceptor: WebSocketInterceptor<Schema>,
-    notifiedClients: WebSocketInterceptorClient<Schema>[],
-    expectedClientMessage: Schema,
+    interceptor: LocalWebSocketInterceptor<Schema> | RemoteWebSocketInterceptor<Schema>,
+    notifiedClients: readonly unknown[],
+    expectedClientMessage: WebSocketSchemaMessage<Schema>,
   ) {
     for (const client of interceptor.clients) {
       if (notifiedClients.includes(client)) {
@@ -371,7 +379,7 @@ export function declareWebSocketInterceptorTests({
 
       it('should support passively observing user creation messages', async () => {
         const creatorClient = userInterceptor.clients[0];
-        const message: UserWebSocketMessage<'user:create'> = {
+        const message: UserWebSocketMessageOfType<'user:create'> = {
           type: 'user:create',
           data: creationInput,
         };
@@ -432,7 +440,7 @@ export function declareWebSocketInterceptorTests({
             { type: 'user:create', data: creationInput },
             'user:create:success',
           );
-          expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:create:success'>>();
+          expectTypeOf(response).toEqualTypeOf<UserWebSocketMessageOfType<'user:create:success'>>();
 
           expect(response.data).toEqual<JSONSerialized<User>>({
             id: expect.any(String) as string,
@@ -463,7 +471,7 @@ export function declareWebSocketInterceptorTests({
               email: message.data.email,
               birthDate: message.data.birthDate,
             };
-            const response: UserWebSocketMessage<'user:create:success'> = {
+            const response: UserWebSocketMessageOfType<'user:create:success'> = {
               type: 'user:create:success',
               data: createdUser,
             };
@@ -476,7 +484,7 @@ export function declareWebSocketInterceptorTests({
           userSockets.map((socket) => waitForResponseMessage(socket, 'user:create:success')),
         );
 
-        const message: UserWebSocketMessage<'user:create'> = {
+        const message: UserWebSocketMessageOfType<'user:create'> = {
           type: 'user:create',
           data: creationInput,
         };
@@ -486,7 +494,7 @@ export function declareWebSocketInterceptorTests({
         const responses = await responsesPromise;
         const response = responses[0];
 
-        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:create:success'>>();
+        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessageOfType<'user:create:success'>>();
         expect(responses).toEqual([response, response]);
 
         expect(response.data).toEqual<JSONSerialized<User>>({
@@ -542,7 +550,7 @@ export function declareWebSocketInterceptorTests({
           { type: 'user:create', data: invalidInput },
           'user:create:error',
         );
-        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:create:error'>>();
+        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessageOfType<'user:create:error'>>();
 
         expect(response).toEqual({ type: 'user:create:error', data: validationError });
 
@@ -570,7 +578,7 @@ export function declareWebSocketInterceptorTests({
           { type: 'user:create', data: creationInput },
           'user:create:error',
         );
-        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:create:error'>>();
+        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessageOfType<'user:create:error'>>();
 
         expect(response).toEqual({ type: 'user:create:error', data: conflictError });
 
@@ -583,7 +591,7 @@ export function declareWebSocketInterceptorTests({
 
       it('should support creating users matched by chained partial restrictions', async () => {
         const creatorClient = userInterceptor.clients[0];
-        const message: UserWebSocketMessage<'user:create'> = {
+        const message: UserWebSocketMessageOfType<'user:create'> = {
           type: 'user:create',
           data: {
             name: 'Name',
@@ -648,7 +656,7 @@ export function declareWebSocketInterceptorTests({
           { type: 'user:update', data: { id: user.id, ...updateInput } },
           'user:update:success',
         );
-        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:update:success'>>();
+        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessageOfType<'user:update:success'>>();
 
         expect(response.data).toEqual<JSONSerialized<User>>({
           ...serializeUser(user),
@@ -684,7 +692,7 @@ export function declareWebSocketInterceptorTests({
           { type: 'user:update', data: { id: unknownUserId, ...updateInput } },
           'user:update:error',
         );
-        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:update:error'>>();
+        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessageOfType<'user:update:error'>>();
 
         expect(response).toEqual({ type: 'user:update:error', data: notFoundError });
 
@@ -720,7 +728,7 @@ export function declareWebSocketInterceptorTests({
           { type: 'user:update', data: { id: user.id, ...invalidInput } },
           'user:update:error',
         );
-        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:update:error'>>();
+        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessageOfType<'user:update:error'>>();
 
         expect(response).toEqual({ type: 'user:update:error', data: validationError });
 
@@ -751,7 +759,7 @@ export function declareWebSocketInterceptorTests({
           { type: 'user:delete', data: { id: user.id } },
           'user:delete:success',
         );
-        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:delete:success'>>();
+        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessageOfType<'user:delete:success'>>();
 
         expect(response).toEqual({
           type: 'user:delete:success',
@@ -785,7 +793,7 @@ export function declareWebSocketInterceptorTests({
           { type: 'user:delete', data: { id: user.id } },
           'user:delete:error',
         );
-        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessage<'user:delete:error'>>();
+        expectTypeOf(response).toEqualTypeOf<UserWebSocketMessageOfType<'user:delete:error'>>();
 
         expect(response).toEqual({ type: 'user:delete:error', data: notFoundError });
 
@@ -801,7 +809,7 @@ export function declareWebSocketInterceptorTests({
   describe('Subprotocols', () => {
     it('should support messages from sockets connected with a subprotocol', async () => {
       const userId = crypto.randomUUID();
-      const response: UserWebSocketMessage<'user:delete:success'> = {
+      const response: UserWebSocketMessageOfType<'user:delete:success'> = {
         type: 'user:delete:success',
         data: { id: userId },
       };
@@ -849,7 +857,7 @@ export function declareWebSocketInterceptorTests({
         });
         expect(userInterceptor.clients[userSockets.length].protocols).toEqual(requestedProtocols);
 
-        const message: UserWebSocketMessage<'user:delete'> = {
+        const message: UserWebSocketMessageOfType<'user:delete'> = {
           type: 'user:delete',
           data: { id: crypto.randomUUID() },
         };
@@ -897,7 +905,10 @@ export function declareWebSocketInterceptorTests({
         await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length + 1));
         expect(userInterceptor.clients[userSockets.length].url).toBe(roomURL);
 
-        const message: UserWebSocketMessage<'user:delete'> = { type: 'user:delete', data: { id: crypto.randomUUID() } };
+        const message: UserWebSocketMessageOfType<'user:delete'> = {
+          type: 'user:delete',
+          data: { id: crypto.randomUUID() },
+        };
 
         await expect(sendAndWaitForResponse(socket, message, 'user:delete:success')).resolves.toEqual({
           type: 'user:delete:success',
@@ -941,7 +952,7 @@ export function declareWebSocketInterceptorTests({
         await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length + 1));
         const reconnectedClient = userInterceptor.clients[userSockets.length];
 
-        const response: UserWebSocketMessage<'user:delete:success'> = {
+        const response: UserWebSocketMessageOfType<'user:delete:success'> = {
           type: 'user:delete:success',
           data: { id: crypto.randomUUID() },
         };
@@ -992,7 +1003,7 @@ export function declareWebSocketInterceptorTests({
       readAt: null,
     };
 
-    function sendNotificationFromServer(message: NotificationWebSocketSchema) {
+    function sendNotificationFromServer(message: NotificationWebSocketMessage) {
       const serializedMessage = JSON.stringify(message);
 
       notificationInterceptor.server.send(serializedMessage);
@@ -1015,7 +1026,7 @@ export function declareWebSocketInterceptorTests({
     }
 
     it('should support receiving notification creation events started by the server', async () => {
-      const message: NotificationWebSocketMessage<'notification:create:success'> = {
+      const message: NotificationWebSocketMessageOfType<'notification:create:success'> = {
         type: 'notification:create:success',
         data: notification,
       };
@@ -1026,14 +1037,14 @@ export function declareWebSocketInterceptorTests({
 
       const responses = await responsesPromise;
 
-      expectTypeOf(responses[0]).toEqualTypeOf<NotificationWebSocketMessage<'notification:create:success'>>();
+      expectTypeOf(responses[0]).toEqualTypeOf<NotificationWebSocketMessageOfType<'notification:create:success'>>();
       expect(responses).toEqual([message, message]);
 
       expectNoSavedServerSentNotificationMessages();
     });
 
     it('should support sending notification creation events to a selected client', async () => {
-      const message: NotificationWebSocketMessage<'notification:create:success'> = {
+      const message: NotificationWebSocketMessageOfType<'notification:create:success'> = {
         type: 'notification:create:success',
         data: notification,
       };
@@ -1064,7 +1075,7 @@ export function declareWebSocketInterceptorTests({
       ) =>
         | WebSocketInterceptorClient<NotificationWebSocketSchema>
         | readonly WebSocketInterceptorClient<NotificationWebSocketSchema>[];
-      expectedThirdSocketMessageTypes: NotificationWebSocketSchema['type'][];
+      expectedThirdSocketMessageTypes: NotificationWebSocketMessage['type'][];
     }>([
       {
         target: 'single client',
@@ -1084,11 +1095,11 @@ export function declareWebSocketInterceptorTests({
         const messageListeners = sockets.map(() =>
           vi.fn<(event: ClientTestWebSocketMessageEvent<NotificationWebSocketSchema>) => void>(),
         );
-        const message: NotificationWebSocketMessage<'notification:create:success'> = {
+        const message: NotificationWebSocketMessageOfType<'notification:create:success'> = {
           type: 'notification:create:success',
           data: notification,
         };
-        const broadcast: NotificationWebSocketMessage<'notification:update:success'> = {
+        const broadcast: NotificationWebSocketMessageOfType<'notification:update:success'> = {
           type: 'notification:update:success',
           data: updatedNotification,
         };
@@ -1123,7 +1134,7 @@ export function declareWebSocketInterceptorTests({
       },
     );
 
-    type ServerStartedNotificationMessage = NotificationWebSocketMessage<
+    type ServerStartedNotificationMessage = NotificationWebSocketMessageOfType<
       | 'notification:update:success'
       | 'notification:read:success'
       | 'notification:read:error'

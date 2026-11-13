@@ -18,11 +18,26 @@ import { WebSocketInterceptorConnectionRequest } from '../../types/messages';
 import { WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
 
-type MessageSchema = WebSocketSchema<
-  { type: 'create'; body: { text: string; priority?: number } } | { type: 'delete'; id: string }
->;
-type TextSchema = WebSocketSchema<string>;
-type BinarySchema = WebSocketSchema<Blob>;
+type Message = { type: 'create'; body: { text: string; priority?: number } } | { type: 'delete'; id: string };
+
+type MessageSchema = WebSocketSchema<{
+  '/': {
+    connection: { searchParams: { token?: string; blocked?: string }; protocols: 'chat' | 'legacy' };
+    message: Message;
+  };
+}>;
+
+type TextSchema = WebSocketSchema<{
+  '/': {
+    message: string;
+  };
+}>;
+
+type BinarySchema = WebSocketSchema<{
+  '/': {
+    message: Blob;
+  };
+}>;
 
 export function declareRestrictionWebSocketInterceptorTests(options: RuntimeSharedWebSocketInterceptorTestsOptions) {
   const { getBaseURL, getInterceptorOptions } = options;
@@ -274,11 +289,11 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
 
   it('should support intercepting messages having computed restrictions', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-      function isCreateMessage(message: MessageSchema): message is Extract<MessageSchema, { type: 'create' }> {
+      function isCreateMessage(message: Message): message is Extract<Message, { type: 'create' }> {
         return message.type === 'create';
       }
 
-      const effect = vi.fn((message: Extract<MessageSchema, { type: 'create' }>) => {
+      const effect = vi.fn((message: Extract<Message, { type: 'create' }>) => {
         expectTypeOf(message.body.priority).toEqualTypeOf<number | undefined>();
       });
 
@@ -352,9 +367,7 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
         interceptor
           .message()
           .with({ type: 'create' })
-          .with((message): message is Extract<MessageSchema, { type: 'create' }> =>
-            message.body.text.startsWith('hello'),
-          )
+          .with((message): message is Extract<Message, { type: 'create' }> => message.body.text.startsWith('hello'))
           .effect(effect)
           .times(1),
         interceptor,

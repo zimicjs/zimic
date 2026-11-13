@@ -20,4 +20,6 @@ export type ChatMessage =
       id: string;
     };
 
-export type Schema = WebSocketSchema<ChatMessage>;
+export type Schema = WebSocketSchema<{
+  '/rooms/:roomId': { message: ChatMessage };
+}>;

@@ -16,7 +16,13 @@ import {
 import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions, verifyUnhandledMessageWarning } from './utils';
 
-type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
+type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
+
+type MessageSchema = WebSocketSchema<{
+  '/': {
+    message: Message;
+  };
+}>;
 
 // HTTP splits each case into bypassed and rejected variants. Unhandled messages have no action, so each pair has one
 // WebSocket counterpart.
@@ -51,7 +57,7 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
 
           await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
             await usingIgnoredConsole(['warn', 'error'], async (console) => {
-              const message: MessageSchema = { type: 'client', index: 1 };
+              const message: Message = { type: 'client', index: 1 };
               client.send(JSON.stringify(message));
 
               await waitFor(() => {
@@ -73,32 +79,37 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
     });
 
     it('should show a warning when logging is enabled and binary messages are unhandled', async () => {
-      await usingWebSocketInterceptor<WebSocketSchema<ArrayBuffer>>(
-        { ...interceptorOptions, onUnhandledMessage },
-        async (interceptor) => {
-          expect(interceptor.onUnhandledMessage).toBe(onUnhandledMessage);
+      await usingWebSocketInterceptor<
+        WebSocketSchema<{
+          '/': { message: ArrayBuffer };
+        }>
+      >({ ...interceptorOptions, onUnhandledMessage }, async (interceptor) => {
+        expect(interceptor.onUnhandledMessage).toBe(onUnhandledMessage);
 
-          await usingWebSocketClient<WebSocketSchema<ArrayBuffer>>(baseURL, async (client) => {
-            await usingIgnoredConsole(['warn', 'error'], async (console) => {
-              const message = createBinaryMessage(1, 2);
-              client.send(message);
+        await usingWebSocketClient<
+          WebSocketSchema<{
+            '/': { message: ArrayBuffer };
+          }>
+        >(baseURL, async (client) => {
+          await usingIgnoredConsole(['warn', 'error'], async (console) => {
+            const message = createBinaryMessage(1, 2);
+            client.send(message);
 
-              await waitFor(() => {
-                expect(console.warn).toHaveBeenCalledTimes(1);
-              });
-              expect(console.error).toHaveBeenCalledTimes(0);
-
-              await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
-                data: message,
-                url: client.url,
-                platform,
-              });
-
-              expect(client.readyState).toBe(WebSocketClient.OPEN);
+            await waitFor(() => {
+              expect(console.warn).toHaveBeenCalledTimes(1);
             });
+            expect(console.error).toHaveBeenCalledTimes(0);
+
+            await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+              data: message,
+              url: client.url,
+              platform,
+            });
+
+            expect(client.readyState).toBe(WebSocketClient.OPEN);
           });
-        },
-      );
+        });
+      });
     });
 
     it('should show a warning when logging is enabled and messages are unhandled due to restrictions', async () => {
@@ -107,7 +118,7 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
         async (interceptor) => {
           expect(interceptor.onUnhandledMessage).toBe(onUnhandledMessage);
 
-          const matchedMessage: MessageSchema = { type: 'client', index: 1 };
+          const matchedMessage: Message = { type: 'client', index: 1 };
 
           await promiseIfRemote(
             interceptor.message().with(matchedMessage).respond({ type: 'server', index: 1 }),
@@ -123,7 +134,7 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
               expect(console.warn).toHaveBeenCalledTimes(0);
               expect(console.error).toHaveBeenCalledTimes(0);
 
-              const unmatchedMessage: MessageSchema = { type: 'client', index: 2 };
+              const unmatchedMessage: Message = { type: 'client', index: 2 };
               client.send(JSON.stringify(unmatchedMessage));
 
               await waitFor(() => {
@@ -151,8 +162,65 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
       );
     });
 
-    // No WebSocket counterparts for the cases with unmocked paths, unknown methods, and array search params: WebSocket
-    // handlers have no per-handler path or method and messages have no search params.
+    it('should show a warning when logging is enabled and messages are unhandled due to unmocked path', async () => {
+      type PathKeyedSchema = WebSocketSchema<{
+        '/rooms/:roomId': { message: Message };
+        '/users/:userId': { message: Message };
+      }>;
+
+      await usingWebSocketInterceptor<PathKeyedSchema>(
+        { ...interceptorOptions, onUnhandledMessage },
+        async (interceptor) => {
+          expect(interceptor.onUnhandledMessage).toBe(onUnhandledMessage);
+
+          const message: Message = { type: 'client', index: 1 };
+
+          await promiseIfRemote(
+            interceptor.message('/rooms/:roomId').with(message).respond({ type: 'server', index: 1 }),
+            interceptor,
+          );
+
+          await usingWebSocketClient<PathKeyedSchema>(`${baseURL}/rooms/1`, async (roomClient) => {
+            await usingWebSocketClient<PathKeyedSchema>(`${baseURL}/users/1`, async (userClient) => {
+              await usingIgnoredConsole(['warn', 'error'], async (console) => {
+                const responsePromise = waitForWebSocketClientMessage(roomClient);
+                roomClient.send(JSON.stringify(message));
+                await expect(responsePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+
+                expect(console.warn).toHaveBeenCalledTimes(0);
+                expect(console.error).toHaveBeenCalledTimes(0);
+
+                userClient.send(JSON.stringify(message));
+
+                await waitFor(() => {
+                  expect(console.warn).toHaveBeenCalledTimes(1);
+                });
+                expect(console.error).toHaveBeenCalledTimes(0);
+
+                await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+                  data: message,
+                  url: userClient.url,
+                  platform,
+                });
+
+                expect(userClient.readyState).toBe(WebSocketClient.OPEN);
+              });
+            });
+          });
+        },
+      );
+    });
+
+    // No WebSocket counterpart for "should show a warning when logging is enabled and requests with array search params
+    // are unhandled and bypassed": message warnings log the connection URL as received, without formatting its search
+    // params.
+
+    // No WebSocket counterpart for "should show an error when logging is enabled and requests with an unknown method are
+    // unhandled and rejected": messages have no method.
+
+    // No WebSocket counterpart for "should show an error when logging is enabled and requests with array search params
+    // are unhandled and rejected": message warnings log the connection URL as received, without formatting its search
+    // params.
   });
 
   describe.each([{ declarationType: 'static' as const }, { declarationType: 'factory' as const }])(
@@ -168,7 +236,7 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
           async (interceptor) => {
             expect(interceptor.onUnhandledMessage).toBe(onUnhandledMessage);
 
-            const matchedMessage: MessageSchema = { type: 'client', index: 1 };
+            const matchedMessage: Message = { type: 'client', index: 1 };
 
             await promiseIfRemote(
               interceptor.message().with(matchedMessage).respond({ type: 'server', index: 1 }),
@@ -210,7 +278,7 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
       async (interceptor) => {
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
           await usingIgnoredConsole(['warn', 'error'], async (console) => {
-            const message: MessageSchema = { type: 'client', index: 1 };
+            const message: Message = { type: 'client', index: 1 };
             client.send(JSON.stringify(message));
 
             await waitFor(() => {
@@ -257,7 +325,7 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
         );
 
         await usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-          const message: MessageSchema = { type: 'client', index: 1 };
+          const message: Message = { type: 'client', index: 1 };
 
           await usingIgnoredConsole(['warn', 'error'], async (console) => {
             client.send(JSON.stringify(message));

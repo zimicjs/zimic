@@ -2,14 +2,15 @@ import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
 import { WebSocketInterceptorClient } from '../interceptor/types/messages';
-import WebSocketInterceptorImplementation from '../interceptor/WebSocketInterceptorImplementation';
+import { WebSocketInterceptorPathMessage } from '../interceptor/types/schema';
+import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
 import { WebSocketMessageHandlerDelayFactory } from './types/messages';
 import {
   SyncedRemoteWebSocketMessageHandler as PublicSyncedRemoteWebSocketMessageHandler,
   PendingRemoteWebSocketMessageHandler as PublicPendingRemoteWebSocketMessageHandler,
   WebSocketMessageHandlerMessageCallback,
   WebSocketMessageHandlerMessageDeclaration,
-  WebSocketMessageHandlerSchemaWithRestriction,
+  WebSocketMessageHandlerMessageWithRestriction,
 } from './types/public';
 import {
   WebSocketMessageHandlerRestriction,
@@ -21,22 +22,31 @@ const PENDING_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Pr
 
 class RemoteWebSocketMessageHandler<
   Schema extends WebSocketSchema,
-  RestrictedSchema extends Schema = Schema,
-> implements PublicPendingRemoteWebSocketMessageHandler<Schema, RestrictedSchema> {
+  Path extends string = string,
+  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path> = WebSocketInterceptorPathMessage<
+    Schema,
+    Path
+  >,
+> implements PublicPendingRemoteWebSocketMessageHandler<Schema, Path, RestrictedMessage> {
   readonly type = 'remote';
 
-  implementation: WebSocketMessageHandlerImplementation<Schema, RestrictedSchema>;
+  implementation: WebSocketMessageHandlerImplementation<Schema, Path, RestrictedMessage>;
 
   private pending: this;
   private synced: this;
 
-  constructor(interceptorImplementation: WebSocketInterceptorImplementation<Schema>) {
-    this.implementation = new WebSocketMessageHandlerImplementation<Schema, RestrictedSchema>(
+  constructor(interceptorImplementation: AnyWebSocketInterceptorImplementation, path: Path | undefined) {
+    this.implementation = new WebSocketMessageHandlerImplementation<Schema, Path, RestrictedMessage>(
       interceptorImplementation,
+      path,
       this,
     );
     this.pending = this;
     this.synced = this.createSyncedProxy();
+  }
+
+  get path() {
+    return this.implementation.path;
   }
 
   private createSyncedProxy() {
@@ -66,33 +76,35 @@ class RemoteWebSocketMessageHandler<
     return this.pending;
   }
 
-  with<Restriction extends WebSocketMessageHandlerRestriction<RestrictedSchema>>(
+  with<Restriction extends WebSocketMessageHandlerRestriction<RestrictedMessage>>(
     restriction: Restriction,
-    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<RestrictedSchema, Restriction>
+    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<RestrictedMessage, Restriction>
   ): RemoteWebSocketMessageHandler<
     Schema,
-    WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>
+    Path,
+    WebSocketMessageHandlerMessageWithRestriction<RestrictedMessage, Restriction>
   > {
     this.implementation.with(restriction, ...options);
 
     const pending = this.pending as unknown as RemoteWebSocketMessageHandler<
       Schema,
-      WebSocketMessageHandlerSchemaWithRestriction<RestrictedSchema, Restriction>
+      Path,
+      WebSocketMessageHandlerMessageWithRestriction<RestrictedMessage, Restriction>
     >;
     return pending;
   }
 
-  delay(minMilliseconds: number | WebSocketMessageHandlerDelayFactory<RestrictedSchema>, maxMilliseconds?: number) {
+  delay(minMilliseconds: number | WebSocketMessageHandlerDelayFactory<RestrictedMessage>, maxMilliseconds?: number) {
     this.implementation.delay(minMilliseconds, maxMilliseconds);
     return this.pending;
   }
 
-  effect(callback: WebSocketMessageHandlerMessageCallback<Schema, RestrictedSchema>) {
+  effect(callback: WebSocketMessageHandlerMessageCallback<Schema, Path, RestrictedMessage>) {
     this.implementation.effect(callback);
     return this.pending;
   }
 
-  respond(declaration: WebSocketMessageHandlerMessageDeclaration<Schema, RestrictedSchema>) {
+  respond(declaration: WebSocketMessageHandlerMessageDeclaration<Schema, Path, RestrictedMessage>) {
     this.implementation.respond(declaration);
     return this.pending;
   }
@@ -113,19 +125,22 @@ class RemoteWebSocketMessageHandler<
     });
   }
 
-  clear(): PublicPendingRemoteWebSocketMessageHandler<Schema, Schema> {
+  clear(): PublicPendingRemoteWebSocketMessageHandler<Schema, Path> {
     this.implementation.clear();
-    return this.pending as unknown as PublicPendingRemoteWebSocketMessageHandler<Schema, Schema>;
+    return this.pending as PublicPendingRemoteWebSocketMessageHandler<Schema, Path>;
   }
 
   get messages() {
     return this.implementation.messages;
   }
 
-  then<FulfilledResult = PublicSyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema>, RejectedResult = never>(
+  then<
+    FulfilledResult = PublicSyncedRemoteWebSocketMessageHandler<Schema, Path, RestrictedMessage>,
+    RejectedResult = never,
+  >(
     onFulfilled?:
       | ((
-          handler: PublicSyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema>,
+          handler: PublicSyncedRemoteWebSocketMessageHandler<Schema, Path, RestrictedMessage>,
         ) => PossiblePromise<FulfilledResult>)
       | null,
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
@@ -137,13 +152,13 @@ class RemoteWebSocketMessageHandler<
 
   catch<RejectedResult = never>(
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
-  ): Promise<PublicSyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema> | RejectedResult> {
+  ): Promise<PublicSyncedRemoteWebSocketMessageHandler<Schema, Path, RestrictedMessage> | RejectedResult> {
     return this.then().catch(onRejected);
   }
 
   finally(
     onFinally?: (() => void) | null,
-  ): Promise<PublicSyncedRemoteWebSocketMessageHandler<Schema, RestrictedSchema>> {
+  ): Promise<PublicSyncedRemoteWebSocketMessageHandler<Schema, Path, RestrictedMessage>> {
     return this.then().finally(onFinally);
   }
 }

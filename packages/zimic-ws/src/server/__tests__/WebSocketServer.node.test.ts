@@ -6,6 +6,7 @@ import { Socket } from 'net';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { WebSocketClient } from '@/client/WebSocketClient';
+import { WebSocketSchema } from '@/types/schema';
 
 import ClosedWebSocketServerError from '../errors/ClosedWebSocketServerError';
 import { WebSocketServer } from '../WebSocketServer';
@@ -13,8 +14,8 @@ import { delayWebSocketServerClose } from './utils';
 
 describe('WebSocketServer', () => {
   let httpServer: HttpServer;
-  let webSocketServer: WebSocketServer<{}> | undefined;
-  let webSocketClient: WebSocketClient<{}> | undefined;
+  let webSocketServer: WebSocketServer<WebSocketSchema> | undefined;
+  let webSocketClient: WebSocketClient<WebSocketSchema> | undefined;
 
   beforeEach(async () => {
     httpServer = createHttpServer();

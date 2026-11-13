@@ -16,9 +16,28 @@ import {
 import type { WebSocketInterceptorType } from '../../types/options';
 import type { WebSocketInterceptor } from '../../types/public';
 
-type ChatMessage = WebSocketSchema<{ type: 'server'; text: string }>;
-type BinaryMessage = WebSocketSchema<ArrayBuffer>;
-type BinaryOrTextMessage = WebSocketSchema<Blob | string>;
+interface ChatMessage {
+  type: 'server';
+  text: string;
+}
+
+type ChatSchema = WebSocketSchema<{
+  '/': {
+    message: ChatMessage;
+  };
+}>;
+
+type BinaryMessage = WebSocketSchema<{
+  '/': {
+    message: ArrayBuffer;
+  };
+}>;
+
+type BinaryOrTextMessage = WebSocketSchema<{
+  '/': {
+    message: Blob | string;
+  };
+}>;
 
 interface SharedWebSocketInterceptorSendsTestsOptions {
   type: WebSocketInterceptorType;
@@ -31,9 +50,9 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
   it('should send server messages to a single client', async () => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
-      await usingWebSocketClient<ChatMessage>(baseURL, async (firstClient) => {
-        await usingWebSocketClient<ChatMessage>(baseURL, async (secondClient) => {
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatSchema>(baseURL, async (firstClient) => {
+        await usingWebSocketClient<ChatSchema>(baseURL, async (secondClient) => {
           await waitFor(() => {
             expect(interceptor.clients).toHaveLength(2);
           });
@@ -60,10 +79,10 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
   it('should send server messages to a readonly client list', async () => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
-      await usingWebSocketClient<ChatMessage>(baseURL, async (firstClient) => {
-        await usingWebSocketClient<ChatMessage>(baseURL, async (secondClient) => {
-          await usingWebSocketClient<ChatMessage>(baseURL, async (thirdClient) => {
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatSchema>(baseURL, async (firstClient) => {
+        await usingWebSocketClient<ChatSchema>(baseURL, async (secondClient) => {
+          await usingWebSocketClient<ChatSchema>(baseURL, async (thirdClient) => {
             await waitFor(() => {
               expect(interceptor.clients).toHaveLength(3);
             });
@@ -96,9 +115,9 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
   it('should send server messages to no clients when the recipient list is empty', async () => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
-      await usingWebSocketClient<ChatMessage>(baseURL, async (firstClient) => {
-        await usingWebSocketClient<ChatMessage>(baseURL, async (secondClient) => {
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatSchema>(baseURL, async (firstClient) => {
+        await usingWebSocketClient<ChatSchema>(baseURL, async (secondClient) => {
           await waitFor(() => {
             expect(interceptor.clients).toHaveLength(2);
           });
@@ -125,9 +144,9 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
   it('should broadcast server messages to all clients', async () => {
     const baseURL = getBaseURL();
 
-    await usingWebSocketInterceptor<ChatMessage>({ type, baseURL }, async (interceptor) => {
-      await usingWebSocketClient<ChatMessage>(baseURL, async (firstClient) => {
-        await usingWebSocketClient<ChatMessage>(baseURL, async (secondClient) => {
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatSchema>(baseURL, async (firstClient) => {
+        await usingWebSocketClient<ChatSchema>(baseURL, async (secondClient) => {
           await waitFor(() => {
             expect(interceptor.clients).toHaveLength(2);
           });
@@ -199,7 +218,11 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
   )(
     'should deliver $dataType server messages as the $binaryType binary type of clients',
     async ({ createMessage, binaryType, receivedMessageType }) => {
-      type BinaryBufferMessage = WebSocketSchema<Blob | BufferSource>;
+      type BinaryBufferMessage = WebSocketSchema<{
+        '/': {
+          message: Blob | BufferSource;
+        };
+      }>;
 
       const baseURL = getBaseURL();
 

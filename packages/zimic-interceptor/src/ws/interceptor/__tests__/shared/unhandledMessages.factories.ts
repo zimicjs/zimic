@@ -10,7 +10,13 @@ import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/util
 import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../types/options';
 import { RuntimeSharedWebSocketInterceptorTestsOptions, verifyUnhandledMessageWarning } from './utils';
 
-type MessageSchema = WebSocketSchema<{ type: 'client'; index: number } | { type: 'server'; index: number }>;
+type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
+
+type MessageSchema = WebSocketSchema<{
+  '/': {
+    message: Message;
+  };
+}>;
 
 export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
   options: RuntimeSharedWebSocketInterceptorTestsOptions,
@@ -34,7 +40,7 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, onUnhandledMessage },
       async (interceptor) => {
-        const matchedMessage: MessageSchema = { type: 'client', index: 1 };
+        const matchedMessage: Message = { type: 'client', index: 1 };
 
         await promiseIfRemote(
           interceptor.message().with(matchedMessage).respond({ type: 'server', index: 1 }),
@@ -51,7 +57,7 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
             expect(console.warn).toHaveBeenCalledTimes(0);
             expect(console.error).toHaveBeenCalledTimes(0);
 
-            const silentMessage: MessageSchema = { type: 'client', index: 2 };
+            const silentMessage: Message = { type: 'client', index: 2 };
             client.send(JSON.stringify(silentMessage));
 
             await waitFor(() => {
@@ -59,7 +65,7 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
             });
             expect(onUnhandledMessage).toHaveBeenNthCalledWith(1, silentMessage);
 
-            const loggedMessage: MessageSchema = { type: 'client', index: 3 };
+            const loggedMessage: Message = { type: 'client', index: 3 };
             client.send(JSON.stringify(loggedMessage));
 
             await waitFor(() => {
@@ -90,7 +96,7 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, onUnhandledMessage },
       async (interceptor) => {
-        const matchedMessage: MessageSchema = { type: 'client', index: 1 };
+        const matchedMessage: Message = { type: 'client', index: 1 };
 
         await promiseIfRemote(
           interceptor.message().with(matchedMessage).respond({ type: 'server', index: 1 }),
@@ -107,7 +113,7 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
             expect(console.warn).toHaveBeenCalledTimes(0);
             expect(console.error).toHaveBeenCalledTimes(0);
 
-            const silentMessage: MessageSchema = { type: 'client', index: 2 };
+            const silentMessage: Message = { type: 'client', index: 2 };
             client.send(JSON.stringify(silentMessage));
 
             await waitFor(() => {
@@ -115,7 +121,7 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
             });
             expect(onUnhandledMessage).toHaveBeenNthCalledWith(1, silentMessage);
 
-            const loggedMessage: MessageSchema = { type: 'client', index: 3 };
+            const loggedMessage: Message = { type: 'client', index: 3 };
             client.send(JSON.stringify(loggedMessage));
 
             await waitFor(() => {
@@ -150,7 +156,7 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, onUnhandledMessage },
       async (interceptor) => {
-        const matchedMessage: MessageSchema = { type: 'client', index: 1 };
+        const matchedMessage: Message = { type: 'client', index: 1 };
 
         await promiseIfRemote(
           interceptor.message().with(matchedMessage).respond({ type: 'server', index: 1 }),
@@ -173,7 +179,7 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
               expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
             });
 
-            const loggedMessage: MessageSchema = { type: 'client', index: 3 };
+            const loggedMessage: Message = { type: 'client', index: 3 };
             client.send(JSON.stringify(loggedMessage));
 
             await waitFor(() => {
@@ -206,7 +212,7 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, onUnhandledMessage },
       async (interceptor) => {
-        const matchedMessage: MessageSchema = { type: 'client', index: 1 };
+        const matchedMessage: Message = { type: 'client', index: 1 };
 
         await promiseIfRemote(
           interceptor.message().with(matchedMessage).respond({ type: 'server', index: 1 }),
@@ -229,7 +235,7 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
               expect(onUnhandledMessage).toHaveBeenCalledTimes(1);
             });
 
-            const loggedMessage: MessageSchema = { type: 'client', index: 3 };
+            const loggedMessage: Message = { type: 'client', index: 3 };
             client.send(JSON.stringify(loggedMessage));
 
             await waitFor(() => {
@@ -257,7 +263,7 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, onUnhandledMessage },
       async (interceptor) => {
-        const matchedMessage: MessageSchema = { type: 'client', index: 1 };
+        const matchedMessage: Message = { type: 'client', index: 1 };
 
         await promiseIfRemote(
           interceptor.message().with(matchedMessage).respond({ type: 'server', index: 1 }),
@@ -296,7 +302,7 @@ export function declareUnhandledMessageFactoriesWebSocketInterceptorTests(
         await usingWebSocketInterceptor<MessageSchema>(
           { ...interceptorOptions, messageSaving: { enabled: true }, onUnhandledMessage },
           async (interceptor) => {
-            const matchedMessage: MessageSchema = { type: 'client', index: 1 };
+            const matchedMessage: Message = { type: 'client', index: 1 };
 
             const handler = await promiseIfRemote(
               interceptor.message().with(matchedMessage).respond({ type: 'server', index: 2 }),

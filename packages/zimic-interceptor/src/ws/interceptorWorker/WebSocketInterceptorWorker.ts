@@ -1,7 +1,7 @@
 import { HttpSearchParams } from '@zimic/utils/http';
 import { PossiblePromise } from '@zimic/utils/types';
 import { createRegexFromPath, validatePathParams } from '@zimic/utils/url';
-import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 
 import { removeArrayElement } from '@/utils/arrays';
 import { isClientSide } from '@/utils/environment';
@@ -32,21 +32,22 @@ import { normalizeWebSocketMessageData } from '../utils/messageData';
 interface WebSocketMessageHandler {
   interceptor: AnyWebSocketInterceptorImplementation;
   implementation: AnyWebSocketMessageHandlerImplementation;
+  pathRegex: RegExp | undefined;
 }
 
-interface WebSocketConnectionHolder<Schema extends WebSocketSchema> {
-  interceptor: WebSocketInterceptorImplementation<Schema>;
-  client: InternalWebSocketInterceptorClient<Schema>;
+interface WebSocketConnectionHolder {
+  interceptor: WebSocketInterceptorImplementation<WebSocketSchema>;
+  client: InternalWebSocketInterceptorClient;
 }
 
 interface RegisteredWebSocketConnectionHolder {
   registeredInterceptor: { interceptor: AnyWebSocketInterceptorImplementation };
-  client: WebSocketInterceptorClient<WebSocketSchema>;
+  client: WebSocketInterceptorClient;
 }
 
 interface FailedWebSocketMessageMatch {
   handler: AnyWebSocketMessageHandlerImplementation;
-  holder: WebSocketConnectionHolder<WebSocketSchema>;
+  holder: WebSocketConnectionHolder;
   messageMatch: Extract<WebSocketMessageHandlerMessageMatch, { success: false }>;
 }
 
@@ -157,21 +158,30 @@ abstract class WebSocketInterceptorWorker {
     interceptor: AnyWebSocketInterceptorImplementation<Schema>,
     handler: AnyWebSocketMessageHandlerImplementation,
   ) {
-    this.messageHandlers.push({ interceptor, implementation: handler });
+    this.messageHandlers.push({
+      interceptor,
+      implementation: handler,
+      pathRegex: this.createHandlerPathRegex(handler),
+    });
+  }
+
+  private createHandlerPathRegex(handler: { path: string | undefined }) {
+    if (handler.path === undefined) {
+      return undefined;
+    }
+
+    validatePathParams(handler.path);
+    return createRegexFromPath(handler.path);
   }
 
   useConnectionHandler<Schema extends WebSocketSchema>(
     interceptor: AnyWebSocketInterceptorImplementation<Schema>,
     handler: AnyWebSocketConnectionHandlerImplementation,
   ) {
-    if (handler.path !== undefined) {
-      validatePathParams(handler.path);
-    }
-
     this.connectionHandlers.push({
       interceptor,
       implementation: handler,
-      pathRegex: handler.path === undefined ? undefined : createRegexFromPath(handler.path),
+      pathRegex: this.createHandlerPathRegex(handler),
     });
   }
 
@@ -200,7 +210,7 @@ abstract class WebSocketInterceptorWorker {
     for (const handler of this.connectionHandlers.toReversed()) {
       const holder = handler.interceptor;
 
-      if (!isHolding(holder) || !this.matchesConnectionHandlerPath(connectionURL, handler)) {
+      if (!isHolding(holder) || !this.matchesHandlerPath(connectionURL, handler)) {
         continue;
       }
 
@@ -248,7 +258,7 @@ abstract class WebSocketInterceptorWorker {
     return UNHANDLED_CONNECTION_HANDLING;
   }
 
-  private matchesConnectionHandlerPath(connectionURL: string, handler: WebSocketConnectionHandler) {
+  private matchesHandlerPath(connectionURL: string, handler: WebSocketMessageHandler | WebSocketConnectionHandler) {
     if (handler.pathRegex === undefined) {
       return true;
     }
@@ -332,10 +342,10 @@ abstract class WebSocketInterceptorWorker {
   // The handlers of all interceptors holding the connection are tried together, from the last created to the first, so
   // a newer handler wins regardless of the start order of its interceptor. Holders are ordered from oldest to newest.
   protected async handleMessageWithHandlers(
-    data: WebSocketMessageData<WebSocketSchema>,
-    holders: WebSocketConnectionHolder<WebSocketSchema>[],
+    data: WebSocketMessageData<WebSocketMessageSchema>,
+    holders: WebSocketConnectionHolder[],
   ) {
-    const message = await normalizeWebSocketMessageData<WebSocketSchema>(data);
+    const message = await normalizeWebSocketMessageData<WebSocketMessageSchema>(data);
     const failedMessageMatches: FailedWebSocketMessageMatch[] = [];
 
     // Handlers can be added or cleared while a message is handled, so the message is matched against a copy.
@@ -345,11 +355,11 @@ abstract class WebSocketInterceptorWorker {
         return holder.interceptor === handler.interceptor && this.isHoldingConnection(holder);
       });
 
-      if (!holder) {
+      if (!holder || !this.matchesHandlerPath(createPathMatchingURL(holder.client.url), handler)) {
         continue;
       }
 
-      const context: WebSocketMessageHandlerApplyContext<WebSocketSchema> = {
+      const context: WebSocketMessageHandlerApplyContext = {
         sender: holder.client,
         receiver: holder.interceptor.server,
       };
@@ -401,15 +411,15 @@ abstract class WebSocketInterceptorWorker {
   // the connection is closed and the message is dropped, as a cleared interceptor does not save the messages it was
   // handling.
   private async logUnhandledMessageIfNecessary(
-    data: WebSocketMessageData<WebSocketSchema>,
-    holders: WebSocketConnectionHolder<WebSocketSchema>[],
+    data: WebSocketMessageData<WebSocketMessageSchema>,
+    holders: WebSocketConnectionHolder[],
   ) {
     const newestHolder = holders.findLast((holder) => this.isHoldingConnection(holder));
     await newestHolder?.interceptor.logUnhandledMessageIfNecessary(data, newestHolder.client.url);
   }
 
   // A holder lists the client from the moment it accepts the connection until it lets the connection go.
-  private isHoldingConnection(holder: WebSocketConnectionHolder<WebSocketSchema>) {
+  private isHoldingConnection(holder: WebSocketConnectionHolder) {
     return holder.interceptor.clients.includes(holder.client);
   }
 
@@ -419,7 +429,7 @@ abstract class WebSocketInterceptorWorker {
   // and resets the count, `from`, `with`, `delay`, and `times` re-enable it without resetting, so the count would
   // satisfy its later limits. Handlers whose holder let the connection go after their match record nothing.
   private markMessageAsUnhandled(
-    message: ReceivedWebSocketMessageData<WebSocketSchema>,
+    message: ReceivedWebSocketMessageData<WebSocketMessageSchema>,
     failedMessageMatches: FailedWebSocketMessageMatch[],
   ) {
     for (const { handler, holder, messageMatch } of failedMessageMatches) {
@@ -442,12 +452,12 @@ abstract class WebSocketInterceptorWorker {
 
   abstract sendToClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
-    data: WebSocketMessageData<Schema>,
+    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   ): PossiblePromise<void>;
 
   abstract sendToClients<Schema extends WebSocketSchema>(
     interceptor: AnyWebSocketInterceptorImplementation<Schema>,
-    data: WebSocketMessageData<Schema>,
+    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   ): PossiblePromise<void>;
 
   abstract closeClient<Schema extends WebSocketSchema>(
