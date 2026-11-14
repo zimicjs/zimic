@@ -1,4 +1,4 @@
-import { NodeXHR } from 'socket.io-client';
+import { NodeWebSocket, NodeXHR } from 'socket.io-client';
 import { afterAll, beforeAll, describe } from 'vitest';
 
 import { getNodeBaseURL } from '@tests/utils/interceptors';
@@ -23,8 +23,10 @@ describe.each(testMatrix)('SocketIOProtocol (node, $type)', ({ type }) => {
   });
 
   declareSocketIOProtocolTests({
+    platform: 'node',
     type,
     getBaseURL: () => getNodeBaseURL(type, server).replace(/^http/, 'ws'),
     PollingTransport: NodeXHR,
+    WebSocketTransport: NodeWebSocket,
   });
 });

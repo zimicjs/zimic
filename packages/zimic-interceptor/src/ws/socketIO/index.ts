@@ -1,5 +1,4 @@
 export { createSocketIOProtocol } from './createSocketIOProtocol';
-export { GlobalWebSocketTransport } from './GlobalWebSocketTransport';
 
 export type {
   SocketIOAckMessage,

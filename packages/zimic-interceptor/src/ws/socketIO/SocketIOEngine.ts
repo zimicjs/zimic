@@ -15,14 +15,12 @@ import type {
 } from '../interceptor/types/protocol';
 import type { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
 import type { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
+import { UNKNOWN_SESSION_CLOSE_CODE, UNSUPPORTED_VERSION_CLOSE_CODE } from './constants';
 import type { SocketIOPacket } from './types';
 
 const { PacketType } = socketIOParser;
 
 const SUPPORTED_ENGINE_IO_VERSION = '4';
-
-// A code in the application range, because Socket.IO has no close code for a refused protocol version.
-const UNSUPPORTED_VERSION_CLOSE_CODE = 4000;
 
 // The message of the error Socket.IO servers send when a client joins a namespace they do not serve.
 const INVALID_NAMESPACE_MESSAGE = 'Invalid namespace';
@@ -43,9 +41,6 @@ const NOOP_PACKET = '6';
 const UPGRADE_PROBE_PACKET = '2probe';
 const UPGRADE_PROBE_REPLY_PACKET = '3probe';
 const UPGRADE_PACKET = '5';
-
-// A code in the application range, because Socket.IO has no close code for an unknown session.
-const UNKNOWN_SESSION_CLOSE_CODE = 4001;
 
 function ignoreConnectionEvent() {
   return undefined;

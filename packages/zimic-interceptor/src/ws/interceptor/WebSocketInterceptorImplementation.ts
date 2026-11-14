@@ -27,11 +27,7 @@ import type {
   WebSocketInterceptorAuthOptions,
   WebSocketInterceptorType,
 } from './types/options';
-import type {
-  WebSocketInterceptorProtocol,
-  WebSocketInterceptorProtocolClientOptions,
-  WebSocketInterceptorProtocolRawConnection,
-} from './types/protocol';
+import type { WebSocketInterceptorProtocol, WebSocketInterceptorProtocolClientOptions } from './types/protocol';
 import type { WebSocketInterceptorConnectionSaving, WebSocketInterceptorMessageSaving } from './types/public';
 import type { WebSocketInterceptorPathMessage } from './types/schema';
 import {
@@ -150,12 +146,8 @@ class WebSocketInterceptorImplementation<
     return this.getAuth?.();
   }
 
-  private get internalProtocol() {
+  get internalProtocol() {
     return isInternalWebSocketInterceptorProtocol(this.protocol) ? this.protocol : undefined;
-  }
-
-  claimProtocolConnection(url: string, connection: WebSocketInterceptorProtocolRawConnection) {
-    return this.internalProtocol?.claimConnection(url, connection);
   }
 
   openProtocolClient(options: WebSocketInterceptorProtocolClientOptions) {

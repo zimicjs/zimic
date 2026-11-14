@@ -1,7 +1,15 @@
 import type { HttpSchema } from '@zimic/http';
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
-import { io, Manager, type ManagerOptions, type NodeXHR, Socket, type XHR } from 'socket.io-client';
+import {
+  io,
+  Manager,
+  type ManagerOptions,
+  type NodeXHR,
+  Socket,
+  type WebSocket as SocketIOWebSocketTransport,
+  type XHR,
+} from 'socket.io-client';
 import msgpackParser from 'socket.io-msgpack-parser';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -9,10 +17,9 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
 import type { WebSocketInterceptorClient } from '../../../interceptor/types/messages';
-import type { WebSocketInterceptorType } from '../../../interceptor/types/options';
+import type { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '../../../interceptor/types/options';
 import type { WebSocketInterceptor } from '../../../interceptor/types/public';
 import { createSocketIOProtocol } from '../../createSocketIOProtocol';
-import { GlobalWebSocketTransport } from '../../GlobalWebSocketTransport';
 import type { SocketIOMessage, SocketIOParser, SocketIOSchema } from '../../types';
 
 /* eslint-disable @typescript-eslint/naming-convention -- Socket.IO event names commonly use colons. */
@@ -37,9 +44,11 @@ type HealthSchema = HttpSchema<{
 }>;
 
 interface SharedSocketIOTestsOptions {
+  platform: WebSocketInterceptorPlatform;
   type: WebSocketInterceptorType;
   getBaseURL: () => string;
   PollingTransport: typeof NodeXHR | typeof XHR;
+  WebSocketTransport: typeof SocketIOWebSocketTransport;
 }
 
 const PING_INTERVAL = 50;
@@ -95,13 +104,19 @@ async function waitForSocketConnection(socket: Socket) {
 }
 
 export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions) {
-  const { type, getBaseURL, PollingTransport } = options;
+  const { platform, type, getBaseURL, PollingTransport, WebSocketTransport } = options;
 
   const transportCases: { transportName: string; transports: ManagerOptions['transports'] }[] = [
-    { transportName: 'websocket', transports: [GlobalWebSocketTransport] },
     { transportName: 'polling', transports: [PollingTransport] },
-    { transportName: 'polling with upgrade', transports: [PollingTransport, GlobalWebSocketTransport] },
   ];
+
+  // Local interceptors serve Socket.IO over polling only.
+  if (type === 'remote') {
+    transportCases.push(
+      { transportName: 'websocket', transports: [WebSocketTransport] },
+      { transportName: 'polling with upgrade', transports: [PollingTransport, WebSocketTransport] },
+    );
+  }
 
   describe.each(transportCases)('Transport: $transportName', ({ transports }) => {
     it('should normalize the first argument as data and omit args when there are no others', async () => {
@@ -1063,103 +1078,178 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
   describe('Polling sessions', () => {
     const pollingTransports: ManagerOptions['transports'] = [PollingTransport];
 
-    const upgradingTransports: ManagerOptions['transports'] = [PollingTransport, GlobalWebSocketTransport];
+    const upgradingTransports: ManagerOptions['transports'] = [PollingTransport, WebSocketTransport];
 
-    it('should keep one client across the upgrade to WebSocket', async () => {
-      const baseURL = getBaseURL();
+    // Local interceptors serve Socket.IO over polling only, so only remote clients upgrade to WebSocket.
+    if (type === 'remote') {
+      it('should keep one client across the upgrade to WebSocket', async () => {
+        const baseURL = getBaseURL();
 
-      await usingWebSocketInterceptor<AnySchema>(
-        {
-          type,
-          baseURL,
-          messageSaving: { enabled: true },
-          connectionSaving: { enabled: true },
-          protocol: createSocketIOProtocol(),
-        },
-        async (interceptor) => {
-          const handler = await interceptor.message().with({ type: 'event' }).times(2);
+        await usingWebSocketInterceptor<AnySchema>(
+          {
+            type,
+            baseURL,
+            messageSaving: { enabled: true },
+            connectionSaving: { enabled: true },
+            protocol: createSocketIOProtocol(),
+          },
+          async (interceptor) => {
+            const handler = await interceptor.message().with({ type: 'event' }).times(2);
 
-          await usingSocket(baseURL, { transports: upgradingTransports }, async (socket) => {
-            await waitForSocketConnection(socket);
+            await usingSocket(baseURL, { transports: upgradingTransports }, async (socket) => {
+              await waitForSocketConnection(socket);
 
-            const client = interceptor.clients[0];
-            socket.emit('event', 'before');
-            await waitFor(() => expect(handler.messages).toHaveLength(1));
+              const client = interceptor.clients[0];
+              socket.emit('event', 'before');
+              await waitFor(() => expect(handler.messages).toHaveLength(1));
 
-            await waitFor(() => expect(socket.io.engine.transport.name).toBe('websocket'));
+              await waitFor(() => expect(socket.io.engine.transport.name).toBe('websocket'));
 
-            socket.emit('event', 'after');
-            await waitFor(() => expect(handler.messages).toHaveLength(2));
+              socket.emit('event', 'after');
+              await waitFor(() => expect(handler.messages).toHaveLength(2));
 
-            expect(interceptor.clients).toEqual([client]);
-            expect(handler.messages[1].sender).toBe(client);
-          });
-
-          await waitFor(() => expect(interceptor.clients).toHaveLength(0));
-        },
-      );
-    });
-
-    it('should deliver messages sent while a client upgrades', async () => {
-      const baseURL = getBaseURL();
-
-      const socketConnectionPromise = createPromiseWithResolvers<void>();
-
-      // The upgrade starts only once the socket joined its namespace, so the interceptor lists a client to send to.
-      class UpgradeAfterConnectionTransport extends GlobalWebSocketTransport {
-        doOpen() {
-          void socketConnectionPromise.then(() => super.doOpen());
-          return this;
-        }
-      }
-
-      await usingWebSocketInterceptor<AnySchema>(
-        {
-          type,
-          baseURL,
-          messageSaving: { enabled: true },
-          connectionSaving: { enabled: true },
-          protocol: createSocketIOProtocol(),
-        },
-        async (interceptor) => {
-          const transports = [PollingTransport, UpgradeAfterConnectionTransport];
-
-          await usingSocket(baseURL, { transports }, async (socket) => {
-            socket.once('connect', () => socketConnectionPromise.resolve());
-
-            const receivedEvents: unknown[] = [];
-            socket.on('event', (data: unknown) => receivedEvents.push(data));
-
-            socket.io.engine.once('upgrading', () => {
-              interceptor.server.send({ type: 'event', data: 'during upgrade' });
+              expect(interceptor.clients).toEqual([client]);
+              expect(handler.messages[1].sender).toBe(client);
             });
 
-            await waitForSocketConnection(socket);
+            await waitFor(() => expect(interceptor.clients).toHaveLength(0));
+          },
+        );
+      });
 
-            await waitFor(() => expect(socket.io.engine.transport.name).toBe('websocket'));
-            await waitFor(() => expect(receivedEvents).toEqual(['during upgrade']));
-          });
-        },
-      );
-    });
+      it('should deliver messages sent while a client upgrades', async () => {
+        const baseURL = getBaseURL();
 
-    it('should not connect WebSocket connections with an unknown session ID', async () => {
-      const baseURL = getBaseURL();
+        const socketConnectionPromise = createPromiseWithResolvers<void>();
 
-      await usingWebSocketInterceptor<AnySchema>(
-        { type, baseURL, protocol: createSocketIOProtocol() },
-        async (interceptor) => {
-          const socket = new WebSocket(`${baseURL}/socket.io/?EIO=4&transport=websocket&sid=unknown`);
+        // The upgrade starts only once the socket joined its namespace, so the interceptor lists a client to send to.
+        class UpgradeAfterConnectionTransport extends WebSocketTransport {
+          doOpen() {
+            void socketConnectionPromise.then(() => super.doOpen());
+            return this;
+          }
+        }
 
-          const closeEvent = await new Promise<CloseEvent>((resolve) => {
-            socket.addEventListener('close', resolve, { once: true });
-          });
+        await usingWebSocketInterceptor<AnySchema>(
+          {
+            type,
+            baseURL,
+            messageSaving: { enabled: true },
+            connectionSaving: { enabled: true },
+            protocol: createSocketIOProtocol(),
+          },
+          async (interceptor) => {
+            const transports = [PollingTransport, UpgradeAfterConnectionTransport];
 
-          expect(closeEvent.reason).toBe('Session ID unknown');
-          expect(interceptor.clients).toHaveLength(0);
-        },
-      );
-    });
+            await usingSocket(baseURL, { transports }, async (socket) => {
+              socket.once('connect', () => socketConnectionPromise.resolve());
+
+              const receivedEvents: unknown[] = [];
+              socket.on('event', (data: unknown) => receivedEvents.push(data));
+
+              socket.io.engine.once('upgrading', () => {
+                interceptor.server.send({ type: 'event', data: 'during upgrade' });
+              });
+
+              await waitForSocketConnection(socket);
+
+              await waitFor(() => expect(socket.io.engine.transport.name).toBe('websocket'));
+              await waitFor(() => expect(receivedEvents).toEqual(['during upgrade']));
+            });
+          },
+        );
+      });
+
+      it('should not connect WebSocket connections with an unknown session ID', async () => {
+        const baseURL = getBaseURL();
+
+        await usingWebSocketInterceptor<AnySchema>(
+          { type, baseURL, protocol: createSocketIOProtocol() },
+          async (interceptor) => {
+            const socket = new WebSocket(`${baseURL}/socket.io/?EIO=4&transport=websocket&sid=unknown`);
+
+            const closeEvent = await new Promise<CloseEvent>((resolve) => {
+              socket.addEventListener('close', resolve, { once: true });
+            });
+
+            expect(closeEvent.reason).toBe('Session ID unknown');
+            expect(interceptor.clients).toHaveLength(0);
+          },
+        );
+      });
+    }
+
+    // Local interceptors serve Socket.IO over polling only, so they close WebSocket connections.
+    if (type === 'local') {
+      it('should close WebSocket connections naming polling as the supported transport', async () => {
+        const baseURL = getBaseURL();
+
+        await usingWebSocketInterceptor<AnySchema>(
+          { type, baseURL, connectionSaving: { enabled: true }, protocol: createSocketIOProtocol() },
+          async (interceptor) => {
+            const socket = new WebSocket(`${baseURL}/socket.io/?EIO=4&transport=websocket`);
+
+            const socketEvents: string[] = [];
+            socket.addEventListener('open', () => socketEvents.push('open'), { once: true });
+
+            const closeEvent = await new Promise<CloseEvent>((resolve) => {
+              socket.addEventListener(
+                'close',
+                (event) => {
+                  socketEvents.push('close');
+                  resolve(event);
+                },
+                { once: true },
+              );
+            });
+
+            expect(socketEvents).toEqual(['open', 'close']);
+            expect(closeEvent.code).toBe(4002);
+            expect(closeEvent.reason).toBe(
+              'Local Socket.IO interceptors support polling; use a remote interceptor for WebSocket transports',
+            );
+            expect(interceptor.clients).toHaveLength(0);
+          },
+        );
+      });
+    }
+
+    // In Node.js, the default WebSocket transport of `socket.io-client` uses the `ws` package instead of the global
+    // `WebSocket`, so local interceptors do not receive its upgrade probe.
+    if (type === 'local' && platform === 'browser') {
+      it('should keep clients with the default transports connected over polling after their upgrade fails', async () => {
+        const baseURL = getBaseURL();
+
+        await usingWebSocketInterceptor<AnySchema>(
+          {
+            type,
+            baseURL,
+            messageSaving: { enabled: true },
+            connectionSaving: { enabled: true },
+            protocol: createSocketIOProtocol(),
+          },
+          async (interceptor) => {
+            const handler = interceptor.message().with({ type: 'event' }).times(1);
+
+            await usingSocket(baseURL, {}, async (socket) => {
+              const upgradeErrorPromise = new Promise<void>((resolve) => {
+                socket.io.engine.once('upgradeError', () => resolve());
+              });
+
+              await waitForSocketConnection(socket);
+              await upgradeErrorPromise;
+
+              socket.emit('event', 'after upgrade error');
+              await waitFor(() => expect(handler.messages).toHaveLength(1));
+
+              expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'after upgrade error' });
+              expect(socket.io.engine.transport.name).toBe('polling');
+              expect(socket.connected).toBe(true);
+            });
+          },
+        );
+      });
+    }
 
     it('should ignore polling packets without a session ID', async () => {
       const baseURL = getBaseURL();
@@ -1264,25 +1354,28 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
       });
     });
 
-    it('should connect WebSocket clients when polling is disabled', async () => {
-      const baseURL = getBaseURL();
+    // Local interceptors serve Socket.IO over polling only, so only remote clients connect over WebSocket.
+    if (type === 'remote') {
+      it('should connect WebSocket clients when polling is disabled', async () => {
+        const baseURL = getBaseURL();
 
-      await usingWebSocketInterceptor<AnySchema>(
-        {
-          type,
-          baseURL,
-          messageSaving: { enabled: true },
-          connectionSaving: { enabled: true },
-          protocol: createSocketIOProtocol({ polling: false }),
-        },
-        async (interceptor) => {
-          await usingSocket(baseURL, { transports: [GlobalWebSocketTransport] }, async (socket) => {
-            await waitForSocketConnection(socket);
-            expect(interceptor.clients).toHaveLength(1);
-          });
-        },
-      );
-    });
+        await usingWebSocketInterceptor<AnySchema>(
+          {
+            type,
+            baseURL,
+            messageSaving: { enabled: true },
+            connectionSaving: { enabled: true },
+            protocol: createSocketIOProtocol({ polling: false }),
+          },
+          async (interceptor) => {
+            await usingSocket(baseURL, { transports: [WebSocketTransport] }, async (socket) => {
+              await waitForSocketConnection(socket);
+              expect(interceptor.clients).toHaveLength(1);
+            });
+          },
+        );
+      });
+    }
 
     it('should follow the polling option of the first interceptor started on a base URL', async () => {
       const baseURL = getBaseURL();
@@ -1345,50 +1438,57 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     });
   });
 
-  describe('Unsupported versions', () => {
-    it('should close WebSocket connections using EIO=3 naming the unsupported version', async () => {
-      const baseURL = getBaseURL();
+  // Local interceptors close every WebSocket connection before reading its Engine.IO version, because they serve
+  // Socket.IO over polling only.
+  if (type === 'remote') {
+    describe('Unsupported versions', () => {
+      it('should close WebSocket connections using EIO=3 naming the unsupported version', async () => {
+        const baseURL = getBaseURL();
 
-      await usingIgnoredConsole(['warn'], async (console) => {
-        await usingWebSocketInterceptor<AnySchema>(
-          {
-            type,
-            baseURL,
-            messageSaving: { enabled: true },
-            connectionSaving: { enabled: true },
-            protocol: createSocketIOProtocol(),
-          },
-          async () => {
-            const socket = new WebSocket(`${baseURL}/socket.io/?EIO=3&transport=websocket`);
+        await usingIgnoredConsole(['warn'], async (console) => {
+          await usingWebSocketInterceptor<AnySchema>(
+            {
+              type,
+              baseURL,
+              messageSaving: { enabled: true },
+              connectionSaving: { enabled: true },
+              protocol: createSocketIOProtocol(),
+            },
+            async () => {
+              const socket = new WebSocket(`${baseURL}/socket.io/?EIO=3&transport=websocket`);
 
-            const closeEvent = await new Promise<CloseEvent>((resolve) => {
-              socket.addEventListener('close', resolve, { once: true });
-            });
+              const closeEvent = await new Promise<CloseEvent>((resolve) => {
+                socket.addEventListener('close', resolve, { once: true });
+              });
 
-            expect(closeEvent.code).toBe(4000);
-            expect(closeEvent.reason).toBe('Engine.IO protocol version 3 is not supported. Use version 4.');
-            expect(console.warn).toHaveBeenCalledTimes(1);
-          },
-        );
+              expect(closeEvent.code).toBe(4000);
+              expect(closeEvent.reason).toBe('Engine.IO protocol version 3 is not supported. Use version 4.');
+              expect(console.warn).toHaveBeenCalledTimes(1);
+            },
+          );
+        });
       });
-    });
 
-    it('should close WebSocket connections without an Engine.IO version', async () => {
-      const baseURL = getBaseURL();
+      it('should close WebSocket connections without an Engine.IO version', async () => {
+        const baseURL = getBaseURL();
 
-      await usingIgnoredConsole(['warn'], async () => {
-        await usingWebSocketInterceptor<AnySchema>({ type, baseURL, protocol: createSocketIOProtocol() }, async () => {
-          const socket = new WebSocket(`${baseURL}/socket.io/?transport=websocket`);
+        await usingIgnoredConsole(['warn'], async () => {
+          await usingWebSocketInterceptor<AnySchema>(
+            { type, baseURL, protocol: createSocketIOProtocol() },
+            async () => {
+              const socket = new WebSocket(`${baseURL}/socket.io/?transport=websocket`);
 
-          const closeEvent = await new Promise<CloseEvent>((resolve) => {
-            socket.addEventListener('close', resolve, { once: true });
-          });
+              const closeEvent = await new Promise<CloseEvent>((resolve) => {
+                socket.addEventListener('close', resolve, { once: true });
+              });
 
-          expect(closeEvent.reason).toBe('Engine.IO protocol version unknown is not supported. Use version 4.');
+              expect(closeEvent.reason).toBe('Engine.IO protocol version unknown is not supported. Use version 4.');
+            },
+          );
         });
       });
     });
-  });
+  }
 
   describe('Outgoing messages', () => {
     it('should reject messages without a type or ack ID', async () => {
@@ -1404,7 +1504,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
             protocol: createSocketIOProtocol(),
           },
           async (interceptor) => {
-            await usingSocket(baseURL, { transports: [GlobalWebSocketTransport] }, async (socket) => {
+            await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
               await waitForSocketConnection(socket);
 
               expect(() => {
@@ -1428,7 +1528,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
           protocol: createSocketIOProtocol(),
         },
         async (interceptor) => {
-          await usingSocket(baseURL, { transports: [GlobalWebSocketTransport] }, async (socket) => {
+          await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
             await waitForSocketConnection(socket);
 
             expect(() => {
@@ -1453,13 +1553,40 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
           ).rejects.toThrow('A Socket.IO protocol can be used by only one running interceptor.');
         });
 
-        await usingSocket(baseURL, { transports: [GlobalWebSocketTransport] }, async (socket) => {
+        await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
           await waitForSocketConnection(socket);
           expect(interceptor.clients).toHaveLength(1);
         });
       });
     });
   });
+
+  // Local interceptors serve Socket.IO over polling only, so only remote WebSocket connections are claimed by a protocol.
+  if (type === 'remote') {
+    describe('Overlapping base URLs', () => {
+      it('should connect WebSocket clients through the newest interceptor', async () => {
+        const baseURL = getBaseURL();
+        const nestedBaseURL = `${baseURL}/nested`;
+
+        await usingWebSocketInterceptor<AnySchema>(
+          { type, baseURL, connectionSaving: { enabled: true }, protocol: createSocketIOProtocol() },
+          async (interceptor) => {
+            await usingWebSocketInterceptor<AnySchema>(
+              { type, baseURL: nestedBaseURL, connectionSaving: { enabled: true }, protocol: createSocketIOProtocol() },
+              async (nestedInterceptor) => {
+                await usingSocket(nestedBaseURL, { transports: [WebSocketTransport] }, async (socket) => {
+                  await waitForSocketConnection(socket);
+
+                  expect(nestedInterceptor.clients).toHaveLength(1);
+                  expect(interceptor.clients).toHaveLength(0);
+                });
+              },
+            );
+          },
+        );
+      });
+    });
+  }
 
   describe('HTTP requests outside the Socket.IO path', () => {
     it('should not decide requests to other paths under the base URL', async () => {
