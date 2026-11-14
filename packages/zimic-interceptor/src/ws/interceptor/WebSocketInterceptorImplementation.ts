@@ -136,18 +136,20 @@ class WebSocketInterceptorImplementation<
 
     this.MessageHandler = options.MessageHandler;
     this.ConnectionHandler = options.ConnectionHandler;
+
     this.createWorker = options.createWorker;
     this.deleteWorker = options.deleteWorker;
+
     this._server = createWebSocketInterceptorServer(
       () => this.baseURLAsString,
       (data, options) => {
-        // Each client encodes the message, because frames may depend on the client, as with its protocol state.
         if (this.protocol) {
           const recipients = options?.to === undefined ? this._clients : [options.to].flat();
 
           for (const client of this._clients.filter((client) => recipients.includes(client))) {
             client.send(data);
           }
+
           return;
         }
 

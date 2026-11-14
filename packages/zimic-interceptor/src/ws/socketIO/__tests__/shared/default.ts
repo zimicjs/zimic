@@ -32,7 +32,9 @@ type AnySchema = SocketIOSchema;
 
 type SocketIOTestInterceptor = Pick<WebSocketInterceptor<AnySchema>, 'clear' | 'stop'>;
 
-type HealthSchema = HttpSchema<{ '/health': { GET: { response: { 204: { body: null } } } } }>;
+type HealthSchema = HttpSchema<{
+  '/health': { GET: { response: { 204: { body: null } } } };
+}>;
 
 interface SharedSocketIOTestsOptions {
   type: WebSocketInterceptorType;

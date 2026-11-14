@@ -70,14 +70,12 @@ class WebSocketInterceptorClientImplementation implements InternalWebSocketInter
   }
 
   send(data: WebSocketMessageSchema | WebSocketMessageData<WebSocketMessageSchema>) {
-    // A protocol encodes the message itself, including binary values JSON would lose.
-    if (!this.#protocol) {
+    if (this.#protocol) {
+      for (const frame of this.#protocol.encode(data, this)) {
+        this.sendFrame(frame);
+      }
+    } else {
       this.#sendMessage(serializeWebSocketMessageDataForSocket<WebSocketMessageSchema>(data));
-      return;
-    }
-
-    for (const frame of this.#protocol.encode(data, this)) {
-      this.sendFrame(frame);
     }
   }
 
