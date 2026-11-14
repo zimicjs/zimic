@@ -9,13 +9,12 @@ import { logger } from '@/utils/logging';
 import { normalizeBufferSource } from '@/ws/utils/messageData';
 
 import type {
-  WebSocketInterceptorProtocolClient,
   WebSocketInterceptorProtocolConnectionClaim,
   WebSocketInterceptorProtocolFrame,
-  WebSocketInterceptorProtocolHost,
   WebSocketInterceptorProtocolRawConnection,
-  WebSocketInterceptorUnnormalizedFrame,
 } from '../interceptor/types/protocol';
+import type { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
+import type { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
 import type { SocketIOPacket } from './types';
 
 const { PacketType } = socketIOParser;
@@ -123,7 +122,7 @@ class SocketIOPollingTransport implements SocketIOTransport {
 
 /** The protocol of one namespace, which decodes the frames of every session and encodes the packets of its namespace. */
 export interface SocketIOEngineMember {
-  readonly host: WebSocketInterceptorProtocolHost;
+  readonly interceptor: AnyWebSocketInterceptorImplementation;
   readonly namespace: string;
   receiveFrame: (session: SocketIOEngineSession, frame: WebSocketInterceptorProtocolFrame) => void;
   sendSocketPacket: (session: SocketIOEngineSession, packet: SocketIOPacket) => void;
@@ -135,7 +134,7 @@ export interface SocketIOEngineSession {
   url: string;
   transport: SocketIOTransport;
   // The client of each namespace the session joined.
-  clients: Map<SocketIOEngineMember, WebSocketInterceptorProtocolClient>;
+  clients: Map<SocketIOEngineMember, InternalWebSocketInterceptorClient>;
   // The namespace connections still decided by the connection handlers of their interceptors.
   pendingConnections: Map<SocketIOEngineMember, AbortController>;
   // Reading a `Blob` frame takes longer than reading a later text frame, and decoders keep state between frames, as
@@ -169,16 +168,16 @@ class SocketIOEngine {
 
   constructor(
     private key: string,
-    host: WebSocketInterceptorProtocolHost,
+    interceptor: AnyWebSocketInterceptorImplementation,
     options: SocketIOEngineOptions,
   ) {
     this.options = options;
 
     // Scoped to the Socket.IO path, because HTTP interceptors decide the unhandled requests under their base URL.
-    const baseURL = `${host.baseURL.replace(/^ws/, 'http').replace(/\/$/, '')}/socket.io`;
+    const baseURL = `${interceptor.baseURLAsString.replace(/^ws/, 'http').replace(/\/$/, '')}/socket.io`;
 
     this.httpInterceptor =
-      host.type === 'local'
+      interceptor.type === 'local'
         ? createHttpInterceptor<SocketIOPollingHttpSchema>({
             type: 'local',
             baseURL,
@@ -187,7 +186,7 @@ class SocketIOEngine {
         : createHttpInterceptor<SocketIOPollingHttpSchema>({
             type: 'remote',
             baseURL,
-            auth: host.auth,
+            auth: interceptor.auth,
             requestSaving: { enabled: false },
           });
 
@@ -280,7 +279,7 @@ class SocketIOEngine {
     return { status: 200, body: 'ok' } as const;
   }
 
-  private dispatchFrame(session: SocketIOEngineSession, frame: WebSocketInterceptorUnnormalizedFrame) {
+  private dispatchFrame(session: SocketIOEngineSession, frame: string | Blob | BufferSource) {
     session.frameReadings = session.frameReadings.then(async () => {
       const normalizedFrame =
         typeof frame === 'string' || frame instanceof ArrayBuffer
@@ -340,23 +339,23 @@ class SocketIOEngine {
     session.pendingConnections.clear();
 
     for (const [member, client] of session.clients) {
-      member.host.removeClient(client);
+      member.interceptor.removeClient(client);
     }
   }
 
-  // The engine stops once its last member detaches. Sessions opened while it stops would outlive it, because nothing
+  // The engine stops once its last member stops. Sessions opened while it stops would outlive it, because nothing
   // closes them.
   private get isStopping() {
     return this.members.size === 0;
   }
 
-  attach(member: SocketIOEngineMember) {
+  start(member: SocketIOEngineMember) {
     this.members.add(member);
     return this.httpInterceptorStart;
   }
 
-  async detach(member: SocketIOEngineMember) {
-    this.closeMemberClients(member);
+  async stop(member: SocketIOEngineMember) {
+    this.clear(member);
     this.members.delete(member);
 
     if (this.members.size === 0) {
@@ -374,7 +373,7 @@ class SocketIOEngine {
 
   // Clearing or stopping an interceptor disconnects its namespace and lets go of the namespace connections it is still
   // deciding. A session stays open until the last namespace using it lets it go.
-  closeMemberClients(member: SocketIOEngineMember) {
+  clear(member: SocketIOEngineMember) {
     for (const session of Array.from(this.sessions.values())) {
       const pendingConnection = session.pendingConnections.get(member);
       const wasUsedByMember = pendingConnection !== undefined || session.clients.has(member);
@@ -394,11 +393,18 @@ class SocketIOEngine {
 
   // As `socket.disconnect()` in a Socket.IO server, which leaves the connection open for other namespaces.
   private disconnectNamespace(member: SocketIOEngineMember, session: SocketIOEngineSession) {
+    if (session.clients.has(member)) {
+      member.sendSocketPacket(session, { type: PacketType.DISCONNECT, nsp: member.namespace });
+      this.leaveNamespace(member, session);
+    }
+  }
+
+  leaveNamespace(member: SocketIOEngineMember, session: SocketIOEngineSession) {
     const client = session.clients.get(member);
 
     if (client) {
-      member.sendSocketPacket(session, { type: PacketType.DISCONNECT, nsp: member.namespace });
-      member.host.removeClient(client);
+      session.clients.delete(member);
+      member.interceptor.removeClient(client);
     }
   }
 
@@ -428,16 +434,15 @@ class SocketIOEngine {
     session.pendingConnections.set(member, pendingConnection);
 
     try {
-      // An accepted client joins the session when its interceptor lists it, before connection effects run.
-      const opening = await member.host.openClient({
+      const opening = await member.interceptor.openProtocolClient({
         url: session.url,
-        connectionId: session.id,
         signal: pendingConnection.signal,
         sendFrame: (frame) => session.transport.send(frame),
         close: () => this.disconnectNamespace(member, session),
+        onOpen: (client) => this.joinNamespace(member, session, client),
       });
 
-      if (opening?.action === 'reject') {
+      if (opening.action === 'reject') {
         member.sendSocketPacket(session, {
           type: PacketType.CONNECT_ERROR,
           nsp: member.namespace,
@@ -451,26 +456,18 @@ class SocketIOEngine {
     }
   }
 
-  connectClient(member: SocketIOEngineMember, client: WebSocketInterceptorProtocolClient) {
-    const session = this.sessions.get(client.connectionId);
-
-    // Only clients opened by the engine join a session.
-    if (!session) {
-      return undefined;
-    }
-
+  // An accepted client joins the session when its interceptor lists it, before connection effects run.
+  private joinNamespace(
+    member: SocketIOEngineMember,
+    session: SocketIOEngineSession,
+    client: InternalWebSocketInterceptorClient,
+  ) {
     session.clients.set(member, client);
     member.sendSocketPacket(session, {
       type: PacketType.CONNECT,
       nsp: member.namespace,
       data: { sid: crypto.randomUUID() },
     });
-
-    return () => {
-      if (session.clients.get(member) === client) {
-        session.clients.delete(member);
-      }
-    };
   }
 
   // Every connection carries an Engine.IO session. A polling client upgrades by opening a WebSocket connection with its
@@ -551,13 +548,16 @@ class SocketIOEngine {
 
 const engines = new Map<string, SocketIOEngine>();
 
-export function getOrCreateSocketIOEngine(host: WebSocketInterceptorProtocolHost, options: SocketIOEngineOptions) {
-  const key = `${host.type}:${host.baseURL}`;
+export function getOrCreateSocketIOEngine(
+  interceptor: AnyWebSocketInterceptorImplementation,
+  options: SocketIOEngineOptions,
+) {
+  const key = `${interceptor.type}:${interceptor.baseURLAsString}`;
 
   let engine = engines.get(key);
 
   if (!engine) {
-    engine = new SocketIOEngine(key, host, options);
+    engine = new SocketIOEngine(key, interceptor, options);
     engines.set(key, engine);
   }
 

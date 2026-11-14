@@ -1,16 +1,18 @@
-import { waitFor, waitForNot } from '@zimic/utils/time';
+import { waitFor } from '@zimic/utils/time';
 import { WebSocketSchema } from '@zimic/ws';
 import { expect, it, vi } from 'vitest';
 
+import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import {
   collectWebSocketClientMessages,
+  createBinaryMessage,
   usingWebSocketClient,
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
 
 import type { WebSocketInterceptorType } from '../../types/options';
-import type { WebSocketInterceptorProtocol, WebSocketInterceptorProtocolClient } from '../../types/protocol';
+import type { WebSocketInterceptorProtocol, WebSocketInterceptorProtocolFrame } from '../../types/protocol';
 
 interface ChatMessage {
   text: string;
@@ -18,6 +20,7 @@ interface ChatMessage {
 
 type ChatSchema = WebSocketSchema<{ '/': { message: ChatMessage } }>;
 type ChatFrameSchema = WebSocketSchema<{ '/': { message: string } }>;
+type BinaryFrameSchema = WebSocketSchema<{ '/': { message: Blob } }>;
 
 const CONTROL_FRAME = 'control';
 const FRAME_PREFIX = 'chat:';
@@ -26,19 +29,18 @@ function encodeFrame(message: ChatMessage) {
   return `${FRAME_PREFIX}${JSON.stringify(message)}`;
 }
 
-// A frame holds one message per comma-free chat payload, or is a control frame consumed by the protocol.
+// A frame holds one message per line, or is a control frame consumed by the protocol.
+function decodeFrame(frame: WebSocketInterceptorProtocolFrame) {
+  if (typeof frame !== 'string' || frame === CONTROL_FRAME) {
+    return [];
+  }
+
+  return frame.split('\n').map((line) => JSON.parse(line.slice(FRAME_PREFIX.length)) as ChatMessage);
+}
+
 const protocol: WebSocketInterceptorProtocol<ChatMessage> = {
-  decode(frame) {
-    if (frame === CONTROL_FRAME) {
-      return [];
-    }
-
-    return (frame as string).split('\n').map((line) => JSON.parse(line.slice(FRAME_PREFIX.length)) as ChatMessage);
-  },
-
-  encode(message) {
-    return [encodeFrame(message)];
-  },
+  decode: decodeFrame,
+  encode: (message) => [encodeFrame(message)],
 };
 
 type TextSchema = WebSocketSchema<{ '/': { message: string } }>;
@@ -48,13 +50,8 @@ const JSON_LIKE_TEXT = '{"text":"raw"}';
 
 // A frame holds one text message, which may look like JSON.
 const textProtocol: WebSocketInterceptorProtocol<string> = {
-  decode(frame) {
-    return [(frame as string).slice(TEXT_FRAME_PREFIX.length)];
-  },
-
-  encode(message) {
-    return [`${TEXT_FRAME_PREFIX}${message}`];
-  },
+  decode: (frame) => (typeof frame === 'string' ? [frame.slice(TEXT_FRAME_PREFIX.length)] : []),
+  encode: (message) => [`${TEXT_FRAME_PREFIX}${message}`],
 };
 
 interface SharedWebSocketInterceptorProtocolTestsOptions {
@@ -65,23 +62,38 @@ interface SharedWebSocketInterceptorProtocolTestsOptions {
 export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocketInterceptorProtocolTestsOptions) {
   const { type, getBaseURL } = options;
 
-  it('should match decoded messages and respond with encoded frames', async () => {
+  it('should match decoded messages', async () => {
     const baseURL = getBaseURL();
 
     await usingWebSocketInterceptor<ChatSchema>(
       { type, baseURL, messageSaving: { enabled: true }, protocol },
       async (interceptor) => {
-        const handler = await interceptor.message().with({ text: 'ping' }).respond({ text: 'pong' }).times(1);
+        const handler = await interceptor.message().with({ text: 'ping' }).times(1);
 
         await usingWebSocketClient<ChatFrameSchema>(baseURL, async (client) => {
-          const responsePromise = waitForWebSocketClientMessage(client);
           client.send(encodeFrame({ text: 'ping' }));
 
-          expect(await responsePromise).toBe(encodeFrame({ text: 'pong' }));
-          expect(handler.messages.map((message) => message.data)).toEqual([{ text: 'ping' }]);
+          await waitFor(() => {
+            expect(handler.messages.map((message) => message.data)).toEqual([{ text: 'ping' }]);
+          });
         });
       },
     );
+  });
+
+  it('should respond with encoded frames', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL, protocol }, async (interceptor) => {
+      await interceptor.message().respond({ text: 'pong' });
+
+      await usingWebSocketClient<ChatFrameSchema>(baseURL, async (client) => {
+        const responsePromise = waitForWebSocketClientMessage(client);
+        client.send(encodeFrame({ text: 'ping' }));
+
+        expect(await responsePromise).toBe(encodeFrame({ text: 'pong' }));
+      });
+    });
   });
 
   it('should handle each message decoded from a frame', async () => {
@@ -99,6 +111,72 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
             expect(handler.messages.map((message) => message.data)).toEqual([{ text: 'first' }, { text: 'second' }]);
           });
         });
+      },
+    );
+  });
+
+  it('should decode binary frames as array buffers', async () => {
+    const baseURL = getBaseURL();
+    const decodedFrames: (string | number[])[] = [];
+
+    const recordingProtocol: WebSocketInterceptorProtocol<ChatMessage> = {
+      decode(frame) {
+        decodedFrames.push(frame instanceof ArrayBuffer ? Array.from(new Uint8Array(frame)) : frame);
+        return [];
+      },
+    };
+
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL, protocol: recordingProtocol }, async () => {
+      await usingWebSocketClient<BinaryFrameSchema>(baseURL, async (client) => {
+        client.send(new Blob([createBinaryMessage(0x00, 0xff)]));
+
+        await waitFor(() => expect(decodedFrames).toEqual([[0x00, 0xff]]));
+      });
+    });
+  });
+
+  it('should handle frames as plain messages if the protocol does not decode them', async () => {
+    const baseURL = getBaseURL();
+    const encodingProtocol: WebSocketInterceptorProtocol<ChatMessage> = { encode: protocol.encode };
+
+    await usingWebSocketInterceptor<ChatSchema>(
+      { type, baseURL, messageSaving: { enabled: true }, protocol: encodingProtocol },
+      async (interceptor) => {
+        const handler = await interceptor.message().times(1);
+
+        await usingWebSocketClient<ChatSchema>(baseURL, async (client) => {
+          client.send(JSON.stringify({ text: 'plain' }));
+
+          await waitFor(() => {
+            expect(handler.messages.map((message) => message.data)).toEqual([{ text: 'plain' }]);
+          });
+        });
+      },
+    );
+  });
+
+  it('should match each view of a frame in interceptors with and without a protocol on the same base URL', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<ChatFrameSchema>(
+      { type, baseURL, messageSaving: { enabled: true } },
+      async (plainInterceptor) => {
+        await usingWebSocketInterceptor<ChatSchema>(
+          { type, baseURL, messageSaving: { enabled: true }, protocol },
+          async (protocolInterceptor) => {
+            const plainHandler = await plainInterceptor.message().times(1);
+            const protocolHandler = await protocolInterceptor.message().times(1);
+
+            await usingWebSocketClient<ChatFrameSchema>(baseURL, async (client) => {
+              client.send(encodeFrame({ text: 'shared' }));
+
+              await waitFor(() => {
+                expect(plainHandler.messages.map((message) => message.data)).toEqual([encodeFrame({ text: 'shared' })]);
+                expect(protocolHandler.messages.map((message) => message.data)).toEqual([{ text: 'shared' }]);
+              });
+            });
+          },
+        );
       },
     );
   });
@@ -161,12 +239,28 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
 
             interceptor.server.send({ text: 'selected' }, { to: interceptor.clients[0] });
 
-            await waitFor(() => expect(firstMessages).toHaveLength(1));
-            await waitForNot(() => expect(secondMessages).not.toHaveLength(0));
+            await waitFor(() => expect(firstMessages).toEqual([encodeFrame({ text: 'selected' })]));
+            expect(secondMessages).toHaveLength(0);
           });
         });
       },
     );
+  });
+
+  it('should send messages as without a protocol if the protocol does not encode them', async () => {
+    const baseURL = getBaseURL();
+    const decodingProtocol: WebSocketInterceptorProtocol<ChatMessage> = { decode: decodeFrame };
+
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL, protocol: decodingProtocol }, async (interceptor) => {
+      await usingWebSocketClient<ChatSchema>(baseURL, async (client) => {
+        await waitFor(() => expect(interceptor.clients).toHaveLength(1));
+
+        const messagePromise = waitForWebSocketClientMessage(client);
+        interceptor.clients[0].send({ text: 'hello' });
+
+        expect(await messagePromise).toBe(JSON.stringify({ text: 'hello' }));
+      });
+    });
   });
 
   it('should not report consumed control frames as unhandled', async () => {
@@ -240,42 +334,6 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
     );
   });
 
-  it('should encode messages that look like JSON sent to a client without parsing them', async () => {
-    const baseURL = getBaseURL();
-
-    await usingWebSocketInterceptor<TextSchema>(
-      { type, baseURL, messageSaving: { enabled: true }, protocol: textProtocol },
-      async (interceptor) => {
-        await usingWebSocketClient<TextSchema>(baseURL, async (client) => {
-          await waitFor(() => expect(interceptor.clients).toHaveLength(1));
-
-          const messagePromise = waitForWebSocketClientMessage(client);
-          interceptor.clients[0].send(JSON_LIKE_TEXT);
-
-          expect(await messagePromise).toBe(`${TEXT_FRAME_PREFIX}${JSON_LIKE_TEXT}`);
-        });
-      },
-    );
-  });
-
-  it('should encode messages that look like JSON sent by the server without parsing them', async () => {
-    const baseURL = getBaseURL();
-
-    await usingWebSocketInterceptor<TextSchema>(
-      { type, baseURL, messageSaving: { enabled: true }, protocol: textProtocol },
-      async (interceptor) => {
-        await usingWebSocketClient<TextSchema>(baseURL, async (client) => {
-          await waitFor(() => expect(interceptor.clients).toHaveLength(1));
-
-          const messagePromise = waitForWebSocketClientMessage(client);
-          interceptor.server.send(JSON_LIKE_TEXT);
-
-          expect(await messagePromise).toBe(`${TEXT_FRAME_PREFIX}${JSON_LIKE_TEXT}`);
-        });
-      },
-    );
-  });
-
   it('should call the connection hook with a client able to send raw frames', async () => {
     const baseURL = getBaseURL();
 
@@ -294,72 +352,119 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
     );
   });
 
-  it('should call the disconnection callback returned by the connection hook when a client disconnects', async () => {
+  it('should call the connection hook before connection effects', async () => {
     const baseURL = getBaseURL();
-    const onDisconnect = vi.fn();
-    const connectedClients: WebSocketInterceptorProtocolClient[] = [];
+    const events: string[] = [];
 
     const connectionProtocol: WebSocketInterceptorProtocol<ChatMessage> = {
       ...protocol,
-      onConnection: (client) => {
-        connectedClients.push(client);
-        return onDisconnect;
+      onConnection: () => {
+        events.push('connection hook');
       },
     };
 
     await usingWebSocketInterceptor<ChatSchema>(
-      { type, baseURL, messageSaving: { enabled: true }, protocol: connectionProtocol },
+      { type, baseURL, protocol: connectionProtocol },
       async (interceptor) => {
-        await usingWebSocketClient<ChatFrameSchema>(baseURL, async () => {
-          await waitFor(() => expect(interceptor.clients).toHaveLength(1));
-          expect(connectedClients).toEqual([interceptor.clients[0]]);
-          expect(onDisconnect).not.toHaveBeenCalled();
+        await interceptor.connection().effect(() => {
+          events.push('connection effect');
         });
 
-        await waitFor(() => expect(onDisconnect).toHaveBeenCalledTimes(1));
+        await usingWebSocketClient<ChatFrameSchema>(baseURL, async () => {
+          await waitFor(() => expect(events).toEqual(['connection hook', 'connection effect']));
+        });
       },
     );
   });
 
-  it('should keep the connection open if decoding a frame fails', async () => {
+  it('should log errors thrown while decoding a frame', async () => {
     const baseURL = getBaseURL();
     const decodingError = new Error('Invalid frame');
-    const onUnhandledMessage = vi.fn<() => { log: boolean }>();
 
     const failingProtocol: WebSocketInterceptorProtocol<ChatMessage> = {
       ...protocol,
-      decode(frame, client) {
-        if (frame === 'invalid') {
-          throw decodingError;
-        }
-        return protocol.decode(frame, client);
+      decode: () => {
+        throw decodingError;
       },
     };
 
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(vi.fn());
+    await usingIgnoredConsole(['error'], async (console) => {
+      await usingWebSocketInterceptor<ChatSchema>({ type, baseURL, protocol: failingProtocol }, async () => {
+        await usingWebSocketClient<ChatFrameSchema>(baseURL, async (client) => {
+          client.send('invalid');
 
-    try {
+          await waitFor(() => expect(console.error).toHaveBeenCalledTimes(1));
+          expect(console.error).toHaveBeenCalledWith(decodingError);
+        });
+      });
+    });
+  });
+
+  it('should keep handling frames after decoding a frame fails', async () => {
+    const baseURL = getBaseURL();
+
+    const failingProtocol: WebSocketInterceptorProtocol<ChatMessage> = {
+      ...protocol,
+      decode(frame) {
+        if (frame === 'invalid') {
+          throw new Error('Invalid frame');
+        }
+        return decodeFrame(frame);
+      },
+    };
+
+    await usingIgnoredConsole(['error'], async () => {
       await usingWebSocketInterceptor<ChatSchema>(
-        { type, baseURL, messageSaving: { enabled: true }, protocol: failingProtocol, onUnhandledMessage },
+        { type, baseURL, messageSaving: { enabled: true }, protocol: failingProtocol },
         async (interceptor) => {
-          const handler = await interceptor.message().with({ text: 'after' }).times(1);
+          const handler = await interceptor.message().times(1);
 
           await usingWebSocketClient<ChatFrameSchema>(baseURL, async (client) => {
             client.send('invalid');
             client.send(encodeFrame({ text: 'after' }));
 
+            await waitFor(() => {
+              expect(handler.messages.map((message) => message.data)).toEqual([{ text: 'after' }]);
+            });
+          });
+        },
+      );
+    });
+  });
+
+  it('should not report frames that fail to decode as unhandled', async () => {
+    const baseURL = getBaseURL();
+    const onUnhandledMessage = vi.fn<() => { log: boolean }>();
+
+    const failingProtocol: WebSocketInterceptorProtocol<ChatMessage> = {
+      ...protocol,
+      decode(frame) {
+        if (frame === 'invalid') {
+          throw new Error('Invalid frame');
+        }
+        return decodeFrame(frame);
+      },
+    };
+
+    await usingIgnoredConsole(['error'], async () => {
+      await usingWebSocketInterceptor<ChatSchema>(
+        { type, baseURL, messageSaving: { enabled: true }, protocol: failingProtocol, onUnhandledMessage },
+        async (interceptor) => {
+          const handler = await interceptor.message().with({ text: 'marker' }).times(1);
+
+          await usingWebSocketClient<ChatFrameSchema>(baseURL, async (client) => {
+            client.send('invalid');
+            client.send(encodeFrame({ text: 'marker' }));
+
             await waitFor(() => expect(handler.messages).toHaveLength(1));
-            expect(consoleError).toHaveBeenCalledExactlyOnceWith(decodingError);
             expect(onUnhandledMessage).not.toHaveBeenCalled();
           });
         },
       );
-    } finally {
-      consoleError.mockRestore();
-    }
+    });
   });
 
-  it('should log errors thrown by the connection hook and keep the connection open', async () => {
+  it('should log errors thrown by the connection hook', async () => {
     const baseURL = getBaseURL();
     const connectionError = new Error('Connection failed');
 
@@ -370,49 +475,37 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
       },
     };
 
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(vi.fn());
-
-    try {
-      await usingWebSocketInterceptor<ChatSchema>(
-        { type, baseURL, messageSaving: { enabled: true }, protocol: failingProtocol },
-        async (interceptor) => {
-          await usingWebSocketClient<ChatFrameSchema>(baseURL, async () => {
-            await waitFor(() => expect(interceptor.clients).toHaveLength(1));
-            expect(consoleError).toHaveBeenCalledExactlyOnceWith(connectionError);
-          });
-        },
-      );
-    } finally {
-      consoleError.mockRestore();
-    }
+    await usingIgnoredConsole(['error'], async (console) => {
+      await usingWebSocketInterceptor<ChatSchema>({ type, baseURL, protocol: failingProtocol }, async () => {
+        await usingWebSocketClient<ChatFrameSchema>(baseURL, async () => {
+          await waitFor(() => expect(console.error).toHaveBeenCalledTimes(1));
+          expect(console.error).toHaveBeenCalledWith(connectionError);
+        });
+      });
+    });
   });
 
-  it('should log errors thrown by the disconnection callback', async () => {
+  it('should keep the connection open if the connection hook throws', async () => {
     const baseURL = getBaseURL();
-    const disconnectionError = new Error('Disconnection failed');
 
     const failingProtocol: WebSocketInterceptorProtocol<ChatMessage> = {
       ...protocol,
-      onConnection: () => () => {
-        throw disconnectionError;
+      onConnection: () => {
+        throw new Error('Connection failed');
       },
     };
 
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(vi.fn());
+    await usingIgnoredConsole(['error'], async () => {
+      await usingWebSocketInterceptor<ChatSchema>({ type, baseURL, protocol: failingProtocol }, async (interceptor) => {
+        await interceptor.message().respond({ text: 'pong' });
 
-    try {
-      await usingWebSocketInterceptor<ChatSchema>(
-        { type, baseURL, messageSaving: { enabled: true }, protocol: failingProtocol },
-        async (interceptor) => {
-          await usingWebSocketClient<ChatFrameSchema>(baseURL, async () => {
-            await waitFor(() => expect(interceptor.clients).toHaveLength(1));
-          });
+        await usingWebSocketClient<ChatFrameSchema>(baseURL, async (client) => {
+          const responsePromise = waitForWebSocketClientMessage(client);
+          client.send(encodeFrame({ text: 'ping' }));
 
-          await waitFor(() => expect(consoleError).toHaveBeenCalledExactlyOnceWith(disconnectionError));
-        },
-      );
-    } finally {
-      consoleError.mockRestore();
-    }
+          expect(await responsePromise).toBe(encodeFrame({ text: 'pong' }));
+        });
+      });
+    });
   });
 }

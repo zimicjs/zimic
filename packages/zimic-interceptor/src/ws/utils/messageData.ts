@@ -28,7 +28,7 @@ export function normalizeBufferSource(bufferSource: BufferSource): ArrayBuffer {
 // Unlike HTTP bodies without a content type, which are parsed as any JSON value, only objects and arrays are parsed.
 // WebSocket frames have no content type to declare JSON, and string schema members are sent as raw text, so text such
 // as `'42'`, `'true'`, `'null'`, or `'"message"'` stays a string.
-export function tryParseJSONMessageData(data: string): unknown {
+function tryParseJSONMessageData(data: string): unknown {
   const firstCharacter = data.trimStart()[0];
 
   if (firstCharacter !== '{' && firstCharacter !== '[') {
@@ -50,6 +50,14 @@ export function normalizeWebSocketBinaryMessageData(data: Blob | BufferSource): 
 }
 
 // A real socket delivers binary frames as its current `binaryType`, whatever binary type the server sent.
+export function convertWebSocketMessageDataToBinaryType(
+  data: string | Blob | BufferSource,
+  binaryType: 'arraybuffer',
+): Promise<string | ArrayBuffer>;
+export function convertWebSocketMessageDataToBinaryType(
+  data: string | Blob | BufferSource,
+  binaryType: BinaryType,
+): Promise<string | Blob | ArrayBuffer>;
 export async function convertWebSocketMessageDataToBinaryType(
   data: string | Blob | BufferSource,
   binaryType: BinaryType,

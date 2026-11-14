@@ -11,10 +11,7 @@ import { convertWebSocketMessageDataToBinaryType } from '@/ws/utils/messageData'
 
 import NotRunningWebSocketInterceptorError from '../interceptor/errors/NotRunningWebSocketInterceptorError';
 import UnknownWebSocketInterceptorPlatformError from '../interceptor/errors/UnknownWebSocketInterceptorPlatformError';
-import type {
-  WebSocketInterceptorProtocolFrame,
-  WebSocketInterceptorUnnormalizedFrame,
-} from '../interceptor/types/protocol';
+import type { WebSocketInterceptorProtocolFrame } from '../interceptor/types/protocol';
 import {
   createWebSocketInterceptorClient,
   InternalWebSocketInterceptorClient,
@@ -48,8 +45,7 @@ interface LocalWebSocketClientConnection {
 
 interface LocalWebSocketConnectionHolder {
   registeredInterceptor: RegisteredWebSocketInterceptor;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  client: InternalWebSocketInterceptorClient<any>;
+  client: InternalWebSocketInterceptorClient;
 }
 
 interface LocalWebSocketDeliveryQueue {
@@ -64,6 +60,9 @@ interface WebSocketClientRegistration extends LocalWebSocketDeliveryQueue {
   holders: LocalWebSocketConnectionHolder[];
   messageListener: (event: MessageEvent<string | ArrayBufferLike | Blob | ArrayBufferView>) => void;
   closeListener: () => void;
+  // Reading a `Blob` frame takes longer than reading a later text frame, and protocols may keep decoding state between
+  // frames, so frames are read in order before they are decoded.
+  frameReadings: Promise<void>;
 }
 
 interface RegisteredWebSocketInterceptor {
@@ -268,17 +267,6 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
   }
 
-  sendToClients<Schema extends WebSocketSchema>(
-    interceptor: AnyWebSocketInterceptorImplementation<Schema>,
-    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
-  ) {
-    const registeredInterceptor = this.findRegisteredInterceptor(interceptor);
-
-    for (const registration of registeredInterceptor?.clients.values() ?? []) {
-      this.deliverMessage(registration, registration.connection, data);
-    }
-  }
-
   // MSW dispatches server messages as sent, ignoring the `binaryType` of the client.
   private deliverMessage(
     deliveryQueue: LocalWebSocketDeliveryQueue,
@@ -388,7 +376,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       if (claim) {
         connection.addEventListener('message', (event) => {
           event.preventDefault();
-          claim.onFrame(event.data as WebSocketInterceptorUnnormalizedFrame);
+          claim.onFrame(event.data as string | Blob | BufferSource);
         });
         connection.addEventListener('close', claim.onClose, { once: true });
         return true;
@@ -435,8 +423,6 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   }
 
   private acceptConnection({ connection, protocols, holders }: PendingLocalWebSocketConnection) {
-    const connectionId = crypto.randomUUID();
-
     // A connection is shared by every interceptor matching it when it opens, so each of them lists the client and can
     // send to it. Interceptors started later do not hold it, because they never decided its connection attempt.
     const registration: WebSocketClientRegistration = {
@@ -446,7 +432,6 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
         const client: InternalWebSocketInterceptorClient = createWebSocketInterceptorClient({
           url: connection.url.href,
           protocols,
-          connectionId,
           send: (data) => {
             this.sendToClient(client, data);
           },
@@ -459,17 +444,18 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       }),
       messageListener: (event) => {
         event.preventDefault();
-        void this.handleConnectionMessage(registration, event.data as WebSocketMessageData<WebSocketMessageSchema>);
+        this.handleConnectionMessage(registration, event.data as WebSocketMessageData<WebSocketMessageSchema>);
       },
       closeListener: () => {
         this.removeConnectionFromHolders(registration);
       },
       deliveries: Promise.resolve(),
+      frameReadings: Promise.resolve(),
     };
 
     for (const { registeredInterceptor, client } of registration.holders) {
       registeredInterceptor.clients.set(client, registration);
-      registeredInterceptor.interceptor.addClient(client);
+      this.addClientToInterceptor(registeredInterceptor.interceptor, client);
     }
 
     connection.addEventListener('message', registration.messageListener);
@@ -486,7 +472,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     });
   }
 
-  private async handleConnectionMessage(
+  private handleConnectionMessage(
     registration: WebSocketClientRegistration,
     data: WebSocketMessageData<WebSocketMessageSchema>,
   ) {
@@ -494,7 +480,21 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       interceptor: registeredInterceptor.interceptor,
       client,
     }));
-    await this.handleFrameWithHandlers(data, holders);
+
+    const { plainHolders, frameDecoders } = this.splitHoldersByDecoding(holders);
+
+    void this.handlePlainFrame(data, plainHolders);
+
+    if (frameDecoders.length > 0) {
+      registration.frameReadings = registration.frameReadings.then(async () => {
+        try {
+          const frame = await convertWebSocketMessageDataToBinaryType(data, 'arraybuffer');
+          void this.decodeFrame(frame, frameDecoders);
+        } catch (error) {
+          console.error(error);
+        }
+      });
+    }
   }
 
   private removeConnectionFromHolders(registration: WebSocketClientRegistration) {
@@ -508,14 +508,6 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     client: InternalWebSocketInterceptorClient<Schema>,
   ) {
     return this.registeredInterceptors.find((registeredInterceptor) => registeredInterceptor.clients.has(client));
-  }
-
-  private findRegisteredInterceptor<Schema extends WebSocketSchema>(
-    interceptor: AnyWebSocketInterceptorImplementation<Schema>,
-  ) {
-    return this.registeredInterceptors.find(
-      (registeredInterceptor) => registeredInterceptor.interceptor === interceptor,
-    );
   }
 
   clearHandlers<Schema extends WebSocketSchema>(options?: {

@@ -22,7 +22,7 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
   implementation: WebSocketInterceptorImplementation<Schema>;
   #auth?: RemoteWebSocketInterceptorOptions['auth'];
 
-  constructor(options: RemoteWebSocketInterceptorOptions) {
+  constructor(options: RemoteWebSocketInterceptorOptions<Schema>) {
     const baseURL = new URL(options.baseURL);
 
     this.implementation = new WebSocketInterceptorImplementation<Schema>({

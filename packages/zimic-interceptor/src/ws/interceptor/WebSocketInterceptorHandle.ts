@@ -4,19 +4,20 @@ import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema, WebSocke
 import { serializeWebSocketMessageDataForSocket } from '../utils/messageData';
 import type {
   InterceptedWebSocketInterceptorMessage,
-  WebSocketInterceptorClient,
   WebSocketInterceptorServer,
   WebSocketInterceptorServerSendOptions,
 } from './types/messages';
-import type { WebSocketInterceptorProtocol, WebSocketInterceptorProtocolFrame } from './types/protocol';
+import type {
+  WebSocketInterceptorProtocol,
+  WebSocketInterceptorProtocolClient,
+  WebSocketInterceptorProtocolFrame,
+} from './types/protocol';
 
 export interface InternalWebSocketInterceptorClient<
   Schema extends WebSocketSchema = WebSocketSchema,
   Path extends string = string,
-> extends WebSocketInterceptorClient<Schema, Path> {
+> extends WebSocketInterceptorProtocolClient<Schema, Path> {
   messages: InterceptedWebSocketInterceptorMessage<Schema, Path>[];
-  readonly connectionId: string;
-  sendFrame: (frame: WebSocketInterceptorProtocolFrame) => void;
 }
 
 export const MAX_CLOSE_REASON_BYTE_LENGTH = 123;
@@ -50,7 +51,7 @@ type SendWebSocketInterceptorClientMessage = (data: WebSocketMessageData<WebSock
 class WebSocketInterceptorClientImplementation implements InternalWebSocketInterceptorClient {
   #sendMessage: SendWebSocketInterceptorClientMessage;
   #closeConnection: WebSocketInterceptorClientCloser;
-  #protocol: WebSocketInterceptorProtocol | undefined;
+  #protocol: WebSocketInterceptorProtocol<WebSocketMessageSchema> | undefined;
 
   searchParams: HttpSearchParams;
   messages: InterceptedWebSocketInterceptorMessage<WebSocketSchema>[] = [];
@@ -58,10 +59,9 @@ class WebSocketInterceptorClientImplementation implements InternalWebSocketInter
   constructor(
     public url: string,
     public protocols: readonly string[],
-    public connectionId: string,
     sendMessage: SendWebSocketInterceptorClientMessage,
     closeConnection: WebSocketInterceptorClientCloser,
-    protocol: WebSocketInterceptorProtocol | undefined,
+    protocol: WebSocketInterceptorProtocol<WebSocketMessageSchema> | undefined,
   ) {
     this.searchParams = new HttpSearchParams(new URL(url).searchParams);
     this.#sendMessage = sendMessage;
@@ -70,7 +70,7 @@ class WebSocketInterceptorClientImplementation implements InternalWebSocketInter
   }
 
   send(data: WebSocketMessageSchema | WebSocketMessageData<WebSocketMessageSchema>) {
-    if (this.#protocol) {
+    if (this.#protocol?.encode) {
       for (const frame of this.#protocol.encode(data, this)) {
         this.sendFrame(frame);
       }
@@ -107,15 +107,13 @@ class WebSocketInterceptorClientImplementation implements InternalWebSocketInter
 export function createWebSocketInterceptorClient(options: {
   url: string;
   protocols: readonly string[];
-  connectionId: string;
   send: SendWebSocketInterceptorClientMessage;
   close: WebSocketInterceptorClientCloser;
-  protocol: WebSocketInterceptorProtocol | undefined;
+  protocol: WebSocketInterceptorProtocol<WebSocketMessageSchema> | undefined;
 }): InternalWebSocketInterceptorClient {
   return new WebSocketInterceptorClientImplementation(
     options.url,
     options.protocols,
-    options.connectionId,
     options.send,
     options.close,
     options.protocol,

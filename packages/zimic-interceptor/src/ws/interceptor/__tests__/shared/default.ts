@@ -305,7 +305,7 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
   it('should share the worker between interceptors with nested base URLs', async () => {
     const nestedBaseURL = `${baseURL}/nested`;
 
-    await usingWebSocketInterceptor<{}>(
+    await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, baseURL: nestedBaseURL },
       async (nestedInterceptor) => {
         await usingWebSocketInterceptor<{}>(interceptorOptions, async (interceptor) => {

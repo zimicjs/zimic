@@ -17,22 +17,19 @@ import {
   AnyWebSocketMessageHandlerImplementation,
   WebSocketMessageHandlerApplyContext,
 } from '../messageHandler/WebSocketMessageHandlerImplementation';
-import { serializeWebSocketMessageDataForSocket } from '../utils/messageData';
+import { isInternalWebSocketInterceptorProtocol } from '../utils/protocol';
 import ConnectionSavingSafeLimitExceededError from './errors/ConnectionSavingSafeLimitExceededError';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
+import type { ReceivedWebSocketMessageData, WebSocketInterceptorConnectionRequest } from './types/messages';
 import type {
-  ReceivedWebSocketMessageData,
-  WebSocketInterceptorClient,
-  WebSocketInterceptorConnectionRequest,
-  WebSocketInterceptorServerSendOptions,
-} from './types/messages';
-import type { UnhandledMessageStrategy, WebSocketInterceptorType } from './types/options';
-import {
-  isInternalWebSocketInterceptorProtocol,
+  UnhandledMessageStrategy,
+  WebSocketInterceptorAuthOptions,
+  WebSocketInterceptorType,
+} from './types/options';
+import type {
   WebSocketInterceptorProtocol,
-  WebSocketInterceptorProtocolClient,
-  WebSocketInterceptorProtocolHost,
+  WebSocketInterceptorProtocolClientOptions,
   WebSocketInterceptorProtocolRawConnection,
 } from './types/protocol';
 import type { WebSocketInterceptorConnectionSaving, WebSocketInterceptorMessageSaving } from './types/public';
@@ -51,12 +48,6 @@ export const DEFAULT_CONNECTION_SAVING_SAFE_LIMIT = DEFAULT_MESSAGE_SAVING_SAFE_
 const DEFAULT_UNHANDLED_MESSAGE_STRATEGY = Object.freeze({
   log: true,
 }) satisfies UnhandledMessageStrategy.Declaration;
-
-function isWebSocketInterceptorClientArray<Schema extends WebSocketSchema>(
-  clients: WebSocketInterceptorServerSendOptions<Schema>['to'],
-): clients is readonly WebSocketInterceptorClient<Schema>[] {
-  return Array.isArray(clients);
-}
 
 export type WebSocketMessageHandlerConstructor =
   typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
@@ -89,9 +80,10 @@ class WebSocketInterceptorImplementation<
   private _server: InternalWebSocketInterceptorServer<Schema>;
   private _clients: InternalWebSocketInterceptorClient<Schema>[] = [];
 
-  readonly protocol: WebSocketInterceptorProtocol | undefined;
-  private protocolHost: WebSocketInterceptorProtocolHost;
-  private protocolDisconnectListeners = new Map<InternalWebSocketInterceptorClient<Schema>, () => void>();
+  readonly type: WebSocketInterceptorType;
+  private getAuth: (() => WebSocketInterceptorAuthOptions | undefined) | undefined;
+
+  readonly protocol: WebSocketInterceptorProtocol<WebSocketSchemaMessage<Schema>> | undefined;
 
   private createWorker: () => WebSocketInterceptorWorker;
   private deleteWorker: () => void;
@@ -108,9 +100,9 @@ class WebSocketInterceptorImplementation<
     messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
     connectionSaving?: Partial<WebSocketInterceptorConnectionSaving>;
     onUnhandledMessage?: UnhandledMessageStrategy;
-    protocol: WebSocketInterceptorProtocol | undefined;
+    protocol: WebSocketInterceptorProtocol<WebSocketSchemaMessage<Schema>> | undefined;
     type: WebSocketInterceptorType;
-    getAuth: (() => WebSocketInterceptorProtocolHost['auth']) | undefined;
+    getAuth: (() => WebSocketInterceptorAuthOptions | undefined) | undefined;
     MessageHandler: MessageHandlerConstructor;
     ConnectionHandler: WebSocketConnectionHandlerConstructor;
     createWorker: () => WebSocketInterceptorWorker;
@@ -131,8 +123,10 @@ class WebSocketInterceptorImplementation<
 
     this.onUnhandledMessage = options.onUnhandledMessage;
 
+    this.type = options.type;
+    this.getAuth = options.getAuth;
+
     this.protocol = options.protocol;
-    this.protocolHost = this.createProtocolHost(options.type, options.getAuth);
 
     this.MessageHandler = options.MessageHandler;
     this.ConnectionHandler = options.ConnectionHandler;
@@ -143,65 +137,17 @@ class WebSocketInterceptorImplementation<
     this._server = createWebSocketInterceptorServer(
       () => this.baseURLAsString,
       (data, options) => {
-        if (this.protocol) {
-          const recipients = options?.to === undefined ? this._clients : [options.to].flat();
+        const recipients = options?.to === undefined ? this._clients : [options.to].flat();
 
-          for (const client of this._clients.filter((client) => recipients.includes(client))) {
-            client.send(data);
-          }
-
-          return;
-        }
-
-        const serializedData = serializeWebSocketMessageDataForSocket(data);
-
-        if (options?.to === undefined) {
-          void this.worker?.sendToClients(this, serializedData);
-          return;
-        }
-
-        const clients = isWebSocketInterceptorClientArray(options.to) ? options.to : [options.to];
-
-        for (const client of this._clients) {
-          if (clients.includes(client)) {
-            void this.worker?.sendToClient(client, serializedData);
-          }
+        for (const client of this._clients.filter((client) => recipients.includes(client))) {
+          client.send(data);
         }
       },
     );
   }
 
-  private createProtocolHost(
-    type: WebSocketInterceptorType,
-    getAuth: (() => WebSocketInterceptorProtocolHost['auth']) | undefined,
-  ): WebSocketInterceptorProtocolHost {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const interceptor = this;
-
-    return {
-      type,
-
-      get baseURL() {
-        return interceptor.baseURLAsString;
-      },
-
-      get auth() {
-        return getAuth?.();
-      },
-
-      openClient: (options) => this.workerOrThrow.openProtocolClient(this, options),
-      // Protocols receive the clients created by the workers, which are schema-erased when created.
-      removeClient: (client) => this.removeClient(client as unknown as InternalWebSocketInterceptorClient<Schema>),
-
-      handleMessage: (client, message) => {
-        void this.worker?.handleMessageWithHandlers(message as ReceivedWebSocketMessageData<WebSocketMessageSchema>, [
-          {
-            interceptor: this as unknown as WebSocketInterceptorImplementation<WebSocketSchema>,
-            client: client as InternalWebSocketInterceptorClient,
-          },
-        ]);
-      },
-    };
+  get auth() {
+    return this.getAuth?.();
   }
 
   private get internalProtocol() {
@@ -210,6 +156,14 @@ class WebSocketInterceptorImplementation<
 
   claimProtocolConnection(url: string, connection: WebSocketInterceptorProtocolRawConnection) {
     return this.internalProtocol?.claimConnection(url, connection);
+  }
+
+  openProtocolClient(options: WebSocketInterceptorProtocolClientOptions) {
+    return this.workerOrThrow.openProtocolClient(this, options);
+  }
+
+  handleProtocolMessage(client: InternalWebSocketInterceptorClient, message: unknown) {
+    void this.worker?.handleDecodedMessage(this, client, message);
   }
 
   private getDefaultSavingEnabled(): boolean {
@@ -278,19 +232,34 @@ class WebSocketInterceptorImplementation<
       return;
     }
 
+    let hasStartedProtocol = false;
+
     try {
       this.worker = this.createWorker();
       this.worker.registerRunningInterceptor(this);
 
       await this.worker.start();
+
+      // The protocol starts before the worker routes connections to the interceptor, so it claims all of them.
+      await this.internalProtocol?.start(this);
+      hasStartedProtocol = true;
+
       await this.worker.use(this);
-      await this.internalProtocol?.start(this.protocolHost);
 
       this.isRunning = true;
-    } catch (error) {
-      await this.internalProtocol?.stop(this.protocolHost);
-      await this.stopWorker();
-      throw error;
+    } catch (startError) {
+      try {
+        if (hasStartedProtocol) {
+          await this.internalProtocol?.stop(this);
+        }
+      } catch (stopError) {
+        // The start error is the one the caller handles, so a failure to undo the start is only logged.
+        console.error(stopError);
+      } finally {
+        await this.stopWorker();
+      }
+
+      throw startError;
     }
   }
 
@@ -318,13 +287,15 @@ class WebSocketInterceptorImplementation<
       return;
     }
 
-    await this.internalProtocol?.stop(this.protocolHost);
+    try {
+      await this.internalProtocol?.stop(this);
+    } finally {
+      // Clearing and unregistering in one worker call sends a single reset to a remote server, so no connection opened
+      // during the stop reaches an interceptor that is cleared but still registered.
+      await this.clearAndOptionallyUnregister({ preserveInterceptorRegistration: false });
 
-    // Clearing and unregistering in one worker call sends a single reset to a remote server, so no connection opened
-    // during the stop reaches an interceptor that is cleared but still registered.
-    await this.clearAndOptionallyUnregister({ preserveInterceptorRegistration: false });
-
-    await this.stopWorker();
+      await this.stopWorker();
+    }
   }
 
   private async stopWorker() {
@@ -519,30 +490,10 @@ class WebSocketInterceptorImplementation<
 
   addClient(client: InternalWebSocketInterceptorClient<Schema>) {
     this._clients.push(client);
-
-    try {
-      const onDisconnect = this.protocol?.onConnection?.(client as unknown as WebSocketInterceptorProtocolClient);
-
-      if (onDisconnect) {
-        this.protocolDisconnectListeners.set(client, onDisconnect);
-      }
-    } catch (error) {
-      console.error(error);
-    }
   }
 
-  // Every way a client stops being held ends here: the connection closing, and clearing or stopping the interceptor.
   removeClient(client: InternalWebSocketInterceptorClient<Schema>) {
     removeArrayElement(this._clients, client);
-
-    const onDisconnect = this.protocolDisconnectListeners.get(client);
-    this.protocolDisconnectListeners.delete(client);
-
-    try {
-      onDisconnect?.();
-    } catch (error) {
-      console.error(error);
-    }
   }
 
   checkTimes() {
@@ -563,7 +514,7 @@ class WebSocketInterceptorImplementation<
 
     const clearResult = worker.clearHandlers({ interceptor: this, ...options });
 
-    this.internalProtocol?.closeClients();
+    this.internalProtocol?.clear();
 
     for (const handler of this.handlers) {
       handler.clear();

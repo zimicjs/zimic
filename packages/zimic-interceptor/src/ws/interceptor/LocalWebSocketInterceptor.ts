@@ -21,7 +21,7 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
 
   implementation: WebSocketInterceptorImplementation<Schema>;
 
-  constructor(options: LocalWebSocketInterceptorOptions) {
+  constructor(options: LocalWebSocketInterceptorOptions<Schema>) {
     const baseURL = new URL(options.baseURL);
 
     this.implementation = new WebSocketInterceptorImplementation<Schema>({

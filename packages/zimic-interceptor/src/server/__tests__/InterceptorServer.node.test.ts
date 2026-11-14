@@ -1042,7 +1042,7 @@ describe('Interceptor server', () => {
           const retainedMessage = JSON.stringify({ type: 'server', text: 'retained' } satisfies ChatMessage);
           const retainedMessagePromise = waitForWebSocketClientMessage(retainedClient);
 
-          await worker.sendToClients(retainedInterceptor.implementation, retainedMessage);
+          retainedInterceptor.server.send(retainedMessage);
 
           await expect(retainedMessagePromise).resolves.toBe(retainedMessage);
         } finally {

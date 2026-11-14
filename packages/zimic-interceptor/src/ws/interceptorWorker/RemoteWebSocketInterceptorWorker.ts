@@ -155,17 +155,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
   }
 
-  // Only clients already listed receive the message, as in local mode, so connections still being decided do not.
-  async sendToClients<Schema extends WebSocketSchema>(
-    interceptor: AnyWebSocketInterceptorImplementation<Schema>,
-    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
-  ) {
-    const registeredInterceptor = this.findRegisteredInterceptor(interceptor);
-    const clientIds = registeredInterceptor?.clients.keys() ?? [];
-
-    await Promise.all(Array.from(clientIds, (clientId) => this.enqueueSend(clientId, data)));
-  }
-
   async closeClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
     code?: number,
@@ -292,7 +281,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       const client = createWebSocketInterceptorClient({
         url: connection.url,
         protocols: connection.protocols,
-        connectionId: connection.clientId,
         send: async (data) => {
           await this.sendToClient(client, data);
         },
@@ -304,7 +292,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
       // The registry is intentionally schema-erased because one remote worker owns interceptors for any schema.
       registeredInterceptor.clients.set(connection.clientId, client);
-      registeredInterceptor.interceptor.addClient(client);
+      this.addClientToInterceptor(registeredInterceptor.interceptor, client);
       holders.push({ registeredInterceptor, client });
     }
 
@@ -358,14 +346,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     const deserializedMessageData = deserializeWebSocketMessageDataFromTransport(message.data);
     await this.handleFrameWithHandlers(deserializedMessageData, holders);
   };
-
-  private findRegisteredInterceptor<Schema extends WebSocketSchema>(
-    interceptor: AnyWebSocketInterceptorImplementation<Schema>,
-  ) {
-    return Array.from(this.registeredInterceptors.values()).find((registeredInterceptor) => {
-      return registeredInterceptor.interceptor === interceptor;
-    });
-  }
 
   private findClientId<Schema extends WebSocketSchema>(client: InternalWebSocketInterceptorClient<Schema>) {
     for (const registeredInterceptor of this.registeredInterceptors.values()) {

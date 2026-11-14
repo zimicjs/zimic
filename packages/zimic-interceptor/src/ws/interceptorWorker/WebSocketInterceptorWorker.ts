@@ -19,8 +19,6 @@ import {
 } from '../interceptor/types/messages';
 import { WebSocketInterceptorPlatform } from '../interceptor/types/options';
 import type {
-  WebSocketInterceptorProtocol,
-  WebSocketInterceptorProtocolClient,
   WebSocketInterceptorProtocolClientOpening,
   WebSocketInterceptorProtocolClientOptions,
   WebSocketInterceptorProtocolFrame,
@@ -48,6 +46,11 @@ interface WebSocketMessageHandler {
 interface WebSocketConnectionHolder {
   interceptor: WebSocketInterceptorImplementation<WebSocketSchema>;
   client: InternalWebSocketInterceptorClient;
+}
+
+interface WebSocketFrameDecoder {
+  holder: WebSocketConnectionHolder;
+  decode: (frame: WebSocketInterceptorProtocolFrame) => unknown[];
 }
 
 interface RegisteredWebSocketConnectionHolder {
@@ -85,6 +88,11 @@ export interface WebSocketConnectionHandling {
 
 const UNHANDLED_CONNECTION_HANDLING: WebSocketConnectionHandling = Object.freeze({ action: 'accept' });
 
+// Internal protocols encode every message their clients send, so the clients they open send only encoded frames.
+function asEncodedFrame(data: WebSocketMessageData<WebSocketMessageSchema>) {
+  return data as WebSocketInterceptorProtocolFrame;
+}
+
 abstract class WebSocketInterceptorWorker {
   platform: WebSocketInterceptorPlatform | null = null;
   isRunning = false;
@@ -95,7 +103,6 @@ abstract class WebSocketInterceptorWorker {
   private runningInterceptors: AnyWebSocketInterceptorImplementation[] = [];
   private messageHandlers: WebSocketMessageHandler[] = [];
   private connectionHandlers: WebSocketConnectionHandler[] = [];
-  private protocolFrameDecodings = new WeakMap<InternalWebSocketInterceptorClient, Promise<unknown>>();
 
   abstract start(): Promise<void>;
 
@@ -350,73 +357,92 @@ abstract class WebSocketInterceptorWorker {
     }
   }
 
-  // A protocol decides what each frame means to its interceptor, as interceptors may decode different messages from one
-  // frame. So, unlike messages of holders without a protocol, which are tried together, each protocol holder handles
-  // what it decodes.
-  async handleFrameWithHandlers(
-    frame: WebSocketMessageData<WebSocketMessageSchema>,
-    holders: WebSocketConnectionHolder[],
+  // The protocol of an interceptor sees each client once the interceptor lists it, before connection effects run.
+  protected addClientToInterceptor(
+    interceptor: AnyWebSocketInterceptorImplementation,
+    client: InternalWebSocketInterceptorClient,
   ) {
-    const plainHolders = holders.filter((holder) => !holder.interceptor.protocol);
+    interceptor.addClient(client);
 
-    await Promise.all([
-      plainHolders.length > 0 ? this.handlePlainFrame(frame, plainHolders) : undefined,
-      ...holders.map(async (holder) => {
-        const { protocol } = holder.interceptor;
-        return protocol ? this.handleProtocolFrame(frame, holder, protocol) : undefined;
-      }),
-    ]);
-  }
-
-  private async handlePlainFrame(
-    frame: WebSocketMessageData<WebSocketMessageSchema>,
-    holders: WebSocketConnectionHolder[],
-  ) {
-    const message = await normalizeWebSocketMessageData<WebSocketMessageSchema>(frame);
-    await this.handleMessageWithHandlers(message, holders);
-  }
-
-  // Decoded messages reach handlers unchanged, because the protocol already decided what each message is.
-  private async handleProtocolFrame(
-    frame: WebSocketMessageData<WebSocketMessageSchema>,
-    holder: WebSocketConnectionHolder,
-    protocol: WebSocketInterceptorProtocol<unknown>,
-  ) {
     try {
-      const messages = await this.decodeFrameInOrder(frame, holder, protocol);
-
-      for (const message of messages) {
-        await this.handleMessageWithHandlers(message as ReceivedWebSocketMessageData<WebSocketMessageSchema>, [holder]);
-      }
+      interceptor.protocol?.onConnection?.(client);
     } catch (error) {
       console.error(error);
     }
   }
 
-  // Protocols may keep decoding state between frames, as with Socket.IO binary attachments, and reading a `Blob` frame
-  // takes longer than reading a later text frame.
-  private decodeFrameInOrder(
-    frame: WebSocketMessageData<WebSocketMessageSchema>,
-    holder: WebSocketConnectionHolder,
-    protocol: WebSocketInterceptorProtocol<unknown>,
+  // A protocol decides what each frame means to its interceptor, as interceptors may decode different messages from one
+  // frame. So, unlike holders without a decoding protocol, whose messages are tried together, each decoding holder
+  // handles what it decodes.
+  protected splitHoldersByDecoding(holders: WebSocketConnectionHolder[]) {
+    const plainHolders: WebSocketConnectionHolder[] = [];
+    const frameDecoders: WebSocketFrameDecoder[] = [];
+
+    for (const holder of holders) {
+      const { protocol } = holder.interceptor;
+      const decode = protocol?.decode;
+
+      if (decode) {
+        frameDecoders.push({ holder, decode: (frame) => decode.call(protocol, frame, holder.client) });
+      } else {
+        plainHolders.push(holder);
+      }
+    }
+
+    return { plainHolders, frameDecoders };
+  }
+
+  protected async handleFrameWithHandlers(
+    frame: WebSocketInterceptorProtocolFrame,
+    holders: WebSocketConnectionHolder[],
   ) {
-    const client = holder.client as WebSocketInterceptorProtocolClient;
+    const { plainHolders, frameDecoders } = this.splitHoldersByDecoding(holders);
 
-    const previousDecoding = this.protocolFrameDecodings.get(holder.client) ?? Promise.resolve();
+    await Promise.all([this.decodeFrame(frame, frameDecoders), this.handlePlainFrame(frame, plainHolders)]);
+  }
 
-    const decoding = previousDecoding.then(async () => {
-      // Text frames are decoded by the protocol, so they stay unparsed.
-      const normalizedFrame =
-        typeof frame === 'string' ? frame : await normalizeWebSocketMessageData<WebSocketMessageSchema>(frame);
-      return protocol.decode(normalizedFrame as unknown as WebSocketInterceptorProtocolFrame, client);
-    });
+  protected async handlePlainFrame(
+    frame: WebSocketMessageData<WebSocketMessageSchema>,
+    holders: WebSocketConnectionHolder[],
+  ) {
+    if (holders.length === 0) {
+      return;
+    }
 
-    this.protocolFrameDecodings.set(
-      holder.client,
-      decoding.catch(() => undefined),
-    );
+    const message = await normalizeWebSocketMessageData<WebSocketMessageSchema>(frame);
+    await this.handleMessageWithHandlers(message, holders);
+  }
 
-    return decoding;
+  // Frames are decoded synchronously, in the order they are received, because protocols may keep decoding state between
+  // frames, as with Socket.IO binary attachments.
+  protected decodeFrame(frame: WebSocketInterceptorProtocolFrame, frameDecoders: WebSocketFrameDecoder[]) {
+    const handlings: Promise<void>[] = [];
+
+    for (const { holder, decode } of frameDecoders) {
+      try {
+        handlings.push(this.handleDecodedMessages(holder, decode(frame)));
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    return Promise.all(handlings);
+  }
+
+  private async handleDecodedMessages(holder: WebSocketConnectionHolder, messages: unknown[]) {
+    for (const message of messages) {
+      await this.handleDecodedMessage(holder.interceptor, holder.client, message);
+    }
+  }
+
+  // Decoded messages reach handlers unchanged, because the protocol already decided what each message is.
+  async handleDecodedMessage(
+    interceptor: AnyWebSocketInterceptorImplementation,
+    client: InternalWebSocketInterceptorClient,
+    message: unknown,
+  ) {
+    const holders = [{ interceptor, client }];
+    await this.handleMessageWithHandlers(message as ReceivedWebSocketMessageData<WebSocketMessageSchema>, holders);
   }
 
   // Runs the connection handlers of one interceptor for a client on a connection claimed by its protocol. As with a
@@ -424,7 +450,7 @@ abstract class WebSocketInterceptorWorker {
   async openProtocolClient(
     interceptor: AnyWebSocketInterceptorImplementation,
     options: WebSocketInterceptorProtocolClientOptions,
-  ): Promise<WebSocketInterceptorProtocolClientOpening | null> {
+  ): Promise<WebSocketInterceptorProtocolClientOpening> {
     function isHolding(candidate: AnyWebSocketInterceptorImplementation) {
       return candidate === interceptor && !options.signal.aborted;
     }
@@ -432,7 +458,7 @@ abstract class WebSocketInterceptorWorker {
     const handling = await this.handleConnectionWithHandlers({ url: options.url, protocols: [] }, isHolding);
 
     if (!isHolding(interceptor)) {
-      return null;
+      return { action: 'abort' };
     }
 
     if (handling.action === 'reject') {
@@ -444,10 +470,9 @@ abstract class WebSocketInterceptorWorker {
     const client: InternalWebSocketInterceptorClient = createWebSocketInterceptorClient({
       url: options.url,
       protocols: [],
-      connectionId: options.connectionId,
       send: (frame) => {
         if (interceptor.clients.includes(client)) {
-          options.sendFrame(frame as WebSocketInterceptorProtocolFrame);
+          options.sendFrame(asEncodedFrame(frame));
         }
       },
       close: (code, reason) => {
@@ -459,14 +484,16 @@ abstract class WebSocketInterceptorWorker {
     });
 
     interceptor.addClient(client);
+    options.onOpen(client);
+
     void this.applyConnectionEffect(handling, [{ registeredInterceptor: { interceptor }, client }]);
 
-    return { action: 'accept', client };
+    return { action: 'accept' };
   }
 
   // The handlers of all interceptors holding the connection are tried together, from the last created to the first, so
   // a newer handler wins regardless of the start order of its interceptor. Holders are ordered from oldest to newest.
-  async handleMessageWithHandlers(
+  protected async handleMessageWithHandlers(
     message: ReceivedWebSocketMessageData<WebSocketMessageSchema>,
     holders: WebSocketConnectionHolder[],
   ) {
@@ -576,11 +603,6 @@ abstract class WebSocketInterceptorWorker {
 
   abstract sendToClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
-    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
-  ): PossiblePromise<void>;
-
-  abstract sendToClients<Schema extends WebSocketSchema>(
-    interceptor: AnyWebSocketInterceptorImplementation<Schema>,
     data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   ): PossiblePromise<void>;
 

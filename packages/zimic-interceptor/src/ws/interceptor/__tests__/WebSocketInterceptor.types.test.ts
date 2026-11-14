@@ -15,6 +15,7 @@ import type { LocalWebSocketMessageHandler, RemoteWebSocketMessageHandler } from
 
 import { createWebSocketInterceptor } from '../factory';
 import { UnhandledMessageStrategy, WebSocketInterceptorType } from '../types/options';
+import type { WebSocketInterceptorProtocol } from '../types/protocol';
 import { LocalWebSocketInterceptor, RemoteWebSocketInterceptor, WebSocketInterceptor } from '../types/public';
 import { InferWebSocketInterceptorSchema } from '../types/schema';
 import { declareWebSocketInterceptorTypes } from './shared/utils';
@@ -99,6 +100,23 @@ describe('WebSocketInterceptor > Types', () => {
     }
 
     expectTypeOf(declareSends).toBeFunction();
+  });
+
+  it('should accept protocols of the messages of the schema', () => {
+    function createInterceptor(protocol: WebSocketInterceptorProtocol<Message>) {
+      createWebSocketInterceptor<MessageSchema>({ baseURL: 'ws://localhost:3000', protocol });
+    }
+
+    expectTypeOf(createInterceptor).toBeFunction();
+  });
+
+  it('should not accept protocols of messages other than the messages of the schema', () => {
+    function createInterceptor(protocol: WebSocketInterceptorProtocol<{ type: 'other' }>) {
+      // @ts-expect-error The protocol does not translate the messages of the schema.
+      createWebSocketInterceptor<MessageSchema>({ baseURL: 'ws://localhost:3000', protocol });
+    }
+
+    expectTypeOf(createInterceptor).toBeFunction();
   });
 
   it('should not accept undeclared paths in message handlers', () => {

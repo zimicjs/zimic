@@ -5,13 +5,12 @@ import { isServerSide } from '@/utils/environment';
 import { isWebSocketBinaryMessageData, normalizeBufferSource } from '@/ws/utils/messageData';
 
 import type {
-  InternalWebSocketInterceptorProtocol,
   WebSocketInterceptorProtocol,
-  WebSocketInterceptorProtocolClient,
   WebSocketInterceptorProtocolFrame,
-  WebSocketInterceptorProtocolHost,
   WebSocketInterceptorProtocolRawConnection,
 } from '../interceptor/types/protocol';
+import type { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
+import { INTERNAL_PROTOCOL_BRAND, type InternalWebSocketInterceptorProtocol } from '../utils/protocol';
 import {
   getOrCreateSocketIOEngine,
   SocketIOEngine,
@@ -33,8 +32,12 @@ interface SocketIODecoderState {
   decodedPackets: SocketIOPacket[];
 }
 
-class SocketIOProtocol implements InternalWebSocketInterceptorProtocol<SocketIOMessage>, SocketIOEngineMember {
-  host!: WebSocketInterceptorProtocolHost;
+class SocketIOProtocol<Message extends SocketIOMessage>
+  implements InternalWebSocketInterceptorProtocol<Message>, SocketIOEngineMember
+{
+  readonly [INTERNAL_PROTOCOL_BRAND] = true;
+
+  interceptor!: AnyWebSocketInterceptorImplementation;
 
   private engine?: SocketIOEngine;
   private encoder: InstanceType<SocketIOParser['Encoder']>;
@@ -48,42 +51,34 @@ class SocketIOProtocol implements InternalWebSocketInterceptorProtocol<SocketIOM
     return this.options.namespace;
   }
 
-  async start(host: WebSocketInterceptorProtocolHost) {
+  async start(interceptor: AnyWebSocketInterceptorImplementation) {
     if (this.engine) {
       throw new Error('A Socket.IO protocol can be used by only one running interceptor. Create one for each of them.');
     }
 
-    this.host = host;
-    this.engine = getOrCreateSocketIOEngine(host, this.options);
-    await this.engine.attach(this);
+    this.interceptor = interceptor;
+    this.engine = getOrCreateSocketIOEngine(interceptor, this.options);
+
+    // The interceptor stops only protocols that started, so a failed start undoes itself.
+    try {
+      await this.engine.start(this);
+    } catch (error) {
+      await this.stop();
+      throw error;
+    }
   }
 
-  // A failed start also stops the protocol, which must not affect the interceptor already using it.
-  async stop(host: WebSocketInterceptorProtocolHost) {
-    if (host !== this.host) {
-      return;
-    }
-
-    await this.engine?.detach(this);
+  async stop() {
+    await this.engine?.stop(this);
     this.engine = undefined;
   }
 
-  closeClients() {
-    this.engine?.closeMemberClients(this);
+  clear() {
+    this.engine?.clear(this);
   }
 
   claimConnection(url: string, connection: WebSocketInterceptorProtocolRawConnection) {
     return this.engine?.claimConnection(url, connection);
-  }
-
-  onConnection = (client: WebSocketInterceptorProtocolClient) => {
-    return this.engine?.connectClient(this, client);
-  };
-
-  // The engine claims every connection while the protocol runs and decodes its frames with `receiveFrame`, so the
-  // interceptor has no frames to decode.
-  decode(): SocketIOMessage[] {
-    return [];
   }
 
   receiveFrame(session: SocketIOEngineSession, frame: WebSocketInterceptorProtocolFrame) {
@@ -139,9 +134,9 @@ class SocketIOProtocol implements InternalWebSocketInterceptorProtocol<SocketIOM
     }
 
     if (packet.type === PacketType.DISCONNECT) {
-      this.host.removeClient(client);
+      this.engine?.leaveNamespace(this, session);
     } else if (packet.type === PacketType.EVENT || packet.type === PacketType.BINARY_EVENT) {
-      this.host.handleMessage(client, this.createEventMessage(packet));
+      this.interceptor.handleProtocolMessage(client, this.createEventMessage(packet));
     }
   }
 
@@ -162,7 +157,7 @@ class SocketIOProtocol implements InternalWebSocketInterceptorProtocol<SocketIOM
     };
   }
 
-  encode(message: SocketIOMessage): WebSocketInterceptorProtocolFrame[] {
+  encode(message: Message): WebSocketInterceptorProtocolFrame[] {
     if (typeof message !== 'object' || (!('type' in message) && !('ackId' in message))) {
       throw new TypeError(
         `Socket.IO messages must be objects with \`type\` or \`ackId\`, but received: ${String(message)}.`,
@@ -224,12 +219,14 @@ class SocketIOProtocol implements InternalWebSocketInterceptorProtocol<SocketIOM
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#createsocketioprotocol `createSocketIOProtocol` API reference}
  * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io Mocking Socket.IO servers}
  */
-export function createSocketIOProtocol(options: SocketIOProtocolOptions = {}): WebSocketInterceptorProtocol {
-  return new SocketIOProtocol({
+export function createSocketIOProtocol<Message extends SocketIOMessage = SocketIOMessage>(
+  options: SocketIOProtocolOptions = {},
+): WebSocketInterceptorProtocol<Message> {
+  return new SocketIOProtocol<Message>({
     namespace: options.namespace ?? DEFAULT_NAMESPACE,
     polling: options.polling ?? true,
     parser: options.parser ?? defaultParser,
     pingInterval: options.pingInterval ?? DEFAULT_PING_INTERVAL,
     pingTimeout: options.pingTimeout ?? DEFAULT_PING_TIMEOUT,
-  }) as WebSocketInterceptorProtocol;
+  });
 }
