@@ -314,7 +314,24 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
     });
   });
 
-  it('should reject invalid server messages and keep sending later messages', async () => {
+  it('should reject invalid server messages', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<BinaryOrTextMessage>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<BinaryOrTextMessage>(baseURL, async () => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        expect(() => {
+          // @ts-expect-error Simulates an invalid runtime value, which typed code cannot send.
+          interceptor.server.send(undefined);
+        }).toThrow(new ValidationError('Expected serialized WebSocket message data to be string, but got undefined.'));
+      });
+    });
+  });
+
+  it('should keep sending server messages after rejecting an invalid one', async () => {
     const baseURL = getBaseURL();
 
     await usingWebSocketInterceptor<BinaryOrTextMessage>({ type, baseURL }, async (interceptor) => {
@@ -325,10 +342,8 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
 
         const messages = collectWebSocketClientMessages(client);
 
-        expect(() => {
-          // Simulates an invalid runtime value, which typed code cannot send.
-          interceptor.server.send(undefined as unknown as string);
-        }).toThrow(new ValidationError('Expected serialized WebSocket message data to be string, but got undefined.'));
+        // @ts-expect-error Simulates an invalid runtime value, which typed code cannot send.
+        expect(() => interceptor.server.send(undefined)).toThrow(ValidationError);
 
         interceptor.server.send('valid');
 
