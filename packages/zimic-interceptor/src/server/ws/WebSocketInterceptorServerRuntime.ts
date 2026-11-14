@@ -60,6 +60,7 @@ const webSocketClientDisconnectionSchema = z.object({
 
 const clientConnectionReplySchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('accept'), acceptedInterceptorIds: z.array(z.string()) }),
+  z.object({ action: z.literal('claim') }),
   z.object({ action: z.literal('reject') }),
 ]) satisfies z.ZodType<WebSocketClientConnectionReply>;
 
@@ -80,6 +81,9 @@ interface UserWebSocketConnection {
   workerSocket: Socket;
   // Kept in the order of the worker's interceptors, so the last holder is the newest.
   holders: RegisteredWebSocketInterceptor[];
+  // A connection claimed by a protocol of the worker closes only when the worker closes it or disconnects, because the
+  // protocol may serve it with interceptors started after it connected.
+  isClaimed: boolean;
 }
 
 interface UserWebSocketConnectionClosure {
@@ -192,7 +196,24 @@ class WebSocketInterceptorServerRuntime {
       this.detachWebSocketInterceptorConnections(interceptor, { pendingClosure: CONNECTION_SETUP_FAILURE_CLOSURE });
     }
 
+    this.closeClaimedConnections(socket);
+
     this.webSocketWorkersBySocket.delete(socket);
+  }
+
+  private closeClaimedConnections(workerSocket: Socket) {
+    for (const userConnection of this.pendingUserWebSocketConnections.values()) {
+      if (userConnection.isClaimed && userConnection.workerSocket === workerSocket) {
+        userConnection.closure ??= CONNECTION_SETUP_FAILURE_CLOSURE;
+      }
+    }
+
+    for (const [userSocket, userConnection] of this.activeUserWebSocketConnections) {
+      if (userConnection.isClaimed && userConnection.workerSocket === workerSocket) {
+        this.activeUserWebSocketConnections.delete(userSocket);
+        userSocket.close(WEB_SOCKET_CLOSE_CODES.DEFAULT);
+      }
+    }
   }
 
   // Clearing or stopping one interceptor must not affect the others, so a shared connection stays open until its last
@@ -202,7 +223,7 @@ class WebSocketInterceptorServerRuntime {
     options: { pendingClosure?: UserWebSocketConnectionClosure } = {},
   ) {
     for (const userConnection of this.pendingUserWebSocketConnections.values()) {
-      if (userConnection.holders.includes(interceptor)) {
+      if (!userConnection.isClaimed && userConnection.holders.includes(interceptor)) {
         userConnection.holders = userConnection.holders.filter((holder) => holder !== interceptor);
 
         if (userConnection.holders.length === 0) {
@@ -218,7 +239,7 @@ class WebSocketInterceptorServerRuntime {
     }
 
     for (const [userSocket, userConnection] of this.activeUserWebSocketConnections) {
-      if (userConnection.holders.includes(interceptor)) {
+      if (!userConnection.isClaimed && userConnection.holders.includes(interceptor)) {
         userConnection.holders = userConnection.holders.filter((holder) => holder !== interceptor);
 
         if (userConnection.holders.length === 0) {
@@ -243,6 +264,7 @@ class WebSocketInterceptorServerRuntime {
       clientId: crypto.randomUUID(),
       workerSocket: connectionTarget.worker.socket,
       holders: connectionTarget.holders,
+      isClaimed: false,
       queuedDeliveries: [],
       requestSocketCloseListener: () => {
         this.removePendingUserWebSocketConnection(request, connection);
@@ -283,11 +305,15 @@ class WebSocketInterceptorServerRuntime {
         return false;
       }
 
-      // Holders that let the connection go while it was being set up were already dropped.
-      const accepted = connection.holders.every((holder) => reply.acceptedInterceptorIds.includes(holder.id));
+      if (reply.action === 'claim') {
+        connection.isClaimed = true;
+      } else {
+        // Holders that let the connection go while it was being set up were already dropped.
+        const accepted = connection.holders.every((holder) => reply.acceptedInterceptorIds.includes(holder.id));
 
-      if (!accepted) {
-        connection.closure ??= CONNECTION_SETUP_FAILURE_CLOSURE;
+        if (!accepted) {
+          connection.closure ??= CONNECTION_SETUP_FAILURE_CLOSURE;
+        }
       }
     } catch (error) {
       // Aborts are expected when the last holder lets the connection go or the worker disconnects.

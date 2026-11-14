@@ -70,7 +70,7 @@ describe('WebSocketMessageHandler > Types', () => {
         expectTypeOf(context.receiver).toEqualTypeOf<WebSocketInterceptorServer<PathKeyedSchema>>();
         expectTypeOf(context.receiver.send)
           .parameter(0)
-          .toEqualTypeOf<WebSocketMessageData<RoomMessage | HealthMessage>>();
+          .toEqualTypeOf<RoomMessage | HealthMessage | WebSocketMessageData<RoomMessage | HealthMessage>>();
       });
     }
 
@@ -128,7 +128,7 @@ describe('WebSocketMessageHandler > Types', () => {
 
       handler.effect((message, context) => {
         expectTypeOf(message).toEqualTypeOf<RoomMessage>();
-        expectTypeOf(context.sender.send).parameter(0).toEqualTypeOf<WebSocketMessageData<RoomMessage>>();
+        expectTypeOf(context.sender.send).parameter(0).toEqualTypeOf<RoomMessage | WebSocketMessageData<RoomMessage>>();
 
         // @ts-expect-error The message belongs to another path.
         context.sender.send(healthMessageData);

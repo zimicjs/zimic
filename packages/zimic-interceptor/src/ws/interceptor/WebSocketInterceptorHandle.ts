@@ -1,18 +1,22 @@
 import { HttpSearchParams } from '@zimic/utils/http';
 import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 
+import { serializeWebSocketMessageDataForSocket } from '../utils/messageData';
 import type {
   InterceptedWebSocketInterceptorMessage,
   WebSocketInterceptorClient,
   WebSocketInterceptorServer,
   WebSocketInterceptorServerSendOptions,
 } from './types/messages';
+import type { WebSocketInterceptorProtocol, WebSocketInterceptorProtocolFrame } from './types/protocol';
 
 export interface InternalWebSocketInterceptorClient<
   Schema extends WebSocketSchema = WebSocketSchema,
   Path extends string = string,
 > extends WebSocketInterceptorClient<Schema, Path> {
   messages: InterceptedWebSocketInterceptorMessage<Schema, Path>[];
+  readonly connectionId: string;
+  sendFrame: (frame: WebSocketInterceptorProtocolFrame) => void;
 }
 
 export const MAX_CLOSE_REASON_BYTE_LENGTH = 123;
@@ -46,6 +50,7 @@ type SendWebSocketInterceptorClientMessage = (data: WebSocketMessageData<WebSock
 class WebSocketInterceptorClientImplementation implements InternalWebSocketInterceptorClient {
   #sendMessage: SendWebSocketInterceptorClientMessage;
   #closeConnection: WebSocketInterceptorClientCloser;
+  #protocol: WebSocketInterceptorProtocol | undefined;
 
   searchParams: HttpSearchParams;
   messages: InterceptedWebSocketInterceptorMessage<WebSocketSchema>[] = [];
@@ -53,16 +58,29 @@ class WebSocketInterceptorClientImplementation implements InternalWebSocketInter
   constructor(
     public url: string,
     public protocols: readonly string[],
+    public connectionId: string,
     sendMessage: SendWebSocketInterceptorClientMessage,
     closeConnection: WebSocketInterceptorClientCloser,
+    protocol: WebSocketInterceptorProtocol | undefined,
   ) {
     this.searchParams = new HttpSearchParams(new URL(url).searchParams);
     this.#sendMessage = sendMessage;
     this.#closeConnection = closeConnection;
+    this.#protocol = protocol;
   }
 
-  send(data: WebSocketMessageData<WebSocketMessageSchema>) {
-    this.#sendMessage(data);
+  send(data: WebSocketMessageSchema | WebSocketMessageData<WebSocketMessageSchema>) {
+    if (this.#protocol) {
+      for (const frame of this.#protocol.encode(data, this)) {
+        this.sendFrame(frame);
+      }
+    } else {
+      this.#sendMessage(serializeWebSocketMessageDataForSocket<WebSocketMessageSchema>(data));
+    }
+  }
+
+  sendFrame(frame: WebSocketInterceptorProtocolFrame) {
+    this.#sendMessage(frame);
   }
 
   close(rawCode?: number, reason?: string) {
@@ -89,10 +107,19 @@ class WebSocketInterceptorClientImplementation implements InternalWebSocketInter
 export function createWebSocketInterceptorClient(options: {
   url: string;
   protocols: readonly string[];
+  connectionId: string;
   send: SendWebSocketInterceptorClientMessage;
   close: WebSocketInterceptorClientCloser;
+  protocol: WebSocketInterceptorProtocol | undefined;
 }): InternalWebSocketInterceptorClient {
-  return new WebSocketInterceptorClientImplementation(options.url, options.protocols, options.send, options.close);
+  return new WebSocketInterceptorClientImplementation(
+    options.url,
+    options.protocols,
+    options.connectionId,
+    options.send,
+    options.close,
+    options.protocol,
+  );
 }
 
 export interface InternalWebSocketInterceptorServer<
@@ -102,7 +129,7 @@ export interface InternalWebSocketInterceptorServer<
 }
 
 type SendWebSocketInterceptorServerMessage<Schema extends WebSocketSchema> = (
-  data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+  data: WebSocketSchemaMessage<Schema> | WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   options?: WebSocketInterceptorServerSendOptions<Schema>,
 ) => void;
 
@@ -124,7 +151,7 @@ class WebSocketInterceptorServerImplementation<
   }
 
   send(
-    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+    data: WebSocketSchemaMessage<Schema> | WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
     options?: WebSocketInterceptorServerSendOptions<Schema>,
   ) {
     this.#sendMessage(data, options);

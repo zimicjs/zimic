@@ -72,6 +72,35 @@ describe('WebSocketInterceptor > Types', () => {
     expectTypeOf(declareSend).toBeFunction();
   });
 
+  it('should accept decoded and stringified messages in server sends', () => {
+    function declareSends(interceptor: LocalWebSocketInterceptor<MessageSchema>) {
+      const message: Message = { type: 'delete', id: '1' };
+
+      interceptor.server.send(message);
+      interceptor.server.send(JSON.stringify(message));
+
+      // @ts-expect-error The message is not declared in the schema.
+      interceptor.server.send({ type: 'unknown' });
+    }
+
+    expectTypeOf(declareSends).toBeFunction();
+  });
+
+  it('should accept decoded and stringified messages in client sends', () => {
+    function declareSends(interceptor: LocalWebSocketInterceptor<MessageSchema>) {
+      const message: Message = { type: 'delete', id: '1' };
+      const client = interceptor.clients[0];
+
+      client.send(message);
+      client.send(JSON.stringify(message));
+
+      // @ts-expect-error The message is not declared in the schema.
+      client.send({ type: 'unknown' });
+    }
+
+    expectTypeOf(declareSends).toBeFunction();
+  });
+
   it('should not accept undeclared paths in message handlers', () => {
     function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
       // @ts-expect-error The path is not declared in the schema.

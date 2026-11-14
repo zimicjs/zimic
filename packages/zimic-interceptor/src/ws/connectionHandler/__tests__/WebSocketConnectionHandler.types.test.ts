@@ -182,7 +182,7 @@ describe('WebSocketConnectionHandler > Types', () => {
     ) {
       interceptor.connection('/rooms/:roomId').effect((client) => {
         expectTypeOf<Parameters<typeof client.send>[0]>().toEqualTypeOf<
-          WebSocketMessageData<{ type: 'chat'; text: string }>
+          { type: 'chat'; text: string } | WebSocketMessageData<{ type: 'chat'; text: string }>
         >();
 
         // @ts-expect-error The message belongs to another path.
@@ -198,7 +198,7 @@ describe('WebSocketConnectionHandler > Types', () => {
       interceptor.connection().effect((client) => {
         expectTypeOf(client).toEqualTypeOf<WebSocketInterceptorClient<PathKeyedSchema>>();
         expectTypeOf<Parameters<typeof client.send>[0]>().toEqualTypeOf<
-          WebSocketMessageData<WebSocketSchemaMessage<PathKeyedSchema>>
+          WebSocketSchemaMessage<PathKeyedSchema> | WebSocketMessageData<WebSocketSchemaMessage<PathKeyedSchema>>
         >();
       });
     }

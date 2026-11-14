@@ -172,15 +172,22 @@ export interface WebSocketInterceptorClient<
    */
   messages: readonly InterceptedWebSocketInterceptorMessage<Schema, Path>[];
 
-  /** Sends a server message to this client. */
-  send: (data: WebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>) => void;
+  /**
+   * Sends a server message to this client. Without a protocol, messages other than strings and binary data are sent as
+   * their JSON text. With a protocol, the protocol encodes the message as received.
+   */
+  send: (
+    data:
+      | WebSocketInterceptorPathMessage<Schema, Path>
+      | WebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
+  ) => void;
 
   /**
    * Closes the connection of this client, as if the server closed it, and removes the client from every interceptor
    * holding it. The arguments follow the native
    * {@link https://developer.mozilla.org/docs/Web/API/WebSocket/close `WebSocket.close()`}: if `code` is omitted, the
    * client receives the close code 1005 and no reason. Closing a client that is already closed, or no longer held by a
-   * running interceptor, does nothing.
+   * running interceptor, does nothing. Clients of a Socket.IO interceptor disconnect only from its namespace.
    *
    * @param code The close code, either 1000 or between 3000 and 4999. As in `WebSocket.close()`, it is clamped to 0
    *   through 65535 and rounded to the nearest integer, with ties to even, before being checked.
@@ -188,6 +195,7 @@ export interface WebSocketInterceptorClient<
    * @throws {DOMException} An `InvalidAccessError` if `code`, after clamping and rounding, is not 1000 or between 3000
    *   and 4999.
    * @throws {DOMException} A `SyntaxError` if `reason` is longer than 123 bytes when encoded as UTF-8.
+   * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#clients Socket.IO clients}
    */
   close: (code?: number, reason?: string) => void;
 }
@@ -222,9 +230,13 @@ export interface WebSocketInterceptorServer<Schema extends WebSocketSchema = Web
    */
   messages: readonly InterceptedWebSocketInterceptorMessage<Schema>[];
 
-  /** Sends a message to the connected clients selected in `options.to`, or to all of them if omitted. */
+  /**
+   * Sends a message to the connected clients selected in `options.to`, or to all of them if omitted. Without a
+   * protocol, messages other than strings and binary data are sent as their JSON text. With a protocol, the protocol
+   * encodes the message as received for each client.
+   */
   send: (
-    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+    data: WebSocketSchemaMessage<Schema> | WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
     options?: WebSocketInterceptorServerSendOptions<Schema>,
   ) => void;
 }

@@ -31,8 +31,9 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
     index: 'src/index.ts',
     http: 'src/http/index.ts',
     'experimental/ws': 'src/ws/index.ts',
+    'experimental/socket.io': 'src/ws/socketIO/index.ts',
   },
-  external: [...sharedConfig.external, 'fs', 'util', 'buffer', 'crypto'],
+  external: [...sharedConfig.external, 'fs', 'util', 'buffer', 'crypto', '@zimic/interceptor/http'],
 }));
 
 const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => {

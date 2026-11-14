@@ -1,4 +1,4 @@
-import { assertTypeOf, ValidationError } from '@zimic/utils/validation';
+import { assertTypeOf } from '@zimic/utils/validation';
 import { WebSocketMessageData, WebSocketMessageSchema } from '@zimic/ws';
 
 import { convertArrayBufferToBase64, convertBase64ToArrayBuffer } from '@/utils/data';
@@ -28,7 +28,7 @@ export function normalizeBufferSource(bufferSource: BufferSource): ArrayBuffer {
 // Unlike HTTP bodies without a content type, which are parsed as any JSON value, only objects and arrays are parsed.
 // WebSocket frames have no content type to declare JSON, and string schema members are sent as raw text, so text such
 // as `'42'`, `'true'`, `'null'`, or `'"message"'` stays a string.
-function tryParseJSONMessageData(data: string): unknown {
+export function tryParseJSONMessageData(data: string): unknown {
   const firstCharacter = data.trimStart()[0];
 
   if (firstCharacter !== '{' && firstCharacter !== '[') {
@@ -98,12 +98,8 @@ export function serializeWebSocketMessageDataForSocket<Message extends WebSocket
 }
 
 export async function serializeWebSocketMessageDataForTransport(
-  data: WebSocketMessageData<WebSocketMessageSchema> | undefined,
+  data: WebSocketMessageData<WebSocketMessageSchema>,
 ): Promise<SerializedWebSocketMessageData> {
-  if (data === undefined) {
-    throw new ValidationError('WebSocket message data must not be undefined.');
-  }
-
   if (isWebSocketBinaryMessageData(data)) {
     const normalizedData = normalizeWebSocketBinaryMessageData(data);
     const arrayBuffer = normalizedData instanceof Blob ? await normalizedData.arrayBuffer() : normalizedData;

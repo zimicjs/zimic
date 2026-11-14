@@ -1,5 +1,5 @@
 import { excludeNonPathParams, validateURLProtocol } from '@zimic/utils/url';
-import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
+import { WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 
 import { removeArrayElement } from '@/utils/arrays';
 import { isServerSide } from '@/utils/environment';
@@ -17,7 +17,7 @@ import {
   AnyWebSocketMessageHandlerImplementation,
   WebSocketMessageHandlerApplyContext,
 } from '../messageHandler/WebSocketMessageHandlerImplementation';
-import { normalizeWebSocketMessageData } from '../utils/messageData';
+import { serializeWebSocketMessageDataForSocket } from '../utils/messageData';
 import ConnectionSavingSafeLimitExceededError from './errors/ConnectionSavingSafeLimitExceededError';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
@@ -27,7 +27,14 @@ import type {
   WebSocketInterceptorConnectionRequest,
   WebSocketInterceptorServerSendOptions,
 } from './types/messages';
-import type { UnhandledMessageStrategy } from './types/options';
+import type { UnhandledMessageStrategy, WebSocketInterceptorType } from './types/options';
+import {
+  isInternalWebSocketInterceptorProtocol,
+  WebSocketInterceptorProtocol,
+  WebSocketInterceptorProtocolClient,
+  WebSocketInterceptorProtocolHost,
+  WebSocketInterceptorProtocolRawConnection,
+} from './types/protocol';
 import type { WebSocketInterceptorConnectionSaving, WebSocketInterceptorMessageSaving } from './types/public';
 import type { WebSocketInterceptorPathMessage } from './types/schema';
 import {
@@ -82,6 +89,10 @@ class WebSocketInterceptorImplementation<
   private _server: InternalWebSocketInterceptorServer<Schema>;
   private _clients: InternalWebSocketInterceptorClient<Schema>[] = [];
 
+  readonly protocol: WebSocketInterceptorProtocol | undefined;
+  private protocolHost: WebSocketInterceptorProtocolHost;
+  private protocolDisconnectListeners = new Map<InternalWebSocketInterceptorClient<Schema>, () => void>();
+
   private createWorker: () => WebSocketInterceptorWorker;
   private deleteWorker: () => void;
   private worker?: WebSocketInterceptorWorker;
@@ -97,6 +108,9 @@ class WebSocketInterceptorImplementation<
     messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
     connectionSaving?: Partial<WebSocketInterceptorConnectionSaving>;
     onUnhandledMessage?: UnhandledMessageStrategy;
+    protocol: WebSocketInterceptorProtocol | undefined;
+    type: WebSocketInterceptorType;
+    getAuth: (() => WebSocketInterceptorProtocolHost['auth']) | undefined;
     MessageHandler: MessageHandlerConstructor;
     ConnectionHandler: WebSocketConnectionHandlerConstructor;
     createWorker: () => WebSocketInterceptorWorker;
@@ -117,15 +131,32 @@ class WebSocketInterceptorImplementation<
 
     this.onUnhandledMessage = options.onUnhandledMessage;
 
+    this.protocol = options.protocol;
+    this.protocolHost = this.createProtocolHost(options.type, options.getAuth);
+
     this.MessageHandler = options.MessageHandler;
     this.ConnectionHandler = options.ConnectionHandler;
+
     this.createWorker = options.createWorker;
     this.deleteWorker = options.deleteWorker;
+
     this._server = createWebSocketInterceptorServer(
       () => this.baseURLAsString,
       (data, options) => {
+        if (this.protocol) {
+          const recipients = options?.to === undefined ? this._clients : [options.to].flat();
+
+          for (const client of this._clients.filter((client) => recipients.includes(client))) {
+            client.send(data);
+          }
+
+          return;
+        }
+
+        const serializedData = serializeWebSocketMessageDataForSocket(data);
+
         if (options?.to === undefined) {
-          void this.worker?.sendToClients(this, data);
+          void this.worker?.sendToClients(this, serializedData);
           return;
         }
 
@@ -133,11 +164,52 @@ class WebSocketInterceptorImplementation<
 
         for (const client of this._clients) {
           if (clients.includes(client)) {
-            void this.worker?.sendToClient(client, data);
+            void this.worker?.sendToClient(client, serializedData);
           }
         }
       },
     );
+  }
+
+  private createProtocolHost(
+    type: WebSocketInterceptorType,
+    getAuth: (() => WebSocketInterceptorProtocolHost['auth']) | undefined,
+  ): WebSocketInterceptorProtocolHost {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const interceptor = this;
+
+    return {
+      type,
+
+      get baseURL() {
+        return interceptor.baseURLAsString;
+      },
+
+      get auth() {
+        return getAuth?.();
+      },
+
+      openClient: (options) => this.workerOrThrow.openProtocolClient(this, options),
+      // Protocols receive the clients created by the workers, which are schema-erased when created.
+      removeClient: (client) => this.removeClient(client as unknown as InternalWebSocketInterceptorClient<Schema>),
+
+      handleMessage: (client, message) => {
+        void this.worker?.handleMessageWithHandlers(message as ReceivedWebSocketMessageData<WebSocketMessageSchema>, [
+          {
+            interceptor: this as unknown as WebSocketInterceptorImplementation<WebSocketSchema>,
+            client: client as InternalWebSocketInterceptorClient,
+          },
+        ]);
+      },
+    };
+  }
+
+  private get internalProtocol() {
+    return isInternalWebSocketInterceptorProtocol(this.protocol) ? this.protocol : undefined;
+  }
+
+  claimProtocolConnection(url: string, connection: WebSocketInterceptorProtocolRawConnection) {
+    return this.internalProtocol?.claimConnection(url, connection);
   }
 
   private getDefaultSavingEnabled(): boolean {
@@ -212,9 +284,11 @@ class WebSocketInterceptorImplementation<
 
       await this.worker.start();
       await this.worker.use(this);
+      await this.internalProtocol?.start(this.protocolHost);
 
       this.isRunning = true;
     } catch (error) {
+      await this.internalProtocol?.stop(this.protocolHost);
       await this.stopWorker();
       throw error;
     }
@@ -243,6 +317,8 @@ class WebSocketInterceptorImplementation<
     if (!this.isRunning) {
       return;
     }
+
+    await this.internalProtocol?.stop(this.protocolHost);
 
     // Clearing and unregistering in one worker call sends a single reset to a remote server, so no connection opened
     // during the stop reaches an interceptor that is cleared but still registered.
@@ -415,8 +491,10 @@ class WebSocketInterceptorImplementation<
 
   // Unlike HTTP, unhandled messages have no bypass or reject action. WebSocket is not request-response, so a message
   // needs no reply and the connection stays open.
-  async logUnhandledMessageIfNecessary(data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>, url: string) {
-    const message = await normalizeWebSocketMessageData(data);
+  async logUnhandledMessageIfNecessary(
+    message: ReceivedWebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+    url: string,
+  ) {
     const strategy = await this.getUnhandledMessageStrategy(message);
 
     if (strategy.log ?? DEFAULT_UNHANDLED_MESSAGE_STRATEGY.log) {
@@ -441,10 +519,30 @@ class WebSocketInterceptorImplementation<
 
   addClient(client: InternalWebSocketInterceptorClient<Schema>) {
     this._clients.push(client);
+
+    try {
+      const onDisconnect = this.protocol?.onConnection?.(client as unknown as WebSocketInterceptorProtocolClient);
+
+      if (onDisconnect) {
+        this.protocolDisconnectListeners.set(client, onDisconnect);
+      }
+    } catch (error) {
+      console.error(error);
+    }
   }
 
+  // Every way a client stops being held ends here: the connection closing, and clearing or stopping the interceptor.
   removeClient(client: InternalWebSocketInterceptorClient<Schema>) {
     removeArrayElement(this._clients, client);
+
+    const onDisconnect = this.protocolDisconnectListeners.get(client);
+    this.protocolDisconnectListeners.delete(client);
+
+    try {
+      onDisconnect?.();
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   checkTimes() {
@@ -464,6 +562,8 @@ class WebSocketInterceptorImplementation<
     this.connectionSavingGeneration = {};
 
     const clearResult = worker.clearHandlers({ interceptor: this, ...options });
+
+    this.internalProtocol?.closeClients();
 
     for (const handler of this.handlers) {
       handler.clear();

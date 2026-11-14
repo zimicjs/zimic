@@ -62,6 +62,12 @@ export type {
   UnhandledMessageStrategy,
 } from './interceptor/types/options';
 
+export type {
+  WebSocketInterceptorProtocol,
+  WebSocketInterceptorProtocolClient,
+  WebSocketInterceptorProtocolFrame,
+} from './interceptor/types/protocol';
+
 export type { InferWebSocketInterceptorSchema } from './interceptor/types/schema';
 export type {
   WebSocketInterceptorConnectionRequest,
