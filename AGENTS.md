@@ -27,7 +27,7 @@
 These rules apply to packages intended for direct external use.
 
 - Write JSDoc for every public export and its public members, including re-exported declarations, overloads, option fields, and types reachable through public signatures even when not exported by name. Audit all of them when adding or changing a public API.
-- When an existing page or section of the website docs covers the resource, write a concise `@see {@link https://zimic.dev/docs/<route>#<anchor> <label>}` to the closest one instead of copying its explanation. Describe the resource inline when no suitable page or section exists.
+- When an existing page or section of the website docs covers the resource, write one sentence and a `@see {@link https://zimic.dev/docs/<route>#<anchor> <label>}` to the closest one, leaving examples, option behavior, and caveats to that page. Describe the resource inline when no suitable page or section exists.
 - Take routes from the `slug` frontmatter of pages under `apps/zimic-web/docs` and anchors from their headings. Update the JSDoc links in the same change when a route or heading moves.
 
 ## Runtime and behavior coverage
@@ -39,7 +39,7 @@ These rules apply to packages intended for direct external use.
 ## Implementation conventions
 
 - Before changing a module, review analogous modules in the same package and follow their structure, naming, data flow, and error-handling patterns unless there is a clear reason to diverge.
-- Prefer type-safe designs over broad unions, loose public/internal type mixing, or casts. If narrowing is unavoidable, keep it isolated behind a small, named boundary that reflects a real runtime guarantee.
+- Prefer type-safe designs over broad unions, loose public/internal type mixing, or casts. If narrowing is unavoidable, keep it isolated behind a small, named boundary that reflects a real runtime guarantee. Do not silence a type error with `as unknown as` or `as never`. Fix the types, and in tests assert an intended type error with `// @ts-expect-error <reason>`.
 - Avoid reaching through public wrappers into internal implementation details from production code unless that is already the established internal contract for the module.
 - Published packages include `@zimic/utils/types/globals`, which narrows built-ins such as `Object.keys`. Rely on those types instead of casting.
 - Create deferred promises with `createPromiseWithResolvers` from `@zimic/utils/data` instead of `Promise.withResolvers`, which older supported runtimes lack.
@@ -54,7 +54,7 @@ These rules apply to packages intended for direct external use.
 - When a scenario cannot be reached publicly, inject the fault at one narrow boundary, comment on why no public path triggers it, and assert the resulting public outcome.
 - Mock only boundaries the project does not own, such as platform APIs, timers, randomness, or missing peer dependencies. Control time with fake timers instead of waiting in real time or measuring elapsed time.
 - Make each test prove its name with an outcome a user can observe. Synchronize on that observable state, not on intermediate internal callbacks.
-- Run every applicable case in every mode and runtime of the test matrix, in the shared suite. Prefer cases that run in all modes without distinction. When a case genuinely applies to one mode or runtime only, wrap it in a `type`/`platform` condition with a comment stating why, instead of a separate file or an optional option.
+- Run every applicable case in every mode and runtime of the test matrix, in the shared suite. Prefer cases that run in all modes without distinction. When a case genuinely applies to one mode or runtime only, wrap it in an `if` on the `type`/`platform` condition with a comment stating why, instead of a separate file or an optional option. Do not use `it.runIf`, `describe.runIf`, or `skipIf`, which report inapplicable cases as skipped.
 - When adding tests for a module with a close analogue, mirror the analogue's test file split, shared test modules, describe blocks, and test-case naming. Keep equivalent behaviors easy to compare across modules.
 - Cover each scenario once, at one level, in the file where the closest analogue keeps it. Keep one behavior per test and one top-level `describe` per file. Use `it.each` instead of branching inside a test.
 - Search existing shared test utilities before writing a helper. Add a helper only when it matches an existing test pattern or removes meaningful repeated setup without hiding the behavior under test. Place helpers used by several modules in a shared location, not inside one module's tests.
