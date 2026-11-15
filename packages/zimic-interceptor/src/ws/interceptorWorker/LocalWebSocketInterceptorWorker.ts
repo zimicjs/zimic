@@ -21,7 +21,7 @@ import WebSocketInterceptorImplementation, {
 import {
   UNSUPPORTED_LOCAL_TRANSPORT_CLOSE_CODE,
   UNSUPPORTED_LOCAL_TRANSPORT_CLOSE_REASON,
-} from '../socketIO/constants';
+} from '../socket.io/constants';
 import { canInterceptorHoldConnection } from '../utils/protocol';
 import type { MSWWebSocketHandler, MSWWorker } from './types/msw';
 import { LocalWebSocketInterceptorWorkerOptions } from './types/options';

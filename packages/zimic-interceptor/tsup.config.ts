@@ -31,7 +31,7 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
     index: 'src/index.ts',
     http: 'src/http/index.ts',
     'experimental/ws': 'src/ws/index.ts',
-    'experimental/socket.io': 'src/ws/socketIO/index.ts',
+    'experimental/socket.io': 'src/ws/socket.io/index.ts',
   },
   external: [...sharedConfig.external, 'fs', 'util', 'buffer', 'crypto'],
 }));
