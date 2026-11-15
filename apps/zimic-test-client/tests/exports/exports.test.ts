@@ -76,14 +76,17 @@ import {
 } from '@zimic/http';
 import {
   createSocketIOProtocol,
-  GlobalWebSocketTransport,
   type SocketIOSchema,
   type SocketIOEventMessage,
   type SocketIOAckMessage,
   type SocketIOMessage,
   type SocketIOParser,
-  type SocketIOPacket,
+  type SocketIOPollingSchema,
   type SocketIOProtocolOptions,
+  SharedSocketIOProtocolError,
+  DuplicateSocketIONamespaceError,
+  MismatchedSocketIOProtocolOptionsError,
+  InvalidSocketIOPollingInterceptorError,
 } from '@zimic/interceptor/experimental/socket.io';
 import {
   createWebSocketInterceptor,
@@ -508,16 +511,25 @@ describe('Exports', () => {
       expectTypeOf(createSocketIOProtocol).not.toBeAny();
       expect(typeof createSocketIOProtocol).toBe('function');
 
-      expectTypeOf(GlobalWebSocketTransport).not.toBeAny();
-      expect(typeof GlobalWebSocketTransport).toBe('function');
-
       expectTypeOf<SocketIOSchema>().not.toBeAny();
       expectTypeOf<SocketIOEventMessage>().not.toBeAny();
       expectTypeOf<SocketIOAckMessage>().not.toBeAny();
       expectTypeOf<SocketIOMessage>().not.toBeAny();
       expectTypeOf<SocketIOParser>().not.toBeAny();
-      expectTypeOf<SocketIOPacket>().not.toBeAny();
+      expectTypeOf<SocketIOPollingSchema>().not.toBeAny();
       expectTypeOf<SocketIOProtocolOptions>().not.toBeAny();
+
+      expectTypeOf<SharedSocketIOProtocolError>().not.toBeAny();
+      expect(typeof SharedSocketIOProtocolError).toBe('function');
+
+      expectTypeOf<DuplicateSocketIONamespaceError>().not.toBeAny();
+      expect(typeof DuplicateSocketIONamespaceError).toBe('function');
+
+      expectTypeOf<MismatchedSocketIOProtocolOptionsError>().not.toBeAny();
+      expect(typeof MismatchedSocketIOProtocolOptionsError).toBe('function');
+
+      expectTypeOf<InvalidSocketIOPollingInterceptorError>().not.toBeAny();
+      expect(typeof InvalidSocketIOPollingInterceptorError).toBe('function');
     });
 
     it('exports all expected resources from @zimic/interceptor/experimental/ws', () => {
@@ -543,7 +555,7 @@ describe('Exports', () => {
       expectTypeOf<WebSocketInterceptorClient<never>>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorServer<never>>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorServerSendOptions<never>>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorProtocol>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorProtocol<never>>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorProtocolClient>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorProtocolFrame>().not.toBeAny();
 
