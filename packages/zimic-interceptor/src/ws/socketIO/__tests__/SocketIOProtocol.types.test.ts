@@ -6,8 +6,10 @@ import { describe, expectTypeOf, it } from 'vitest';
 import { createHttpInterceptor } from '@/http';
 import { createWebSocketInterceptor } from '@/ws/interceptor/factory';
 
-import { createSocketIOProtocol } from '../createSocketIOProtocol';
-import type { SocketIOParser, SocketIOPollingSchema, SocketIOSchema } from '../types';
+import { createSocketIOProtocol } from '../factory';
+import type { SocketIOParser } from '../types/options';
+import type { SocketIOPollingSchema } from '../types/polling';
+import type { SocketIOSchema } from '../types/schema';
 
 /* eslint-disable @typescript-eslint/naming-convention -- Socket.IO event names commonly use colons. */
 interface ServerToClientEvents {

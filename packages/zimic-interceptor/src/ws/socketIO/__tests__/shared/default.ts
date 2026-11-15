@@ -29,18 +29,15 @@ import type {
   RemoteWebSocketInterceptor,
   WebSocketInterceptor,
 } from '../../../interceptor/types/public';
-import { createSocketIOProtocol } from '../../createSocketIOProtocol';
 import DuplicateSocketIONamespaceError from '../../errors/DuplicateSocketIONamespaceError';
 import InvalidSocketIOPollingInterceptorError from '../../errors/InvalidSocketIOPollingInterceptorError';
 import MismatchedSocketIOProtocolOptionsError from '../../errors/MismatchedSocketIOProtocolOptionsError';
 import SharedSocketIOProtocolError from '../../errors/SharedSocketIOProtocolError';
-import type {
-  SocketIOMessage,
-  SocketIOParser,
-  SocketIOPollingSchema,
-  SocketIOProtocolOptions,
-  SocketIOSchema,
-} from '../../types';
+import { createSocketIOProtocol } from '../../factory';
+import type { SocketIOMessage } from '../../types/messages';
+import type { SocketIOParser, SocketIOProtocolOptions } from '../../types/options';
+import type { SocketIOPollingSchema } from '../../types/polling';
+import type { SocketIOSchema } from '../../types/schema';
 
 /* eslint-disable @typescript-eslint/naming-convention -- Socket.IO event names commonly use colons. */
 interface ServerToClientEvents {

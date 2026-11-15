@@ -3,7 +3,6 @@ import * as defaultParser from 'socket.io-parser';
 import type { Packet } from 'socket.io-parser';
 
 import type {
-  WebSocketInterceptorProtocol,
   WebSocketInterceptorProtocolFrame,
   WebSocketInterceptorProtocolRawConnection,
 } from '../interceptor/types/protocol';
@@ -17,11 +16,11 @@ import {
   getOrCreateSocketIOEngine,
   SocketIOEngine,
 } from './SocketIOEngine';
-import type { SocketIOMessage, SocketIOParser, SocketIOPollingInterceptor, SocketIOProtocolOptions } from './types';
+import type { SocketIOMessage } from './types/messages';
+import type { SocketIOParser } from './types/options';
+import type { SocketIOPollingInterceptor } from './types/polling';
 
 const { PacketType } = defaultParser;
-
-const DEFAULT_NAMESPACE = '/';
 
 class SocketIOProtocol<Message extends SocketIOMessage> implements InternalWebSocketInterceptorProtocol<Message> {
   readonly [INTERNAL_PROTOCOL_BRAND] = true;
@@ -135,22 +134,4 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements InternalWebSo
   }
 }
 
-export type { SocketIOProtocol };
-
-/**
- * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
- *
- * Creates a protocol to mock Socket.IO servers with WebSocket interceptor handlers.
- *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#createsocketioprotocol `createSocketIOProtocol` API reference}
- * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io Mocking Socket.IO servers}
- */
-export function createSocketIOProtocol<Message extends SocketIOMessage = SocketIOMessage>(
-  options: SocketIOProtocolOptions = {},
-): WebSocketInterceptorProtocol<Message> {
-  return new SocketIOProtocol<Message>({
-    namespace: options.namespace ?? DEFAULT_NAMESPACE,
-    polling: options.polling,
-    parser: options.parser ?? defaultParser,
-  });
-}
+export default SocketIOProtocol;

@@ -1,4 +1,4 @@
-import type { SocketIOProtocolOptions } from '../types';
+import type { SocketIOProtocolOptions } from '../types/options';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.

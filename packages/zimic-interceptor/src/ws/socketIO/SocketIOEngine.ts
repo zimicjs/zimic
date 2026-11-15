@@ -3,7 +3,6 @@ import { decodePacket, protocol as engineIOProtocol } from 'engine.io-parser';
 import * as defaultParser from 'socket.io-parser';
 import type { Packet } from 'socket.io-parser';
 
-import { convertArrayBufferToBase64 } from '@/utils/data';
 import { isServerSide } from '@/utils/environment';
 import { logger } from '@/utils/logging';
 import { isWebSocketBinaryMessageData, normalizeBufferSource } from '@/ws/utils/messageData';
@@ -15,18 +14,27 @@ import type {
 } from '../interceptor/types/protocol';
 import type { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
 import type { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
-import { UNKNOWN_SESSION_CLOSE_CODE, UNSUPPORTED_VERSION_CLOSE_CODE } from './constants';
-import type { SocketIOProtocol } from './createSocketIOProtocol';
+import {
+  CLOSE_PACKET,
+  ENGINE_IO_MESSAGE_PACKET_PREFIX,
+  NOOP_PACKET,
+  OPEN_PACKET_PREFIX,
+  PING_PACKET,
+  POLLING_PACKET_SEPARATOR,
+  UNKNOWN_SESSION_CLOSE_CODE,
+  UNSUPPORTED_VERSION_CLOSE_CODE,
+  UPGRADE_PACKET,
+  UPGRADE_PROBE_PACKET,
+  UPGRADE_PROBE_REPLY_PACKET,
+} from './constants';
 import DuplicateSocketIONamespaceError from './errors/DuplicateSocketIONamespaceError';
 import InvalidSocketIOPollingInterceptorError from './errors/InvalidSocketIOPollingInterceptorError';
 import MismatchedSocketIOProtocolOptionsError from './errors/MismatchedSocketIOProtocolOptionsError';
-import type {
-  SocketIOMessage,
-  SocketIOParser,
-  SocketIOPollingInterceptor,
-  SocketIOPollingRequest,
-  SocketIOPollingResponse,
-} from './types';
+import SocketIOPollingTransport from './SocketIOPollingTransport';
+import type SocketIOProtocol from './SocketIOProtocol';
+import type { SocketIOMessage } from './types/messages';
+import type { SocketIOParser } from './types/options';
+import type { SocketIOPollingInterceptor, SocketIOPollingRequest, SocketIOPollingResponse } from './types/polling';
 
 const { PacketType } = defaultParser;
 
@@ -52,17 +60,6 @@ const MAX_PAYLOAD_BYTES = 1000000;
 const PING_INTERVAL = 25000;
 const PING_TIMEOUT = 20000;
 
-const POLLING_PACKET_SEPARATOR = '\x1e';
-
-const OPEN_PACKET_PREFIX = '0';
-const CLOSE_PACKET = '1';
-const PING_PACKET = '2';
-const ENGINE_IO_MESSAGE_PACKET_PREFIX = '4';
-const NOOP_PACKET = '6';
-const UPGRADE_PROBE_PACKET = '2probe';
-const UPGRADE_PROBE_REPLY_PACKET = '3probe';
-const UPGRADE_PACKET = '5';
-
 function ignoreConnectionEvent() {
   return undefined;
 }
@@ -71,52 +68,6 @@ const IGNORED_CONNECTION_CLAIM: WebSocketInterceptorProtocolConnectionClaim = {
   onFrame: ignoreConnectionEvent,
   onClose: ignoreConnectionEvent,
 };
-
-class SocketIOPollingTransport implements WebSocketInterceptorProtocolRawConnection {
-  private queuedFrames: WebSocketInterceptorProtocolFrame[] = [];
-  private resolvePendingPoll?: (body: string) => void;
-
-  get hasPendingPoll() {
-    return this.resolvePendingPoll !== undefined;
-  }
-
-  private drainBody() {
-    return this.drainFrames()
-      .map((frame) => (typeof frame === 'string' ? frame : `b${convertArrayBufferToBase64(frame)}`))
-      .join(POLLING_PACKET_SEPARATOR);
-  }
-
-  send(frame: WebSocketInterceptorProtocolFrame) {
-    this.queuedFrames.push(frame);
-
-    if (this.resolvePendingPoll) {
-      this.resolvePendingPoll(this.drainBody());
-      this.resolvePendingPoll = undefined;
-    }
-  }
-
-  // The close packet completes the pending poll and stops the client from polling again.
-  close() {
-    this.send(CLOSE_PACKET);
-  }
-
-  // Long-poll requests stay open until a packet is sent to the session, as a Socket.IO server does.
-  poll() {
-    if (this.queuedFrames.length > 0) {
-      return Promise.resolve(this.drainBody());
-    }
-
-    return new Promise<string>((resolve) => {
-      this.resolvePendingPoll = resolve;
-    });
-  }
-
-  drainFrames() {
-    const frames = this.queuedFrames;
-    this.queuedFrames = [];
-    return frames;
-  }
-}
 
 type SocketIONamespaceConnection =
   { state: 'pending'; abort: () => void } | { state: 'open'; client: InternalWebSocketInterceptorClient };
