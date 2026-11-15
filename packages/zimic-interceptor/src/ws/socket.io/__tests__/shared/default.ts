@@ -1122,6 +1122,44 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
       });
     });
 
+    it('should not intercept events that the parser decodes without an array of arguments', async () => {
+      // Decodes `bare` events without arguments, which the default parser never does.
+      class BareEventDecoder {
+        private decoder = new defaultParser.Decoder();
+
+        add(chunk: unknown) {
+          this.decoder.add(chunk);
+        }
+
+        on(event: 'decoded', listener: (packet: Packet) => void) {
+          return this.decoder.on(event, (packet) => {
+            const isBareEvent = Array.isArray(packet.data) && packet.data[0] === 'bare';
+            listener(isBareEvent ? { ...packet, data: null } : packet);
+          });
+        }
+      }
+
+      const parser: SocketIOParser = { Encoder: defaultParser.Encoder, Decoder: BareEventDecoder };
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions({ parser }), async (interceptor) => {
+          const handler = await interceptor.message();
+
+          await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
+            await waitForSocketConnection(socket);
+
+            socket.emit('bare');
+            socket.emit('event', 'valid');
+
+            await waitFor(() => expect(handler.messages).toHaveLength(1));
+            expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'valid' });
+
+            expect(console.error).not.toHaveBeenCalled();
+          });
+        });
+      });
+    });
+
     it('should not intercept acks sent by clients', async () => {
       await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
         const handler = await interceptor.message();

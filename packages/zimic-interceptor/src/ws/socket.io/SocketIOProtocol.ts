@@ -87,16 +87,20 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements InternalWebSo
     return this.engine?.claimConnection(url, connection);
   }
 
-  // Parsers validate that event packets carry an array of arguments, but `socket.io-parser` accepts event names that
-  // are not strings, which handlers do not expect.
+  // Parsers are user-provided and `socket.io-parser` accepts event names that are not strings, so the arguments are
+  // validated before reaching handlers.
   receiveEventPacket(client: InternalWebSocketInterceptorClient, packet: Packet) {
-    const [type, ...socketArguments] = packet.data as unknown[];
+    const socketArguments: unknown = packet.data;
+
+    if (!Array.isArray(socketArguments)) {
+      return;
+    }
+
+    const [type, data, ...args]: unknown[] = socketArguments;
 
     if (typeof type !== 'string') {
       return;
     }
-
-    const [data, ...args] = socketArguments;
 
     this.interceptor.handleProtocolMessage(client, {
       type,
