@@ -57,7 +57,7 @@ export interface WebSocketInterceptorProtocolRawConnection {
 
 /** Receives the events of a connection claimed by a protocol, which has no client of its own. */
 export interface WebSocketInterceptorProtocolConnectionClaim {
-  onFrame: (frame: string | Blob | BufferSource) => void;
+  onFrame: (frame: WebSocketInterceptorProtocolFrame) => void;
   onClose: () => void;
 }
 

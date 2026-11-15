@@ -178,12 +178,9 @@ export interface SocketIOProtocolOptions {
    */
   polling?: boolean;
 
-  /** The parser used by the client, with the same shape as the `parser` option of `socket.io-client`. */
+  /**
+   * The parser used by the client, with the same shape as the `parser` option of `socket.io-client`. The protocols of
+   * the namespaces on one base URL must use the same parser.
+   */
   parser?: SocketIOParser;
-
-  /** The interval between pings sent to clients, in milliseconds. Defaults to 25000. */
-  pingInterval?: number;
-
-  /** The time clients wait for a ping beyond `pingInterval`, in milliseconds. Defaults to 20000. */
-  pingTimeout?: number;
 }

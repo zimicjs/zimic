@@ -2,11 +2,14 @@ import type { HttpSchema } from '@zimic/http';
 // Imported through the package name so that bundling keeps the HTTP code in its own entry point. Sharing it in a chunk
 // breaks prebundlers that cannot resolve the dependencies of the chunk, such as Vite with strict node_modules.
 import { createHttpInterceptor, type LocalHttpInterceptor, type RemoteHttpInterceptor } from '@zimic/interceptor/http';
-import * as socketIOParser from 'socket.io-parser';
+import { ValidationError } from '@zimic/utils/validation';
+import { decodePacket, protocol as engineIOProtocol } from 'engine.io-parser';
+import * as defaultParser from 'socket.io-parser';
 
 import { convertArrayBufferToBase64 } from '@/utils/data';
+import { isServerSide } from '@/utils/environment';
 import { logger } from '@/utils/logging';
-import { normalizeBufferSource } from '@/ws/utils/messageData';
+import { isWebSocketBinaryMessageData, normalizeBufferSource } from '@/ws/utils/messageData';
 
 import type {
   WebSocketInterceptorProtocolConnectionClaim,
@@ -16,27 +19,41 @@ import type {
 import type { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
 import type { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
 import { UNKNOWN_SESSION_CLOSE_CODE, UNSUPPORTED_VERSION_CLOSE_CODE } from './constants';
-import type { SocketIOPacket } from './types';
+import type { SocketIOProtocol } from './createSocketIOProtocol';
+import DuplicateSocketIONamespaceError from './errors/DuplicateSocketIONamespaceError';
+import MismatchedSocketIOProtocolOptionsError from './errors/MismatchedSocketIOProtocolOptionsError';
+import type { SocketIOMessage, SocketIOPacket, SocketIOParser } from './types';
 
-const { PacketType } = socketIOParser;
+const { PacketType } = defaultParser;
 
-const SUPPORTED_ENGINE_IO_VERSION = '4';
+const SUPPORTED_ENGINE_IO_VERSION = String(engineIOProtocol);
 
-// The message of the error Socket.IO servers send when a client joins a namespace they do not serve.
+// The errors of Engine.IO servers, which clients receive in polling responses and close reasons.
+const ENGINE_IO_ERRORS = {
+  UNKNOWN_SESSION_ID: { code: 1, message: 'Session ID unknown' },
+  BAD_REQUEST: { code: 3, message: 'Bad request' },
+  FORBIDDEN: { code: 4, message: 'Forbidden' },
+  UNSUPPORTED_PROTOCOL_VERSION: { code: 5 },
+} as const;
+
 const INVALID_NAMESPACE_MESSAGE = 'Invalid namespace';
 
-// Socket.IO servers send the message of the error a middleware rejects a namespace connection with, so the client
-// receives it in `connect_error`. Connection handlers reject without an error, so this message names the rejection.
+// Connection handlers reject without an error, so this message names the rejection in the client's `connect_error`.
 const REJECTED_NAMESPACE_CONNECTION_MESSAGE = 'Connection rejected';
 
 // Clients use this value only to split the polling batches they send. It matches the limit of Socket.IO servers.
 const MAX_PAYLOAD_BYTES = 1000000;
 
-// Polling bodies batch packets separated by the ASCII record separator.
+// The defaults of Socket.IO servers. Clients adopt them from the open packet.
+const PING_INTERVAL = 25000;
+const PING_TIMEOUT = 20000;
+
 const POLLING_PACKET_SEPARATOR = '\x1e';
 
+const OPEN_PACKET_PREFIX = '0';
 const CLOSE_PACKET = '1';
 const PING_PACKET = '2';
+const ENGINE_IO_MESSAGE_PACKET_PREFIX = '4';
 const NOOP_PACKET = '6';
 const UPGRADE_PROBE_PACKET = '2probe';
 const UPGRADE_PROBE_REPLY_PACKET = '3probe';
@@ -45,6 +62,11 @@ const UPGRADE_PACKET = '5';
 function ignoreConnectionEvent() {
   return undefined;
 }
+
+const IGNORED_CONNECTION_CLAIM: WebSocketInterceptorProtocolConnectionClaim = {
+  onFrame: ignoreConnectionEvent,
+  onClose: ignoreConnectionEvent,
+};
 
 interface SocketIOPollingErrorBody {
   code: number;
@@ -62,25 +84,24 @@ type SocketIOPollingHttpSchema = HttpSchema<{
       };
     };
     POST: {
-      request: { searchParams: { EIO?: string; transport?: string; sid?: string }; body: string };
+      request: { searchParams: { EIO?: string; transport?: string; sid?: string }; body?: string };
       response: { 200: { body: string }; 400: { body: SocketIOPollingErrorBody } };
     };
   };
 }>;
 
-type SocketIOTransport = WebSocketInterceptorProtocolRawConnection;
-
-class SocketIOPollingTransport implements SocketIOTransport {
+class SocketIOPollingTransport implements WebSocketInterceptorProtocolRawConnection {
   private queuedFrames: WebSocketInterceptorProtocolFrame[] = [];
   private resolvePendingPoll?: (body: string) => void;
 
+  get hasPendingPoll() {
+    return this.resolvePendingPoll !== undefined;
+  }
+
   private drainBody() {
-    const body = this.queuedFrames
+    return this.drainFrames()
       .map((frame) => (typeof frame === 'string' ? frame : `b${convertArrayBufferToBase64(frame)}`))
       .join(POLLING_PACKET_SEPARATOR);
-
-    this.queuedFrames = [];
-    return body;
   }
 
   send(frame: WebSocketInterceptorProtocolFrame) {
@@ -115,72 +136,86 @@ class SocketIOPollingTransport implements SocketIOTransport {
   }
 }
 
-/** The protocol of one namespace, which decodes the frames of every session and encodes the packets of its namespace. */
-export interface SocketIOEngineMember {
-  readonly interceptor: AnyWebSocketInterceptorImplementation;
-  readonly namespace: string;
-  receiveFrame: (session: SocketIOEngineSession, frame: WebSocketInterceptorProtocolFrame) => void;
-  sendSocketPacket: (session: SocketIOEngineSession, packet: SocketIOPacket) => void;
-}
+type SocketIONamespaceConnection =
+  { state: 'pending'; abort: () => void } | { state: 'open'; client: InternalWebSocketInterceptorClient };
 
 /** An Engine.IO connection, which carries the namespaces its client joined. */
-export interface SocketIOEngineSession {
+interface SocketIOEngineSession {
   id: string;
   url: string;
-  transport: SocketIOTransport;
-  // The client of each namespace the session joined.
-  clients: Map<SocketIOEngineMember, InternalWebSocketInterceptorClient>;
-  // The namespace connections still decided by the connection handlers of their interceptors.
-  pendingConnections: Map<SocketIOEngineMember, AbortController>;
-  // Reading a `Blob` frame takes longer than reading a later text frame, and decoders keep state between frames, as
-  // with binary attachments, so frames are read in order.
-  frameReadings: Promise<void>;
+  transport: WebSocketInterceptorProtocolRawConnection;
+  decoder: InstanceType<SocketIOParser['Decoder']>;
+  connections: Map<string, SocketIONamespaceConnection>;
   pingTimer: ReturnType<typeof setInterval>;
 }
 
 export interface SocketIOEngineOptions {
   polling: boolean;
-  pingInterval: number;
-  pingTimeout: number;
+  parser: SocketIOParser;
 }
 
-function createUnsupportedEngineIOVersionMessage(version: string | null) {
-  return `Engine.IO protocol version ${version ?? 'unknown'} is not supported. Use version ${SUPPORTED_ENGINE_IO_VERSION}.`;
+type AnySocketIOProtocol = SocketIOProtocol<SocketIOMessage>;
+
+export function encodeSocketIOPacket(
+  encoder: InstanceType<SocketIOParser['Encoder']>,
+  packet: SocketIOPacket,
+): WebSocketInterceptorProtocolFrame[] {
+  return encoder.encode(packet).map((encodedChunk) => {
+    if (typeof encodedChunk === 'string') {
+      return `${ENGINE_IO_MESSAGE_PACKET_PREFIX}${encodedChunk}`;
+    }
+
+    if (!isWebSocketBinaryMessageData(encodedChunk) || encodedChunk instanceof Blob) {
+      throw new ValidationError('Socket.IO binary attachments sent by interceptors must be ArrayBuffers or views.');
+    }
+
+    return normalizeBufferSource(encodedChunk);
+  });
+}
+
+function warnOfUnsupportedEngineIOVersion(version: string | null) {
+  if (version === SUPPORTED_ENGINE_IO_VERSION) {
+    return undefined;
+  }
+
+  const message = `Engine.IO protocol version ${version ?? 'unknown'} is not supported. Use version ${SUPPORTED_ENGINE_IO_VERSION}.`;
+  logger.warn(message);
+  return message;
 }
 
 /**
- * The Engine.IO server of a base URL. Socket.IO multiplexes namespaces over one connection and one polling session, so
- * the interceptors of each namespace share one engine, which sends each open packet and ping once per connection. As a
- * Socket.IO server, it opens a client in the interceptor of a namespace only when the session joins that namespace.
+ * The Engine.IO server of a base URL, shared by the interceptors of its namespaces because Socket.IO multiplexes them
+ * over one connection.
  */
 class SocketIOEngine {
-  private members = new Set<SocketIOEngineMember>();
+  private protocols = new Map<string, AnySocketIOProtocol>();
   private sessions = new Map<string, SocketIOEngineSession>();
+  private encoder: InstanceType<SocketIOParser['Encoder']>;
   private httpInterceptor:
     LocalHttpInterceptor<SocketIOPollingHttpSchema> | RemoteHttpInterceptor<SocketIOPollingHttpSchema>;
   private httpInterceptorStart: Promise<void>;
-  private options: SocketIOEngineOptions;
+  private baseURL: string;
 
   constructor(
-    private key: string,
     interceptor: AnyWebSocketInterceptorImplementation,
-    options: SocketIOEngineOptions,
+    private options: SocketIOEngineOptions,
   ) {
-    this.options = options;
+    this.baseURL = interceptor.baseURLAsString;
+    this.encoder = new options.parser.Encoder();
 
     // Scoped to the Socket.IO path, because HTTP interceptors decide the unhandled requests under their base URL.
-    const baseURL = `${interceptor.baseURLAsString.replace(/^ws/, 'http').replace(/\/$/, '')}/socket.io`;
+    const pollingBaseURL = `${this.baseURL.replace(/^ws/, 'http').replace(/\/$/, '')}/socket.io`;
 
     this.httpInterceptor =
       interceptor.type === 'local'
         ? createHttpInterceptor<SocketIOPollingHttpSchema>({
             type: 'local',
-            baseURL,
+            baseURL: pollingBaseURL,
             requestSaving: { enabled: false },
           })
         : createHttpInterceptor<SocketIOPollingHttpSchema>({
             type: 'remote',
-            baseURL,
+            baseURL: pollingBaseURL,
             auth: interceptor.auth,
             requestSaving: { enabled: false },
           });
@@ -192,8 +227,8 @@ class SocketIOEngine {
     await this.httpInterceptor.start();
 
     if (this.options.polling) {
-      await this.httpInterceptor.get('/').respond((request) => this.handlePoll(request));
-      await this.httpInterceptor.post('/').respond((request) => this.handlePollingPacket(request));
+      await this.httpInterceptor.get('/').respond((request) => this.respondToPoll(request));
+      await this.httpInterceptor.post('/').respond((request) => this.receivePollingPayload(request));
     } else {
       await this.httpInterceptor
         .get('/')
@@ -215,7 +250,7 @@ class SocketIOEngine {
     return { status: 400, body: { code: 0, message: 'Transport unknown' } } as const;
   }
 
-  private async handlePoll(request: { url: string; searchParams: { get: (name: 'sid' | 'EIO') => string | null } }) {
+  private async respondToPoll(request: { url: string; searchParams: { get: (name: 'sid' | 'EIO') => string | null } }) {
     const sessionId = request.searchParams.get('sid');
 
     if (sessionId === null) {
@@ -230,91 +265,137 @@ class SocketIOEngine {
     }
 
     /* istanbul ignore if -- @preserve
-     * Clients pause polling before finishing an upgrade, so only a poll overlapping the upgrade reaches this. It has
-     * nothing left to deliver, because the session moved to the WebSocket. */
+     * Clients pause polling before finishing an upgrade, so only a poll overlapping the upgrade reaches this. */
     if (!(session.transport instanceof SocketIOPollingTransport)) {
       return { status: 200, body: NOOP_PACKET } as const;
+    }
+
+    if (session.transport.hasPendingPoll) {
+      return { status: 400, body: ENGINE_IO_ERRORS.BAD_REQUEST } as const;
     }
 
     return { status: 200, body: await session.transport.poll() } as const;
   }
 
   private openPollingSession(request: { url: string; searchParams: { get: (name: 'sid' | 'EIO') => string | null } }) {
-    const version = request.searchParams.get('EIO');
+    const unsupportedVersionMessage = warnOfUnsupportedEngineIOVersion(request.searchParams.get('EIO'));
 
-    if (version !== SUPPORTED_ENGINE_IO_VERSION) {
-      const message = createUnsupportedEngineIOVersionMessage(version);
-      logger.warn(message);
-      return { status: 400, body: { code: 5, message } } as const;
+    if (unsupportedVersionMessage !== undefined) {
+      const { code } = ENGINE_IO_ERRORS.UNSUPPORTED_PROTOCOL_VERSION;
+      return { status: 400, body: { code, message: unsupportedVersionMessage } } as const;
     }
 
-    // Refused as an Engine.IO server refuses a request it does not allow.
     if (this.isStopping) {
-      return { status: 403, body: { code: 4, message: 'Forbidden' } } as const;
+      return { status: 403, body: ENGINE_IO_ERRORS.FORBIDDEN } as const;
     }
 
     const session = this.createSession(request.url.replace(/^http/, 'ws'), new SocketIOPollingTransport());
     return { status: 200, body: this.createOpenPacket(session.id, ['websocket']) } as const;
   }
 
-  private handlePollingPacket(request: { body: string; searchParams: { get: (name: 'sid') => string | null } }) {
+  private receivePollingPayload(request: {
+    body: string | null;
+    searchParams: { get: (name: 'sid') => string | null };
+  }) {
     const sessionId = request.searchParams.get('sid');
     const session = sessionId === null ? undefined : this.sessions.get(sessionId);
+    const packets = typeof request.body === 'string' ? request.body.split(POLLING_PACKET_SEPARATOR) : [];
 
     if (session) {
-      for (const packet of request.body.split(POLLING_PACKET_SEPARATOR)) {
+      for (const packet of packets) {
         if (packet === CLOSE_PACKET) {
           this.closeSession(session);
-        } else {
-          this.dispatchFrame(session, packet);
+          break;
         }
+
+        this.receiveFrame(session, packet);
       }
     }
 
     return { status: 200, body: 'ok' } as const;
   }
 
-  private dispatchFrame(session: SocketIOEngineSession, frame: string | Blob | BufferSource) {
-    session.frameReadings = session.frameReadings.then(async () => {
-      const normalizedFrame =
-        typeof frame === 'string' || frame instanceof ArrayBuffer
-          ? frame
-          : frame instanceof Blob
-            ? await frame.arrayBuffer()
-            : normalizeBufferSource(frame);
+  private receiveFrame(session: SocketIOEngineSession, frame: WebSocketInterceptorProtocolFrame) {
+    try {
+      const packet = decodePacket(frame, 'arraybuffer');
 
-      // A session closed while the frame was read no longer opens clients.
-      if (this.sessions.get(session.id) !== session) {
-        return;
+      if (packet.type === 'message') {
+        session.decoder.add(this.convertChunkForParser(packet.data));
       }
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
-      for (const member of this.members) {
-        try {
-          member.receiveFrame(session, normalizedFrame);
-        } catch (error) {
-          console.error(error);
-        }
+  // On Node.js, custom parsers such as `socket.io-msgpack-parser` read binary chunks as buffers, as a Socket.IO server
+  // gives them. The default parser keeps array buffers, which is how handlers receive binary attachments.
+  private convertChunkForParser(chunk: unknown) {
+    const needsNodeBuffer = this.options.parser !== defaultParser && isServerSide() && chunk instanceof ArrayBuffer;
+    return needsNodeBuffer ? Buffer.from(chunk) : chunk;
+  }
+
+  private receiveSocketPacket(session: SocketIOEngineSession, packet: SocketIOPacket) {
+    const protocol = this.protocols.get(packet.nsp);
+
+    if (!protocol) {
+      if (packet.type === PacketType.CONNECT) {
+        this.sendSocketPacket(session, {
+          type: PacketType.CONNECT_ERROR,
+          nsp: packet.nsp,
+          data: { message: INVALID_NAMESPACE_MESSAGE },
+        });
       }
-    });
+      return;
+    }
+
+    if (packet.type === PacketType.CONNECT) {
+      this.connectNamespace(protocol, session);
+      return;
+    }
+
+    const connection = session.connections.get(packet.nsp);
+
+    if (connection?.state !== 'open') {
+      return;
+    }
+
+    if (packet.type === PacketType.DISCONNECT) {
+      this.releaseNamespace(protocol, session);
+    } else if (packet.type === PacketType.EVENT || packet.type === PacketType.BINARY_EVENT) {
+      protocol.receiveEventPacket(connection.client, packet);
+    }
+  }
+
+  private sendSocketPacket(session: SocketIOEngineSession, packet: SocketIOPacket) {
+    for (const frame of encodeSocketIOPacket(this.encoder, packet)) {
+      session.transport.send(frame);
+    }
   }
 
   private createOpenPacket(sessionId: string, upgrades: string[]) {
-    const { pingInterval, pingTimeout } = this.options;
-    return `0${JSON.stringify({ sid: sessionId, upgrades, pingInterval, pingTimeout, maxPayload: MAX_PAYLOAD_BYTES })}`;
+    const openData = {
+      sid: sessionId,
+      upgrades,
+      pingInterval: PING_INTERVAL,
+      pingTimeout: PING_TIMEOUT,
+      maxPayload: MAX_PAYLOAD_BYTES,
+    };
+
+    return `${OPEN_PACKET_PREFIX}${JSON.stringify(openData)}`;
   }
 
-  // Clients close the connection if the server does not ping them within `pingInterval + pingTimeout`. Unresponsive
-  // clients are not detected: their sessions stay open until their namespaces are cleared or stopped.
-  private createSession(url: string, transport: SocketIOTransport) {
+  // Unresponsive clients are not detected, so their sessions stay open until their namespaces are cleared or stopped.
+  private createSession(url: string, transport: WebSocketInterceptorProtocolRawConnection) {
     const session: SocketIOEngineSession = {
       id: crypto.randomUUID(),
       url,
       transport,
-      clients: new Map(),
-      pendingConnections: new Map(),
-      frameReadings: Promise.resolve(),
-      pingTimer: setInterval(() => session.transport.send(PING_PACKET), this.options.pingInterval),
+      decoder: new this.options.parser.Decoder(),
+      connections: new Map(),
+      pingTimer: setInterval(() => session.transport.send(PING_PACKET), PING_INTERVAL),
     };
+
+    session.decoder.on('decoded', (packet) => this.receiveSocketPacket(session, packet));
 
     this.sessions.set(session.id, session);
     return session;
@@ -328,157 +409,148 @@ class SocketIOEngine {
     clearInterval(session.pingTimer);
     session.transport.close();
 
-    for (const pendingConnection of session.pendingConnections.values()) {
-      pendingConnection.abort();
-    }
-    session.pendingConnections.clear();
-
-    for (const [member, client] of session.clients) {
-      member.interceptor.removeClient(client);
+    for (const protocol of this.protocols.values()) {
+      this.releaseNamespace(protocol, session);
     }
   }
 
-  // The engine stops once its last member stops. Sessions opened while it stops would outlive it, because nothing
-  // closes them.
-  private get isStopping() {
-    return this.members.size === 0;
+  // Sessions opened while the engine stops would outlive it, because nothing closes them.
+  get isStopping() {
+    return this.protocols.size === 0;
   }
 
-  start(member: SocketIOEngineMember) {
-    this.members.add(member);
+  start(protocol: AnySocketIOProtocol) {
+    if (this.protocols.has(protocol.namespace)) {
+      throw new DuplicateSocketIONamespaceError(protocol.namespace, this.baseURL);
+    }
+
+    if (protocol.parser !== this.options.parser) {
+      throw new MismatchedSocketIOProtocolOptionsError('parser', this.baseURL);
+    }
+
+    this.protocols.set(protocol.namespace, protocol);
     return this.httpInterceptorStart;
   }
 
-  async stop(member: SocketIOEngineMember) {
-    this.clear(member);
-    this.members.delete(member);
+  async stop(protocol: AnySocketIOProtocol) {
+    this.clear(protocol);
+    this.protocols.delete(protocol.namespace);
 
-    if (this.members.size === 0) {
-      engines.delete(this.key); // eslint-disable-line @typescript-eslint/no-use-before-define
-
-      // Sessions that joined no namespace are left only to the last member.
-      for (const session of Array.from(this.sessions.values())) {
-        this.closeSession(session);
-      }
-
-      await Promise.allSettled([this.httpInterceptorStart]);
-      await this.httpInterceptor.stop();
+    if (!this.isStopping) {
+      return;
     }
+
+    // Sessions that joined no namespace are left only to the last protocol.
+    for (const session of Array.from(this.sessions.values())) {
+      this.closeSession(session);
+    }
+
+    await Promise.allSettled([this.httpInterceptorStart]);
+    await this.httpInterceptor.stop();
   }
 
-  // Clearing or stopping an interceptor disconnects its namespace and lets go of the namespace connections it is still
-  // deciding. A session stays open until the last namespace using it lets it go.
-  clear(member: SocketIOEngineMember) {
+  // A session stays open until the last namespace using it lets it go.
+  clear(protocol: AnySocketIOProtocol) {
     for (const session of Array.from(this.sessions.values())) {
-      const pendingConnection = session.pendingConnections.get(member);
-      const wasUsedByMember = pendingConnection !== undefined || session.clients.has(member);
+      if (!session.connections.has(protocol.namespace)) {
+        continue;
+      }
 
-      pendingConnection?.abort();
-      session.pendingConnections.delete(member);
+      this.disconnectNamespace(protocol, session);
 
-      this.disconnectNamespace(member, session);
-
-      const isUnused = session.clients.size === 0 && session.pendingConnections.size === 0;
-
-      if (wasUsedByMember && isUnused) {
+      if (session.connections.size === 0) {
         this.closeSession(session);
       }
     }
   }
 
   // As `socket.disconnect()` in a Socket.IO server, which leaves the connection open for other namespaces.
-  private disconnectNamespace(member: SocketIOEngineMember, session: SocketIOEngineSession) {
-    if (session.clients.has(member)) {
-      member.sendSocketPacket(session, { type: PacketType.DISCONNECT, nsp: member.namespace });
-      this.leaveNamespace(member, session);
+  private disconnectNamespace(protocol: AnySocketIOProtocol, session: SocketIOEngineSession) {
+    if (session.connections.get(protocol.namespace)?.state === 'open') {
+      this.sendSocketPacket(session, { type: PacketType.DISCONNECT, nsp: protocol.namespace });
+    }
+
+    this.releaseNamespace(protocol, session);
+  }
+
+  private releaseNamespace(protocol: AnySocketIOProtocol, session: SocketIOEngineSession) {
+    const connection = session.connections.get(protocol.namespace);
+    session.connections.delete(protocol.namespace);
+
+    if (connection?.state === 'pending') {
+      connection.abort();
+    } else if (connection?.state === 'open') {
+      protocol.interceptor.removeClient(connection.client);
     }
   }
 
-  leaveNamespace(member: SocketIOEngineMember, session: SocketIOEngineSession) {
-    const client = session.clients.get(member);
-
-    if (client) {
-      session.clients.delete(member);
-      member.interceptor.removeClient(client);
-    }
-  }
-
-  // Every member decodes the CONNECT packets of all namespaces, so only the oldest one refuses unknown namespaces.
-  handleConnectPacket(member: SocketIOEngineMember, session: SocketIOEngineSession, namespace: string) {
-    if (namespace === member.namespace) {
-      this.connectNamespace(member, session).catch((error: unknown) => {
-        console.error(error);
-      });
+  private connectNamespace(protocol: AnySocketIOProtocol, session: SocketIOEngineSession) {
+    if (session.connections.has(protocol.namespace)) {
       return;
     }
 
-    const oldestMember = this.members.values().next().value;
-    const isKnownNamespace = Array.from(this.members).some((candidate) => candidate.namespace === namespace);
+    const abortController = new AbortController();
+    const pendingConnection: SocketIONamespaceConnection = { state: 'pending', abort: () => abortController.abort() };
+    session.connections.set(protocol.namespace, pendingConnection);
 
-    if (member === oldestMember && !isKnownNamespace) {
-      member.sendSocketPacket(session, {
-        type: PacketType.CONNECT_ERROR,
-        nsp: namespace,
-        data: { message: INVALID_NAMESPACE_MESSAGE },
+    void this.openNamespaceClient(protocol, session, abortController.signal)
+      .catch((error: unknown) => {
+        console.error(error);
+      })
+      .finally(() => {
+        if (session.connections.get(protocol.namespace) === pendingConnection) {
+          session.connections.delete(protocol.namespace);
+        }
       });
-    }
   }
 
-  private async connectNamespace(member: SocketIOEngineMember, session: SocketIOEngineSession) {
-    const pendingConnection = new AbortController();
-    session.pendingConnections.set(member, pendingConnection);
+  private async openNamespaceClient(
+    protocol: AnySocketIOProtocol,
+    session: SocketIOEngineSession,
+    signal: AbortSignal,
+  ) {
+    const opening = await protocol.interceptor.openProtocolClient({
+      url: session.url,
+      signal,
+      sendFrame: (frame) => session.transport.send(frame),
+      close: () => this.disconnectNamespace(protocol, session),
+      onOpen: (client) => this.joinNamespace(protocol, session, client),
+    });
 
-    try {
-      const opening = await member.interceptor.openProtocolClient({
-        url: session.url,
-        signal: pendingConnection.signal,
-        sendFrame: (frame) => session.transport.send(frame),
-        close: () => this.disconnectNamespace(member, session),
-        onOpen: (client) => this.joinNamespace(member, session, client),
+    if (opening.action === 'reject') {
+      this.sendSocketPacket(session, {
+        type: PacketType.CONNECT_ERROR,
+        nsp: protocol.namespace,
+        data: { message: REJECTED_NAMESPACE_CONNECTION_MESSAGE },
       });
-
-      if (opening.action === 'reject') {
-        member.sendSocketPacket(session, {
-          type: PacketType.CONNECT_ERROR,
-          nsp: member.namespace,
-          data: { message: REJECTED_NAMESPACE_CONNECTION_MESSAGE },
-        });
-      }
-    } finally {
-      if (session.pendingConnections.get(member) === pendingConnection) {
-        session.pendingConnections.delete(member);
-      }
     }
   }
 
   // An accepted client joins the session when its interceptor lists it, before connection effects run.
   private joinNamespace(
-    member: SocketIOEngineMember,
+    protocol: AnySocketIOProtocol,
     session: SocketIOEngineSession,
     client: InternalWebSocketInterceptorClient,
   ) {
-    session.clients.set(member, client);
-    member.sendSocketPacket(session, {
+    session.connections.set(protocol.namespace, { state: 'open', client });
+    this.sendSocketPacket(session, {
       type: PacketType.CONNECT,
-      nsp: member.namespace,
+      nsp: protocol.namespace,
       data: { sid: crypto.randomUUID() },
     });
   }
 
-  // Every connection carries an Engine.IO session. A polling client upgrades by opening a WebSocket connection with its
-  // session ID, which only carries the existing session.
+  // A polling client upgrades by opening a WebSocket connection with its session ID, which carries the existing session.
   claimConnection(
     url: string,
     connection: WebSocketInterceptorProtocolRawConnection,
   ): WebSocketInterceptorProtocolConnectionClaim {
     const searchParams = new URL(url).searchParams;
-    const version = searchParams.get('EIO');
+    const unsupportedVersionMessage = warnOfUnsupportedEngineIOVersion(searchParams.get('EIO'));
 
-    if (version !== SUPPORTED_ENGINE_IO_VERSION) {
-      const message = createUnsupportedEngineIOVersionMessage(version);
-      logger.warn(message);
-      connection.close(UNSUPPORTED_VERSION_CLOSE_CODE, message);
-      return { onFrame: ignoreConnectionEvent, onClose: ignoreConnectionEvent };
+    if (unsupportedVersionMessage !== undefined) {
+      connection.close(UNSUPPORTED_VERSION_CLOSE_CODE, unsupportedVersionMessage);
+      return IGNORED_CONNECTION_CLAIM;
     }
 
     const sessionId = searchParams.get('sid');
@@ -489,18 +561,16 @@ class SocketIOEngine {
 
     const session = this.sessions.get(sessionId);
 
-    // As a Socket.IO server refuses unknown session IDs, an upgrade of a session closed in the meantime does not connect.
     if (!session || !(session.transport instanceof SocketIOPollingTransport)) {
-      connection.close(UNKNOWN_SESSION_CLOSE_CODE, 'Session ID unknown');
-      return { onFrame: ignoreConnectionEvent, onClose: ignoreConnectionEvent };
+      connection.close(UNKNOWN_SESSION_CLOSE_CODE, ENGINE_IO_ERRORS.UNKNOWN_SESSION_ID.message);
+      return IGNORED_CONNECTION_CLAIM;
     }
 
     const pollingTransport = session.transport;
 
     return {
       onFrame: (frame) => {
-        // A client that paused polling to upgrade receives no close packet, so a session closed during the upgrade
-        // closes the connection the client upgrades with.
+        // A client that paused polling to upgrade receives no close packet, so the upgrading connection closes instead.
         if (this.sessions.get(session.id) !== session) {
           connection.close();
         } else if (frame === UPGRADE_PROBE_PACKET) {
@@ -508,11 +578,10 @@ class SocketIOEngine {
           // The noop completes the pending poll so the client can pause polling before finishing the upgrade.
           pollingTransport.send(NOOP_PACKET);
         } else if (frame === UPGRADE_PACKET) {
-          // Packets queued while the client upgraded are delivered through the WebSocket.
           session.transport = connection;
           pollingTransport.drainFrames().forEach((queuedFrame) => connection.send(queuedFrame));
         } else {
-          this.dispatchFrame(session, frame);
+          this.receiveFrame(session, frame);
         }
       },
 
@@ -528,14 +597,14 @@ class SocketIOEngine {
   private openWebSocketSession(url: string, connection: WebSocketInterceptorProtocolRawConnection) {
     if (this.isStopping) {
       connection.close();
-      return { onFrame: ignoreConnectionEvent, onClose: ignoreConnectionEvent };
+      return IGNORED_CONNECTION_CLAIM;
     }
 
     const session = this.createSession(url, connection);
     connection.send(this.createOpenPacket(session.id, []));
 
     return {
-      onFrame: (frame) => this.dispatchFrame(session, frame),
+      onFrame: (frame) => this.receiveFrame(session, frame),
       onClose: () => this.closeSession(session),
     } satisfies WebSocketInterceptorProtocolConnectionClaim;
   }
@@ -543,20 +612,28 @@ class SocketIOEngine {
 
 const engines = new Map<string, SocketIOEngine>();
 
+function getSocketIOEngineKey(interceptor: AnyWebSocketInterceptorImplementation) {
+  return `${interceptor.type}:${interceptor.baseURLAsString}`;
+}
+
 export function getOrCreateSocketIOEngine(
   interceptor: AnyWebSocketInterceptorImplementation,
   options: SocketIOEngineOptions,
 ) {
-  const key = `${interceptor.type}:${interceptor.baseURLAsString}`;
+  const key = getSocketIOEngineKey(interceptor);
 
   let engine = engines.get(key);
 
   if (!engine) {
-    engine = new SocketIOEngine(key, interceptor, options);
+    engine = new SocketIOEngine(interceptor, options);
     engines.set(key, engine);
   }
 
   return engine;
+}
+
+export function deleteSocketIOEngine(interceptor: AnyWebSocketInterceptorImplementation) {
+  engines.delete(getSocketIOEngineKey(interceptor));
 }
 
 export type { SocketIOEngine };

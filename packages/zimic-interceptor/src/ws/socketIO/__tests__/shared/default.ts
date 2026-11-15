@@ -1,6 +1,7 @@
 import type { HttpSchema } from '@zimic/http';
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
+import { ValidationError } from '@zimic/utils/validation';
 import {
   io,
   Manager,
@@ -11,6 +12,7 @@ import {
   type XHR,
 } from 'socket.io-client';
 import msgpackParser from 'socket.io-msgpack-parser';
+import * as defaultParser from 'socket.io-parser';
 import { describe, expect, it, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
@@ -20,6 +22,9 @@ import type { WebSocketInterceptorClient } from '../../../interceptor/types/mess
 import type { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '../../../interceptor/types/options';
 import type { WebSocketInterceptor } from '../../../interceptor/types/public';
 import { createSocketIOProtocol } from '../../createSocketIOProtocol';
+import DuplicateSocketIONamespaceError from '../../errors/DuplicateSocketIONamespaceError';
+import MismatchedSocketIOProtocolOptionsError from '../../errors/MismatchedSocketIOProtocolOptionsError';
+import SharedSocketIOProtocolError from '../../errors/SharedSocketIOProtocolError';
 import type { SocketIOMessage, SocketIOParser, SocketIOSchema } from '../../types';
 
 /* eslint-disable @typescript-eslint/naming-convention -- Socket.IO event names commonly use colons. */
@@ -51,7 +56,9 @@ interface SharedSocketIOTestsOptions {
   WebSocketTransport: typeof SocketIOWebSocketTransport;
 }
 
-const PING_INTERVAL = 50;
+const PING_INTERVAL = 25000;
+
+const POLLING_PACKET_SEPARATOR = '\x1e';
 
 async function usingSocket(
   baseURL: string,
@@ -950,26 +957,35 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     it('should send pings without user handlers', async () => {
       const baseURL = getBaseURL();
 
-      await usingWebSocketInterceptor<AnySchema>(
-        {
-          type,
-          baseURL,
-          messageSaving: { enabled: true },
-          connectionSaving: { enabled: true },
-          protocol: createSocketIOProtocol({ pingInterval: PING_INTERVAL }),
-        },
-        async () => {
-          await usingSocket(baseURL, { transports }, async (socket) => {
-            await waitForSocketConnection(socket);
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
 
-            let numberOfPings = 0;
-            socket.io.on('ping', () => numberOfPings++);
+      try {
+        await usingWebSocketInterceptor<AnySchema>(
+          {
+            type,
+            baseURL,
+            messageSaving: { enabled: true },
+            connectionSaving: { enabled: true },
+            protocol: createSocketIOProtocol(),
+          },
+          async () => {
+            await usingSocket(baseURL, { transports }, async (socket) => {
+              await waitForSocketConnection(socket);
 
-            await waitFor(() => expect(numberOfPings).toBeGreaterThanOrEqual(2));
-            expect(socket.connected).toBe(true);
-          });
-        },
-      );
+              const pingPromise = new Promise<void>((resolve) => {
+                socket.io.once('ping', () => resolve());
+              });
+
+              vi.advanceTimersByTime(PING_INTERVAL);
+              await pingPromise;
+
+              expect(socket.connected).toBe(true);
+            });
+          },
+        );
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('should list a connected socket as one client and remove it when the socket disconnects', async () => {
@@ -1268,6 +1284,172 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
       );
     });
 
+    it('should ignore polling packets without a body', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<AnySchema>(
+        { type, baseURL, connectionSaving: { enabled: true }, protocol: createSocketIOProtocol() },
+        async (interceptor) => {
+          await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
+            await waitForSocketConnection(socket);
+
+            const response = await fetch(
+              `${baseURL.replace(/^ws/, 'http')}/socket.io/?EIO=4&transport=polling&sid=${socket.io.engine.id}`,
+              { method: 'POST' },
+            );
+
+            expect(response.status).toBe(200);
+            expect(await response.text()).toBe('ok');
+            expect(interceptor.clients).toHaveLength(1);
+            expect(socket.connected).toBe(true);
+          });
+        },
+      );
+    });
+
+    it('should answer overlapping polls with a bad request error', async () => {
+      const baseURL = getBaseURL();
+      const pollingURL = `${baseURL.replace(/^ws/, 'http')}/socket.io/?EIO=4&transport=polling`;
+
+      await usingWebSocketInterceptor<AnySchema>({ type, baseURL, protocol: createSocketIOProtocol() }, async () => {
+        const openPacket = await (await fetch(pollingURL)).text();
+        const { sid } = JSON.parse(openPacket.slice(1)) as { sid: string };
+        const sessionURL = `${pollingURL}&sid=${sid}`;
+
+        // Either poll may reach the session first, and the other one overlaps it.
+        const polls = [fetch(sessionURL), fetch(sessionURL)];
+
+        const overlappingPoll = await Promise.race(polls);
+        expect(overlappingPoll.status).toBe(400);
+        expect(await overlappingPoll.json()).toEqual({ code: 3, message: 'Bad request' });
+
+        await fetch(sessionURL, { method: 'POST', body: '1' });
+
+        const pendingPoll = (await Promise.all(polls)).find((poll) => poll !== overlappingPoll);
+        expect(pendingPoll?.status).toBe(200);
+        expect(await pendingPoll?.text()).toBe('1');
+      });
+    });
+
+    it('should keep one client when a socket sends a second connect packet for its namespace', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<AnySchema>(
+        {
+          type,
+          baseURL,
+          messageSaving: { enabled: true },
+          connectionSaving: { enabled: true },
+          protocol: createSocketIOProtocol(),
+        },
+        async (interceptor) => {
+          const handler = await interceptor.message().with({ type: 'event' }).times(1);
+
+          await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
+            await waitForSocketConnection(socket);
+
+            await fetch(
+              `${baseURL.replace(/^ws/, 'http')}/socket.io/?EIO=4&transport=polling&sid=${socket.io.engine.id}`,
+              { method: 'POST', body: '40' },
+            );
+
+            socket.emit('event', 'after second connect');
+            await waitFor(() => expect(handler.messages).toHaveLength(1));
+
+            expect(interceptor.clients).toHaveLength(1);
+            expect(socket.connected).toBe(true);
+          });
+        },
+      );
+    });
+
+    it('should handle the packets after a malformed one in a polling payload', async () => {
+      const baseURL = getBaseURL();
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        await usingWebSocketInterceptor<AnySchema>(
+          {
+            type,
+            baseURL,
+            messageSaving: { enabled: true },
+            connectionSaving: { enabled: true },
+            protocol: createSocketIOProtocol(),
+          },
+          async (interceptor) => {
+            const handler = await interceptor.message().with({ type: 'event' }).times(1);
+
+            await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
+              await waitForSocketConnection(socket);
+
+              await fetch(
+                `${baseURL.replace(/^ws/, 'http')}/socket.io/?EIO=4&transport=polling&sid=${socket.io.engine.id}`,
+                { method: 'POST', body: ['42[malformed', '42["event","valid"]'].join(POLLING_PACKET_SEPARATOR) },
+              );
+
+              await waitFor(() => expect(handler.messages).toHaveLength(1));
+              expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'valid' });
+
+              expect(console.error).toHaveBeenCalledWith(new Error('invalid payload'));
+              expect(console.error).toHaveBeenCalledTimes(1);
+            });
+          },
+        );
+      });
+    });
+
+    it('should ignore the packets after a close packet in a polling payload', async () => {
+      const baseURL = getBaseURL();
+      const pollingURL = `${baseURL.replace(/^ws/, 'http')}/socket.io/?EIO=4&transport=polling`;
+
+      await usingWebSocketInterceptor<AnySchema>(
+        { type, baseURL, connectionSaving: { enabled: true }, protocol: createSocketIOProtocol() },
+        async (interceptor) => {
+          const openPacket = await (await fetch(pollingURL)).text();
+          const { sid } = JSON.parse(openPacket.slice(1)) as { sid: string };
+
+          await fetch(`${pollingURL}&sid=${sid}`, {
+            method: 'POST',
+            body: ['1', '40'].join(POLLING_PACKET_SEPARATOR),
+          });
+
+          // Connections are decided in order, so the next socket connects after a connection from the payload would.
+          await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
+            await waitForSocketConnection(socket);
+            expect(interceptor.clients).toHaveLength(1);
+          });
+        },
+      );
+    });
+
+    it('should not intercept events whose name is not a string', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<AnySchema>(
+        {
+          type,
+          baseURL,
+          messageSaving: { enabled: true },
+          connectionSaving: { enabled: true },
+          protocol: createSocketIOProtocol(),
+        },
+        async (interceptor) => {
+          const handler = await interceptor.message();
+
+          await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
+            await waitForSocketConnection(socket);
+
+            await fetch(
+              `${baseURL.replace(/^ws/, 'http')}/socket.io/?EIO=4&transport=polling&sid=${socket.io.engine.id}`,
+              { method: 'POST', body: ['42[1,"numeric"]', '42["event","valid"]'].join(POLLING_PACKET_SEPARATOR) },
+            );
+
+            await waitFor(() => expect(handler.messages).toHaveLength(1));
+            expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'valid' });
+          });
+        },
+      );
+    });
+
     it('should expose polling clients to server sends', async () => {
       const baseURL = getBaseURL();
 
@@ -1491,30 +1673,42 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
   }
 
   describe('Outgoing messages', () => {
-    it('should reject messages without a type or ack ID', async () => {
-      const baseURL = getBaseURL();
+    it.each([
+      { messageDescription: 'a string', message: 'plain text', stringifiedMessage: 'plain text' },
+      { messageDescription: 'an object', message: { data: 1 }, stringifiedMessage: '[object Object]' },
+      { messageDescription: 'null', message: null, stringifiedMessage: 'null' },
+    ])(
+      'should reject messages without a type or ack ID: $messageDescription',
+      async ({ message, stringifiedMessage }) => {
+        const baseURL = getBaseURL();
 
-      await usingIgnoredConsole(['error'], async () => {
-        await usingWebSocketInterceptor<AnySchema>(
-          {
-            type,
-            baseURL,
-            messageSaving: { enabled: true },
-            connectionSaving: { enabled: true },
-            protocol: createSocketIOProtocol(),
-          },
-          async (interceptor) => {
-            await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
-              await waitForSocketConnection(socket);
+        await usingIgnoredConsole(['error'], async () => {
+          await usingWebSocketInterceptor<AnySchema>(
+            {
+              type,
+              baseURL,
+              messageSaving: { enabled: true },
+              connectionSaving: { enabled: true },
+              protocol: createSocketIOProtocol(),
+            },
+            async (interceptor) => {
+              await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
+                await waitForSocketConnection(socket);
 
-              expect(() => {
-                interceptor.clients[0].send('plain text' as never);
-              }).toThrow('Socket.IO messages must be objects with `type` or `ackId`, but received: plain text.');
-            });
-          },
-        );
-      });
-    });
+                expect(() => {
+                  // @ts-expect-error Socket.IO messages must be objects with `type` or `ackId`.
+                  interceptor.clients[0].send(message);
+                }).toThrow(
+                  new ValidationError(
+                    `Socket.IO messages must be objects with \`type\` or \`ackId\`, but received: ${stringifiedMessage}.`,
+                  ),
+                );
+              });
+            },
+          );
+        });
+      },
+    );
 
     it('should reject binary attachments sent as blobs', async () => {
       const baseURL = getBaseURL();
@@ -1533,7 +1727,9 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
 
             expect(() => {
               interceptor.clients[0].send({ type: 'file', data: new Blob(['data']) });
-            }).toThrow('Socket.IO binary attachments sent by interceptors must be ArrayBuffers or views.');
+            }).toThrow(
+              new ValidationError('Socket.IO binary attachments sent by interceptors must be ArrayBuffers or views.'),
+            );
           });
         },
       );
@@ -1550,7 +1746,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
         await usingIgnoredConsole(['error'], async () => {
           await expect(
             usingWebSocketInterceptor<AnySchema>({ type, baseURL: otherBaseURL, protocol }, vi.fn()),
-          ).rejects.toThrow('A Socket.IO protocol can be used by only one running interceptor.');
+          ).rejects.toThrow(new SharedSocketIOProtocolError());
         });
 
         await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
@@ -1558,6 +1754,45 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
           expect(interceptor.clients).toHaveLength(1);
         });
       });
+    });
+
+    it('should not allow two running interceptors on the same namespace of a base URL', async () => {
+      const baseURL = getBaseURL();
+
+      await usingWebSocketInterceptor<AnySchema>(
+        { type, baseURL, connectionSaving: { enabled: true }, protocol: createSocketIOProtocol() },
+        async (interceptor) => {
+          await usingIgnoredConsole(['error'], async () => {
+            await expect(
+              usingWebSocketInterceptor<AnySchema>({ type, baseURL, protocol: createSocketIOProtocol() }, vi.fn()),
+            ).rejects.toThrow(new DuplicateSocketIONamespaceError('/', interceptor.baseURL));
+          });
+
+          await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
+            await waitForSocketConnection(socket);
+            expect(interceptor.clients).toHaveLength(1);
+          });
+        },
+      );
+    });
+
+    it('should not allow the namespaces of a base URL to use different parsers', async () => {
+      const baseURL = getBaseURL();
+      const otherParser: SocketIOParser = { Encoder: defaultParser.Encoder, Decoder: defaultParser.Decoder };
+
+      await usingWebSocketInterceptor<AnySchema>(
+        { type, baseURL, protocol: createSocketIOProtocol() },
+        async (interceptor) => {
+          await usingIgnoredConsole(['error'], async () => {
+            await expect(
+              usingWebSocketInterceptor<AnySchema>(
+                { type, baseURL, protocol: createSocketIOProtocol({ namespace: '/admin', parser: otherParser }) },
+                vi.fn(),
+              ),
+            ).rejects.toThrow(new MismatchedSocketIOProtocolOptionsError('parser', interceptor.baseURL));
+          });
+        },
+      );
     });
   });
 
