@@ -137,6 +137,29 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
     });
   });
 
+  it('should not let protocols claim connections by declaring internal members', async () => {
+    const baseURL = getBaseURL();
+    const claimConnection = vi.fn();
+    const claimingProtocol = { ...protocol, claimConnection };
+
+    await usingWebSocketInterceptor<ChatSchema>(
+      { type, baseURL, messageSaving: { enabled: true }, protocol: claimingProtocol },
+      async (interceptor) => {
+        const handler = await interceptor.message().times(1);
+
+        await usingWebSocketClient<ChatFrameSchema>(baseURL, async (client) => {
+          client.send(encodeFrame({ text: 'decoded' }));
+
+          await waitFor(() => {
+            expect(handler.messages.map((message) => message.data)).toEqual([{ text: 'decoded' }]);
+          });
+        });
+
+        expect(claimConnection).not.toHaveBeenCalled();
+      },
+    );
+  });
+
   it('should handle frames as plain messages if the protocol does not decode them', async () => {
     const baseURL = getBaseURL();
     const encodingProtocol: WebSocketInterceptorProtocol<ChatMessage> = { encode: protocol.encode };
