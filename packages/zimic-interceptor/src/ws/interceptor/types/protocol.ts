@@ -13,8 +13,9 @@ export type WebSocketInterceptorProtocolFrame = string | ArrayBuffer;
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A client connected to an interceptor, as seen by its {@link WebSocketInterceptorProtocol}. It is the same object
- * listed in `interceptor.clients`, so `send` encodes messages with the protocol. Use `sendFrame` to skip encoding.
+ * A client connected to an interceptor, as seen by its {@link WebSocketInterceptorProtocol}.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#protocol-option `protocol` option}
  */
 export interface WebSocketInterceptorProtocolClient<
   Schema extends WebSocketSchema = WebSocketSchema,
@@ -27,8 +28,7 @@ export interface WebSocketInterceptorProtocolClient<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * Translates between the raw frames of a framed protocol and the messages seen by interceptor handlers. The protocol
- * runs inside the interceptor in local and remote modes, and the interceptor server relays raw frames.
+ * Translates between the raw frames of a framed protocol and the messages seen by interceptor handlers.
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#protocol-option `protocol` option}
  */

@@ -187,7 +187,7 @@ export interface WebSocketInterceptorClient<
    * holding it. The arguments follow the native
    * {@link https://developer.mozilla.org/docs/Web/API/WebSocket/close `WebSocket.close()`}: if `code` is omitted, the
    * client receives the close code 1005 and no reason. Closing a client that is already closed, or no longer held by a
-   * running interceptor, does nothing. Clients of a Socket.IO interceptor disconnect only from its namespace.
+   * running interceptor, does nothing.
    *
    * @param code The close code, either 1000 or between 3000 and 4999. As in `WebSocket.close()`, it is clamped to 0
    *   through 65535 and rounded to the nearest integer, with ties to even, before being checked.

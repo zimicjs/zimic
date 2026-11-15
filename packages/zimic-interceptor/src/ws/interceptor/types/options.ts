@@ -75,8 +75,7 @@ export interface SharedWebSocketInterceptorOptions<Schema extends WebSocketSchem
   onUnhandledMessage?: UnhandledMessageStrategy;
 
   /**
-   * Translates the raw frames of a framed protocol into the messages seen by handlers. Experimental. Without it,
-   * handlers receive WebSocket frames as messages.
+   * Translates the raw frames of a framed protocol into the messages seen by handlers.
    *
    * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#protocol-option `protocol` option}
    */
