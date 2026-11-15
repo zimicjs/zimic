@@ -2135,6 +2135,46 @@ describe('Interceptor server', () => {
         });
       });
 
+      // Protocols such as Socket.IO claim the connections they serve, so no interceptor holds them.
+      it('should close client connections claimed by a protocol when the worker disconnects', async () => {
+        server = createInternalInterceptorServer();
+        await server.start();
+
+        const baseURL = `ws://${server.hostname}:${server.port}/socket.io`;
+
+        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+          url: `ws://${server.hostname}:${server.port}`,
+        });
+        worker.onChannel('event', 'interceptors/ws/clients/connect', () => ({ action: 'claim' }));
+
+        const client = new WebSocketClient<ChatSchema>(baseURL);
+
+        try {
+          await worker.start({
+            parameters: {
+              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
+            },
+            waitForAuthentication: true,
+          });
+
+          await worker.request('interceptors/ws/workers/reset', {
+            interceptors: [{ id: crypto.randomUUID(), baseURL }],
+          });
+
+          await client.open();
+
+          const closeEventPromise = waitForWebSocketClientClose(client);
+          await worker.stop();
+
+          const closeEvent = await closeEventPromise;
+          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
+        } finally {
+          await client.close();
+          await worker.stop();
+        }
+      });
+
       it('should log and close pending client connections when the worker does not confirm them in time', async () => {
         server = createInternalInterceptorServer();
         await server.start();
