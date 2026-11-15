@@ -32,7 +32,6 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
       onUnhandledMessage: options.onUnhandledMessage,
       protocol: options.protocol,
       type: 'remote',
-      getAuth: () => this.#auth,
       MessageHandler: RemoteWebSocketMessageHandler,
       ConnectionHandler: RemoteWebSocketConnectionHandler,
       createWorker: () => {

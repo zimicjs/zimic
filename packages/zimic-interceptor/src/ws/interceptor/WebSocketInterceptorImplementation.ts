@@ -22,11 +22,7 @@ import ConnectionSavingSafeLimitExceededError from './errors/ConnectionSavingSaf
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
 import type { ReceivedWebSocketMessageData, WebSocketInterceptorConnectionRequest } from './types/messages';
-import type {
-  UnhandledMessageStrategy,
-  WebSocketInterceptorAuthOptions,
-  WebSocketInterceptorType,
-} from './types/options';
+import type { UnhandledMessageStrategy, WebSocketInterceptorType } from './types/options';
 import type { WebSocketInterceptorProtocol, WebSocketInterceptorProtocolClientOptions } from './types/protocol';
 import type { WebSocketInterceptorConnectionSaving, WebSocketInterceptorMessageSaving } from './types/public';
 import type { WebSocketInterceptorPathMessage } from './types/schema';
@@ -77,7 +73,6 @@ class WebSocketInterceptorImplementation<
   private _clients: InternalWebSocketInterceptorClient<Schema>[] = [];
 
   readonly type: WebSocketInterceptorType;
-  private getAuth: (() => WebSocketInterceptorAuthOptions | undefined) | undefined;
 
   readonly protocol: WebSocketInterceptorProtocol<WebSocketSchemaMessage<Schema>> | undefined;
 
@@ -98,7 +93,6 @@ class WebSocketInterceptorImplementation<
     onUnhandledMessage?: UnhandledMessageStrategy;
     protocol: WebSocketInterceptorProtocol<WebSocketSchemaMessage<Schema>> | undefined;
     type: WebSocketInterceptorType;
-    getAuth: (() => WebSocketInterceptorAuthOptions | undefined) | undefined;
     MessageHandler: MessageHandlerConstructor;
     ConnectionHandler: WebSocketConnectionHandlerConstructor;
     createWorker: () => WebSocketInterceptorWorker;
@@ -120,7 +114,6 @@ class WebSocketInterceptorImplementation<
     this.onUnhandledMessage = options.onUnhandledMessage;
 
     this.type = options.type;
-    this.getAuth = options.getAuth;
 
     this.protocol = options.protocol;
 
@@ -140,10 +133,6 @@ class WebSocketInterceptorImplementation<
         }
       },
     );
-  }
-
-  get auth() {
-    return this.getAuth?.();
   }
 
   get internalProtocol() {
@@ -244,9 +233,6 @@ class WebSocketInterceptorImplementation<
         if (hasStartedProtocol) {
           await this.internalProtocol?.stop(this);
         }
-      } catch (stopError) {
-        // The start error is the one the caller handles, so a failure to undo the start is only logged.
-        console.error(stopError);
       } finally {
         await this.stopWorker();
       }

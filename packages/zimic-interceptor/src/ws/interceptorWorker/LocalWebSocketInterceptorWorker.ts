@@ -465,12 +465,8 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     if (frameDecoders.length > 0) {
       registration.frameReadings = registration.frameReadings.then(async () => {
-        try {
-          const frame = await convertWebSocketMessageDataToBinaryType(data, 'arraybuffer');
-          void this.decodeFrame(frame, frameDecoders);
-        } catch (error) {
-          console.error(error);
-        }
+        const frame = await convertWebSocketMessageDataToBinaryType(data, 'arraybuffer');
+        void this.decodeFrame(frame, frameDecoders);
       });
     }
   }

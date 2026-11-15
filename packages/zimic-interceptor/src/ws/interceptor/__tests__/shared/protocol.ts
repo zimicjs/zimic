@@ -50,8 +50,10 @@ const JSON_LIKE_TEXT = '{"text":"raw"}';
 
 // A frame holds one text message, which may look like JSON.
 const textProtocol: WebSocketInterceptorProtocol<string> = {
-  decode: (frame) => (typeof frame === 'string' ? [frame.slice(TEXT_FRAME_PREFIX.length)] : []),
-  encode: (message) => [`${TEXT_FRAME_PREFIX}${message}`],
+  decode: (frame) =>
+    [frame]
+      .filter((textFrame) => typeof textFrame === 'string')
+      .map((textFrame) => textFrame.slice(TEXT_FRAME_PREFIX.length)),
 };
 
 interface SharedWebSocketInterceptorProtocolTestsOptions {
@@ -117,11 +119,11 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
 
   it('should decode binary frames as array buffers', async () => {
     const baseURL = getBaseURL();
-    const decodedFrames: (string | number[])[] = [];
+    const decodedFrames: WebSocketInterceptorProtocolFrame[] = [];
 
     const recordingProtocol: WebSocketInterceptorProtocol<ChatMessage> = {
       decode(frame) {
-        decodedFrames.push(frame instanceof ArrayBuffer ? Array.from(new Uint8Array(frame)) : frame);
+        decodedFrames.push(frame);
         return [];
       },
     };
@@ -130,7 +132,7 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
       await usingWebSocketClient<BinaryFrameSchema>(baseURL, async (client) => {
         client.send(new Blob([createBinaryMessage(0x00, 0xff)]));
 
-        await waitFor(() => expect(decodedFrames).toEqual([[0x00, 0xff]]));
+        await waitFor(() => expect(decodedFrames).toStrictEqual([createBinaryMessage(0x00, 0xff)]));
       });
     });
   });

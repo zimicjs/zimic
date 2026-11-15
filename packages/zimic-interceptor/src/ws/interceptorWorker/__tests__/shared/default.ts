@@ -90,7 +90,6 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       onUnhandledMessage: options.onUnhandledMessage,
       protocol: undefined,
       type: 'remote',
-      getAuth: undefined,
       MessageHandler: RemoteWebSocketMessageHandler,
       ConnectionHandler: RemoteWebSocketConnectionHandler,
       createWorker: () => worker,

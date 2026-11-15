@@ -201,13 +201,8 @@ class WebSocketInterceptorServerRuntime {
     this.webSocketWorkersBySocket.delete(socket);
   }
 
+  // A claimed connection leaves the pending ones in the same task as its claim reply, before a worker can disconnect.
   private closeClaimedConnections(workerSocket: Socket) {
-    for (const userConnection of this.pendingUserWebSocketConnections.values()) {
-      if (userConnection.isClaimed && userConnection.workerSocket === workerSocket) {
-        userConnection.closure ??= CONNECTION_SETUP_FAILURE_CLOSURE;
-      }
-    }
-
     for (const [userSocket, userConnection] of this.activeUserWebSocketConnections) {
       if (userConnection.isClaimed && userConnection.workerSocket === workerSocket) {
         this.activeUserWebSocketConnections.delete(userSocket);
