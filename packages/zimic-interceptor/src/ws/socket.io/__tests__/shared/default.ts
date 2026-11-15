@@ -18,10 +18,12 @@ import type { Packet } from 'socket.io-parser';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createHttpInterceptor } from '@/http';
+import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { waitForWebSocketClientClose } from '@tests/utils/webSocket';
 
+import { createWebSocketInterceptor } from '../../../interceptor/factory';
 import type { WebSocketInterceptorClient } from '../../../interceptor/types/messages';
 import type { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '../../../interceptor/types/options';
 import type {
@@ -82,6 +84,8 @@ interface SharedSocketIOTestsOptions {
   platform: WebSocketInterceptorPlatform;
   type: WebSocketInterceptorType;
   getBaseURL: () => string;
+  getAuthenticatedBaseURL: () => string;
+  getValidToken: () => string;
   PollingTransport: typeof NodeXHR | typeof XHR;
   WebSocketTransport: typeof SocketIOWebSocketTransport;
 }
@@ -151,7 +155,15 @@ async function waitForSocketDisconnection(socket: Socket) {
 }
 
 export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions) {
-  const { platform, type, getBaseURL: getServerBaseURL, PollingTransport, WebSocketTransport } = options;
+  const {
+    platform,
+    type,
+    getBaseURL: getServerBaseURL,
+    getAuthenticatedBaseURL,
+    getValidToken,
+    PollingTransport,
+    WebSocketTransport,
+  } = options;
 
   // The base URLs of the WebSocket and polling interceptors end with the Socket.IO path, which is the `path` option of
   // the clients.
@@ -880,6 +892,43 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
           expect(interceptor.clients).toHaveLength(0);
         });
       });
+
+      it('should close WebSocket connections opened while the last namespace stops', async () => {
+        const pollingStopStartedPromise = createPromiseWithResolvers<void>();
+        const pollingStopReleasedPromise = createPromiseWithResolvers<void>();
+        const stopPolling = polling.stop.bind(polling);
+
+        // No public call pauses a stop, so the polling interceptor holds it to open a connection while it runs.
+        vi.spyOn(polling, 'stop').mockImplementation(async () => {
+          pollingStopStartedPromise.resolve();
+          await pollingStopReleasedPromise;
+          await stopPolling();
+        });
+
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+          const stopPromise = interceptor.stop();
+
+          try {
+            await pollingStopStartedPromise;
+
+            const socket = new WebSocket(`${baseURL}/?EIO=4&transport=websocket`);
+
+            const messageListener = vi.fn();
+            socket.addEventListener('message', messageListener);
+
+            const closeEvent = await new Promise<CloseEvent>((resolve) => {
+              socket.addEventListener('close', resolve, { once: true });
+            });
+
+            expect(closeEvent.code).toBe(1005);
+            expect(messageListener).not.toHaveBeenCalled();
+            expect(interceptor.clients).toHaveLength(0);
+          } finally {
+            pollingStopReleasedPromise.resolve();
+            await stopPromise;
+          }
+        });
+      });
     }
 
     // Local interceptors serve Socket.IO over polling only, so they close WebSocket connections.
@@ -1073,6 +1122,76 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
       });
     });
 
+    it('should not intercept acks sent by clients', async () => {
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        const handler = await interceptor.message();
+
+        await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
+          await waitForSocketConnection(socket);
+
+          await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling&sid=${socket.io.engine.id}`, {
+            method: 'POST',
+            body: ['431["ack"]', '42["event","valid"]'].join(POLLING_PACKET_SEPARATOR),
+          });
+
+          await waitFor(() => expect(handler.messages).toHaveLength(1));
+          expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'valid' });
+        });
+      });
+    });
+
+    it('should not intercept events of sessions that did not connect to the namespace', async () => {
+      const pollingURL = `${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling`;
+
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        const handler = await interceptor.message();
+
+        const openPacket = await (await fetch(pollingURL)).text();
+        const { sid } = JSON.parse(openPacket.slice(1)) as { sid: string };
+        const sessionURL = `${pollingURL}&sid=${sid}`;
+
+        await fetch(sessionURL, { method: 'POST', body: '42["event","before connect"]' });
+        await fetch(sessionURL, { method: 'POST', body: '40' });
+
+        const connectReply = await (await fetch(sessionURL)).text();
+        expect(connectReply).toMatch(/^40\{"sid":/);
+
+        await fetch(sessionURL, { method: 'POST', body: '42["event","after connect"]' });
+
+        await waitFor(() => expect(handler.messages).toHaveLength(1));
+        expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'after connect' });
+      });
+    });
+
+    it('should not open polling sessions while the last namespace stops', async () => {
+      const pollingStopStartedPromise = createPromiseWithResolvers<void>();
+      const pollingStopReleasedPromise = createPromiseWithResolvers<void>();
+      const stopPolling = polling.stop.bind(polling);
+
+      // No public call pauses a stop, so the polling interceptor holds it to open a session while it runs.
+      vi.spyOn(polling, 'stop').mockImplementation(async () => {
+        pollingStopStartedPromise.resolve();
+        await pollingStopReleasedPromise;
+        await stopPolling();
+      });
+
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        const stopPromise = interceptor.stop();
+
+        try {
+          await pollingStopStartedPromise;
+
+          const response = await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling`);
+
+          expect(response.status).toBe(403);
+          expect(await response.json()).toEqual({ code: 4, message: 'Forbidden' });
+        } finally {
+          pollingStopReleasedPromise.resolve();
+          await stopPromise;
+        }
+      });
+    });
+
     it('should run connection effects with the polling client', async () => {
       await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
         const handler = await interceptor
@@ -1254,6 +1373,33 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
         });
       });
     });
+
+    it('should log the error of parsers that do not encode namespace connection replies into arrays of chunks', async () => {
+      // Encodes connection replies into a bare chunk, as parsers declaring `encode(): ArrayBuffer` describe their output.
+      class BareChunkConnectEncoder {
+        private encoder = new defaultParser.Encoder();
+
+        encode(packet: Packet): unknown {
+          const chunks: unknown[] = this.encoder.encode(packet);
+          return packet.type === defaultParser.PacketType.CONNECT ? chunks[0] : chunks;
+        }
+      }
+
+      const parser: SocketIOParser = { Encoder: BareChunkConnectEncoder, Decoder: defaultParser.Decoder };
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions({ parser }), async () => {
+          await usingSocket(baseURL, { transports: [PollingTransport] }, async () => {
+            await waitFor(() => {
+              expect(console.error).toHaveBeenCalledWith(
+                new ValidationError('Socket.IO parsers must encode packets into arrays of chunks.'),
+              );
+            });
+            expect(console.error).toHaveBeenCalledTimes(1);
+          });
+        });
+      });
+    });
   });
 
   describe('Protocol instances', () => {
@@ -1393,6 +1539,43 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
             ),
           );
         });
+      });
+    }
+
+    // Local interceptors do not connect to an interceptor server, so they do not authenticate.
+    if (type === 'remote') {
+      it('should be able to start after adding required authentication to the polling interceptor', async () => {
+        const authenticatedBaseURL = `${getAuthenticatedBaseURL()}/socket.io`;
+
+        const authenticatedServerPolling = createHttpInterceptor<SocketIOPollingSchema>({
+          type,
+          baseURL: authenticatedBaseURL.replace(/^ws/, 'http'),
+          requestSaving: { enabled: false },
+        });
+
+        const interceptor = createWebSocketInterceptor<AnySchema>({
+          type,
+          baseURL: authenticatedBaseURL,
+          auth: { token: getValidToken() },
+          protocol: createSocketIOProtocol({ polling: authenticatedServerPolling }),
+        });
+
+        await usingIgnoredConsole(['error'], async () => {
+          await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
+        });
+
+        expect(interceptor.isRunning).toBe(false);
+
+        authenticatedServerPolling.auth = { token: getValidToken() };
+
+        try {
+          await interceptor.start();
+
+          expect(interceptor.isRunning).toBe(true);
+          expect(authenticatedServerPolling.isRunning).toBe(true);
+        } finally {
+          await interceptor.stop();
+        }
       });
     }
 

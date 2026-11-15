@@ -1,6 +1,12 @@
 import { NodeWebSocket, NodeXHR } from 'socket.io-client';
 import { afterAll, beforeAll, describe } from 'vitest';
 
+import {
+  createInterceptorToken,
+  DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
+  InterceptorToken,
+  removeInterceptorToken,
+} from '@/server/utils/auth';
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
@@ -10,15 +16,24 @@ import { declareSocketIOProtocolTests } from './shared/default';
 describe.each(testMatrix)('SocketIOProtocol (node, $type)', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
+  const authenticatedServer = createInternalInterceptorServer({
+    tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
+    logUnhandledRequests: false,
+  });
+
+  let token: InterceptorToken;
+
   beforeAll(async () => {
     if (type === 'remote') {
-      await server.start();
+      token = await createInterceptorToken();
+      await Promise.all([server.start(), authenticatedServer.start()]);
     }
   });
 
   afterAll(async () => {
     if (type === 'remote') {
-      await server.stop();
+      await Promise.all([server.stop(), authenticatedServer.stop()]);
+      await removeInterceptorToken(token.id);
     }
   });
 
@@ -26,6 +41,8 @@ describe.each(testMatrix)('SocketIOProtocol (node, $type)', ({ type }) => {
     platform: 'node',
     type,
     getBaseURL: () => getNodeBaseURL(type, server).replace(/^http/, 'ws'),
+    getAuthenticatedBaseURL: () => `ws://localhost:${authenticatedServer.port}`,
+    getValidToken: () => token.value,
     PollingTransport: NodeXHR,
     WebSocketTransport: NodeWebSocket,
   });

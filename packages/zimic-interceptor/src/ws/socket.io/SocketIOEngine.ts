@@ -255,9 +255,10 @@ class SocketIOEngine {
       return;
     }
 
+    // Parsers emit binary events as event packets once their attachments arrive.
     if (packet.type === PacketType.DISCONNECT) {
       this.releaseNamespace(protocol, session);
-    } else if (packet.type === PacketType.EVENT || packet.type === PacketType.BINARY_EVENT) {
+    } else if (packet.type === PacketType.EVENT) {
       protocol.receiveEventPacket(connection.client, packet);
     }
   }
