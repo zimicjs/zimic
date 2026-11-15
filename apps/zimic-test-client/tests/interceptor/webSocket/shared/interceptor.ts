@@ -117,11 +117,11 @@ export function declareWebSocketInterceptorTests({
   defaultBinaryMessageType,
   openSocket,
   createSocket,
-  createProtocol,
+  framedProtocol,
 }: ClientTestOptionsByWorkerType) {
   // Framed protocols choose their own connection path and cannot express raw WebSocket features: close codes and
   // reasons, subprotocols, and binary frames sent as messages.
-  const supportsRawWebSocketFeatures = createProtocol === undefined;
+  const supportsRawWebSocketFeatures = framedProtocol === undefined;
 
   const nodeMajorVersion = platform === 'node' ? Number(process.versions.node.split('.')[0]) : null;
 
@@ -168,32 +168,28 @@ export function declareWebSocketInterceptorTests({
     expect(settled.closeCodes).toEqual(refusedSocketBehavior.closeCodes);
   }
 
+  const userBaseURL = `${getUserBaseURL(type)}${framedProtocol?.path ?? ''}`;
+
   const userInterceptor = createWebSocketInterceptor<UserWebSocketSchema>({
     type,
-    baseURL: getUserBaseURL(type),
+    baseURL: userBaseURL,
     messageSaving: { enabled: true },
-    protocol: createProtocol?.(),
+    protocol: framedProtocol?.create({ type, baseURL: userBaseURL }),
   });
+
+  const notificationBaseURL = `${getNotificationBaseURL(type)}${framedProtocol?.path ?? ''}`;
 
   const notificationInterceptor = createWebSocketInterceptor<NotificationWebSocketSchema>({
     type,
-    baseURL: getNotificationBaseURL(type),
+    baseURL: notificationBaseURL,
     messageSaving: { enabled: true },
-    protocol: createProtocol?.(),
+    protocol: framedProtocol?.create({ type, baseURL: notificationBaseURL }),
   });
 
-  const binaryInterceptor = createWebSocketInterceptor<BinaryWebSocketSchema>({
-    type,
-    baseURL: getBinaryBaseURL(type),
-    messageSaving: { enabled: true },
-    protocol: createProtocol?.(),
-  });
-
-  const interceptors = [userInterceptor, notificationInterceptor, binaryInterceptor];
+  const interceptors = [userInterceptor, notificationInterceptor];
 
   let userSockets: ClientTestWebSocket<UserWebSocketSchema>[] = [];
   let notificationSockets: ClientTestWebSocket<NotificationWebSocketSchema>[] = [];
-  let binarySocket: ClientTestWebSocket<BinaryWebSocketSchema>;
 
   function expectMessagedClients<Schema extends UserWebSocketSchema | NotificationWebSocketSchema>(
     interceptor: LocalWebSocketInterceptor<Schema> | RemoteWebSocketInterceptor<Schema>,
@@ -225,7 +221,6 @@ export function declareWebSocketInterceptorTests({
   beforeEach(async () => {
     await Promise.resolve(userInterceptor.clear());
     await Promise.resolve(notificationInterceptor.clear());
-    await Promise.resolve(binaryInterceptor.clear());
 
     userSockets = [
       await openSocket<UserWebSocketSchema>(userInterceptor.baseURL),
@@ -237,12 +232,9 @@ export function declareWebSocketInterceptorTests({
       await openSocket<NotificationWebSocketSchema>(notificationInterceptor.baseURL),
     ];
 
-    binarySocket = await openSocket<BinaryWebSocketSchema>(binaryInterceptor.baseURL);
-
     await waitFor(() => {
       expect(userInterceptor.clients).toHaveLength(userSockets.length);
       expect(notificationInterceptor.clients).toHaveLength(notificationSockets.length);
-      expect(binaryInterceptor.clients).toHaveLength(1);
     });
   });
 
@@ -254,13 +246,12 @@ export function declareWebSocketInterceptorTests({
         }),
       );
     } finally {
-      const sockets = [...userSockets, ...notificationSockets, binarySocket];
+      const sockets = [...userSockets, ...notificationSockets];
       await Promise.all(sockets.map((socket) => closeWebSocketClient(socket)));
 
       await waitFor(() => {
         expect(userInterceptor.clients).toHaveLength(0);
         expect(notificationInterceptor.clients).toHaveLength(0);
-        expect(binaryInterceptor.clients).toHaveLength(0);
       });
     }
   });
@@ -294,70 +285,30 @@ export function declareWebSocketInterceptorTests({
   });
 
   describe('Connection refusals', () => {
-    // Framed protocols such as Socket.IO connect through their own path, so they cannot connect to a room path.
-    function getRoomURL(query = '') {
-      const roomPath = supportsRawWebSocketFeatures ? '/rooms/1' : '';
-      return `${userInterceptor.baseURL}${roomPath}${query}`;
-    }
-
-    it.runIf(supportsRawWebSocketFeatures)(
-      'should refuse connections rejected by a connection handler before they open',
-      async () => {
+    if (supportsRawWebSocketFeatures) {
+      it('should refuse connections rejected by a connection handler before they open', async () => {
         const roomURL = `${userInterceptor.baseURL}/rooms/1`;
 
         await userInterceptor.connection('/rooms/:roomId').respond({ action: 'reject' }).times(1);
 
         await expectSocketToBeRefused(roomURL, 'graphql-transport-ws');
-      },
-    );
+      });
+    }
 
-    it.each(
-      [
-        {
-          restriction: 'static search params',
-          rejectedQuery: '?token=expired',
-          acceptedQuery: '?token=valid',
-          rejectedProtocols: [],
-          acceptedProtocols: [],
-          declareHandler: () =>
-            userInterceptor
-              .connection()
-              .with({ searchParams: { token: 'expired' } })
-              .respond({ action: 'reject' }),
-          requiresSubprotocols: false,
-        },
-        {
-          restriction: 'computed protocols',
-          rejectedQuery: '',
-          acceptedQuery: '',
-          rejectedProtocols: ['legacy-protocol'],
-          acceptedProtocols: ['graphql-transport-ws'],
-          declareHandler: () =>
-            userInterceptor
-              .connection()
-              .with((request) => request.protocols.includes('legacy-protocol'))
-              .respond({ action: 'reject' }),
-          requiresSubprotocols: true,
-        },
-      ].filter((testCase) => supportsRawWebSocketFeatures || !testCase.requiresSubprotocols),
-    )(
-      'should refuse only connections matching the $restriction restriction of a connection handler',
-      async ({ rejectedQuery, acceptedQuery, rejectedProtocols, acceptedProtocols, declareHandler }) => {
-        const rejectedURL = getRoomURL(rejectedQuery);
-        const acceptedURL = getRoomURL(acceptedQuery);
+    it('should refuse only connections matching the static search params restriction of a connection handler', async () => {
+      await userInterceptor
+        .connection()
+        .with({ searchParams: { token: 'expired' } })
+        .respond({ action: 'reject' })
+        .times(1);
 
-        await declareHandler().times(1);
+      await expectSocketToBeRefused(`${userInterceptor.baseURL}?token=expired`);
 
-        await expectSocketToBeRefused(rejectedURL, rejectedProtocols);
-
-        const acceptedSocket = await openSocket<UserWebSocketSchema>(acceptedURL, acceptedProtocols);
-        await closeWebSocketClient(acceptedSocket);
-      },
-    );
+      const acceptedSocket = await openSocket<UserWebSocketSchema>(`${userInterceptor.baseURL}?token=valid`);
+      await closeWebSocketClient(acceptedSocket);
+    });
 
     it('should count connection attempts accepted and rejected by limited connection handlers', async () => {
-      const roomURL = getRoomURL();
-
       const acceptingHandler = await userInterceptor.connection().times(1);
       const rejectingHandler = await userInterceptor.connection().respond({ action: 'reject' }).times(1);
 
@@ -365,14 +316,14 @@ export function declareWebSocketInterceptorTests({
         await rejectingHandler.checkTimes();
       }).rejects.toThrow(WebSocketTimesCheckError);
 
-      await expectSocketToBeRefused(roomURL);
+      await expectSocketToBeRefused(userInterceptor.baseURL);
 
       await rejectingHandler.checkTimes();
       await expect(async () => {
         await acceptingHandler.checkTimes();
       }).rejects.toThrow(WebSocketTimesCheckError);
 
-      const reconnectedSocket = await openSocket<UserWebSocketSchema>(roomURL);
+      const reconnectedSocket = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
 
       try {
         await acceptingHandler.checkTimes();
@@ -497,7 +448,7 @@ export function declareWebSocketInterceptorTests({
               data: createdUser,
             };
 
-            receiver.send(JSON.stringify(response));
+            receiver.send(response);
           })
           .times(1);
 
@@ -827,121 +778,138 @@ export function declareWebSocketInterceptorTests({
     });
   });
 
-  describe.runIf(supportsRawWebSocketFeatures)('Subprotocols', () => {
-    it('should support messages from sockets connected with a subprotocol', async () => {
-      const userId = crypto.randomUUID();
-      const response: UserWebSocketMessageOfType<'user:delete:success'> = {
-        type: 'user:delete:success',
-        data: { id: userId },
-      };
-      const deleteHandler = await userInterceptor
-        .message()
-        .with({ type: 'user:delete', data: { id: userId } })
-        .respond(response)
-        .times(1);
+  if (supportsRawWebSocketFeatures) {
+    describe('Subprotocols', () => {
+      it('should refuse only connections matching the computed protocols restriction of a connection handler', async () => {
+        await userInterceptor
+          .connection()
+          .with((request) => request.protocols.includes('legacy-protocol'))
+          .respond({ action: 'reject' })
+          .times(1);
 
-      const socket = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL, 'graphql-transport-ws');
+        await expectSocketToBeRefused(userInterceptor.baseURL, ['legacy-protocol']);
 
-      try {
-        expect(socket.protocol).toBe('graphql-transport-ws');
+        const acceptedSocket = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL, ['graphql-transport-ws']);
+        await closeWebSocketClient(acceptedSocket);
+      });
 
-        await expect(
-          sendAndWaitForResponse(socket, { type: 'user:delete', data: { id: userId } }, 'user:delete:success'),
-        ).resolves.toEqual(response);
-
-        expect(deleteHandler.messages).toHaveLength(1);
-      } finally {
-        await closeWebSocketClient(socket);
-      }
-    });
-
-    it('should support responding based on the subprotocols requested by sockets', async () => {
-      const tokenProtocol = `token.${crypto.randomUUID()}`;
-      const requestedProtocols = ['graphql-transport-ws', tokenProtocol];
-
-      const deleteHandler = await userInterceptor
-        .message()
-        .with({ type: 'user:delete' })
-        .respond((_message, { sender }) => ({
+      it('should support messages from sockets connected with a subprotocol', async () => {
+        const userId = crypto.randomUUID();
+        const response: UserWebSocketMessageOfType<'user:delete:success'> = {
           type: 'user:delete:success',
-          data: { id: sender.protocols.join(',') },
-        }))
-        .times(1);
-
-      const socket = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL, requestedProtocols);
-
-      try {
-        expect(socket.protocol).toBe('graphql-transport-ws');
-
-        await waitFor(() => {
-          expect(userInterceptor.clients).toHaveLength(userSockets.length + 1);
-        });
-        expect(userInterceptor.clients[userSockets.length].protocols).toEqual(requestedProtocols);
-
-        const message: UserWebSocketMessageOfType<'user:delete'> = {
-          type: 'user:delete',
-          data: { id: crypto.randomUUID() },
+          data: { id: userId },
         };
+        const deleteHandler = await userInterceptor
+          .message()
+          .with({ type: 'user:delete', data: { id: userId } })
+          .respond(response)
+          .times(1);
 
-        await expect(sendAndWaitForResponse(socket, message, 'user:delete:success')).resolves.toEqual({
-          type: 'user:delete:success',
-          data: { id: requestedProtocols.join(',') },
-        });
+        const socket = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL, 'graphql-transport-ws');
 
-        expect(deleteHandler.messages).toHaveLength(1);
-      } finally {
-        await closeWebSocketClient(socket);
-      }
+        try {
+          expect(socket.protocol).toBe('graphql-transport-ws');
+
+          await expect(
+            sendAndWaitForResponse(socket, { type: 'user:delete', data: { id: userId } }, 'user:delete:success'),
+          ).resolves.toEqual(response);
+
+          expect(deleteHandler.messages).toHaveLength(1);
+        } finally {
+          await closeWebSocketClient(socket);
+        }
+      });
+
+      it('should support responding based on the subprotocols requested by sockets', async () => {
+        const tokenProtocol = `token.${crypto.randomUUID()}`;
+        const requestedProtocols = ['graphql-transport-ws', tokenProtocol];
+
+        const deleteHandler = await userInterceptor
+          .message()
+          .with({ type: 'user:delete' })
+          .respond((_message, { sender }) => ({
+            type: 'user:delete:success',
+            data: { id: sender.protocols.join(',') },
+          }))
+          .times(1);
+
+        const socket = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL, requestedProtocols);
+
+        try {
+          expect(socket.protocol).toBe('graphql-transport-ws');
+
+          await waitFor(() => {
+            expect(userInterceptor.clients).toHaveLength(userSockets.length + 1);
+          });
+          expect(userInterceptor.clients[userSockets.length].protocols).toEqual(requestedProtocols);
+
+          const message: UserWebSocketMessageOfType<'user:delete'> = {
+            type: 'user:delete',
+            data: { id: crypto.randomUUID() },
+          };
+
+          await expect(sendAndWaitForResponse(socket, message, 'user:delete:success')).resolves.toEqual({
+            type: 'user:delete:success',
+            data: { id: requestedProtocols.join(',') },
+          });
+
+          expect(deleteHandler.messages).toHaveLength(1);
+        } finally {
+          await closeWebSocketClient(socket);
+        }
+      });
+
+      it('should expose no subprotocols for sockets that requested none', async () => {
+        const socket = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
+
+        try {
+          expect(socket.protocol).toBe('');
+
+          await waitFor(() => {
+            expect(userInterceptor.clients).toHaveLength(userSockets.length + 1);
+          });
+          expect(userInterceptor.clients[userSockets.length].protocols).toEqual([]);
+        } finally {
+          await closeWebSocketClient(socket);
+        }
+      });
     });
+  }
 
-    it('should expose no subprotocols for sockets that requested none', async () => {
-      const socket = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
+  if (supportsRawWebSocketFeatures) {
+    describe('Connection URLs', () => {
+      it('should support responding based on the path and search params of the connection URL', async () => {
+        const roomURL = `${userInterceptor.baseURL}/rooms/1?token=${crypto.randomUUID()}`;
 
-      try {
-        expect(socket.protocol).toBe('');
+        const deleteHandler = await userInterceptor
+          .message()
+          .with({ type: 'user:delete' })
+          .respond((_message, { sender }) => ({ type: 'user:delete:success', data: { id: sender.url } }))
+          .times(1);
 
-        await waitFor(() => {
-          expect(userInterceptor.clients).toHaveLength(userSockets.length + 1);
-        });
-        expect(userInterceptor.clients[userSockets.length].protocols).toEqual([]);
-      } finally {
-        await closeWebSocketClient(socket);
-      }
+        const socket = await openSocket<UserWebSocketSchema>(roomURL);
+
+        try {
+          await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length + 1));
+          expect(userInterceptor.clients[userSockets.length].url).toBe(roomURL);
+
+          const message: UserWebSocketMessageOfType<'user:delete'> = {
+            type: 'user:delete',
+            data: { id: crypto.randomUUID() },
+          };
+
+          await expect(sendAndWaitForResponse(socket, message, 'user:delete:success')).resolves.toEqual({
+            type: 'user:delete:success',
+            data: { id: roomURL },
+          });
+
+          expect(deleteHandler.messages).toHaveLength(1);
+        } finally {
+          await closeWebSocketClient(socket);
+        }
+      });
     });
-  });
-
-  describe.runIf(supportsRawWebSocketFeatures)('Connection URLs', () => {
-    it('should support responding based on the path and search params of the connection URL', async () => {
-      const roomURL = `${userInterceptor.baseURL}/rooms/1?token=${crypto.randomUUID()}`;
-
-      const deleteHandler = await userInterceptor
-        .message()
-        .with({ type: 'user:delete' })
-        .respond((_message, { sender }) => ({ type: 'user:delete:success', data: { id: sender.url } }))
-        .times(1);
-
-      const socket = await openSocket<UserWebSocketSchema>(roomURL);
-
-      try {
-        await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length + 1));
-        expect(userInterceptor.clients[userSockets.length].url).toBe(roomURL);
-
-        const message: UserWebSocketMessageOfType<'user:delete'> = {
-          type: 'user:delete',
-          data: { id: crypto.randomUUID() },
-        };
-
-        await expect(sendAndWaitForResponse(socket, message, 'user:delete:success')).resolves.toEqual({
-          type: 'user:delete:success',
-          data: { id: roomURL },
-        });
-
-        expect(deleteHandler.messages).toHaveLength(1);
-      } finally {
-        await closeWebSocketClient(socket);
-      }
-    });
-  });
+  }
 
   describe('Connection closes', () => {
     it('should support reconnecting after the interceptor closes a connection', async () => {
@@ -958,15 +926,8 @@ export function declareWebSocketInterceptorTests({
           closedSocket.addEventListener('close', resolve);
         });
 
-        closedClient.close(4000, 'Reconnect to continue.');
-
-        const closeEvent = await closeEventPromise;
-
-        // Framed protocols such as Socket.IO do not expose the close code and reason of the connection to the client.
-        if (supportsRawWebSocketFeatures) {
-          expect(closeEvent.code).toBe(4000);
-          expect(closeEvent.reason).toBe('Reconnect to continue.');
-        }
+        closedClient.close();
+        await closeEventPromise;
 
         await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length));
         expect(userInterceptor.clients).not.toContain(closedClient);
@@ -1003,6 +964,29 @@ export function declareWebSocketInterceptorTests({
         await Promise.all(sockets.map((socket) => closeWebSocketClient(socket)));
       }
     });
+
+    if (supportsRawWebSocketFeatures) {
+      it('should support closing connections with a code and reason', async () => {
+        const closedSocket = await openSocket<UserWebSocketSchema>(userInterceptor.baseURL);
+
+        try {
+          await waitFor(() => expect(userInterceptor.clients).toHaveLength(userSockets.length + 1));
+          const closedClient = userInterceptor.clients[userSockets.length];
+
+          const closeEventPromise = new Promise<ClientTestWebSocketCloseEvent>((resolve) => {
+            closedSocket.addEventListener('close', resolve);
+          });
+
+          closedClient.close(4000, 'Reconnect to continue.');
+
+          const closeEvent = await closeEventPromise;
+          expect(closeEvent.code).toBe(4000);
+          expect(closeEvent.reason).toBe('Reconnect to continue.');
+        } finally {
+          await closeWebSocketClient(closedSocket);
+        }
+      });
+    }
   });
 
   describe('Notifications', () => {
@@ -1029,9 +1013,7 @@ export function declareWebSocketInterceptorTests({
     };
 
     function sendNotificationFromServer(message: NotificationWebSocketMessage) {
-      const serializedMessage = JSON.stringify(message);
-
-      notificationInterceptor.server.send(serializedMessage);
+      notificationInterceptor.server.send(message);
     }
 
     function expectNoSavedServerSentNotificationMessages() {
@@ -1079,7 +1061,7 @@ export function declareWebSocketInterceptorTests({
       notificationSockets[1].addEventListener('message', otherClientMessageListener);
 
       try {
-        notificationInterceptor.clients[0].send(JSON.stringify(message));
+        notificationInterceptor.clients[0].send(message);
 
         expect(await responsePromise).toEqual(message);
 
@@ -1139,8 +1121,8 @@ export function declareWebSocketInterceptorTests({
           const broadcastsPromise = Promise.all(sockets.map((socket) => waitForNotificationUpdate(socket)));
           const recipients = selectRecipients(notificationInterceptor.clients);
 
-          notificationInterceptor.server.send(JSON.stringify(message), { to: recipients });
-          notificationInterceptor.server.send(JSON.stringify(broadcast));
+          notificationInterceptor.server.send(message, { to: recipients });
+          notificationInterceptor.server.send(broadcast);
 
           expect(await broadcastsPromise).toEqual([broadcast, broadcast, broadcast]);
           expect(messageListeners[0].mock.calls.map(([event]) => JSON.parse(event.data))).toEqual([message, broadcast]);
@@ -1187,50 +1169,83 @@ export function declareWebSocketInterceptorTests({
     });
   });
 
-  describe.runIf(supportsRawWebSocketFeatures)('Binary messages', () => {
-    const receivedBinaryTypes = [
-      { binaryType: undefined, receivedMessageType: defaultBinaryMessageType },
-      { binaryType: 'arraybuffer', receivedMessageType: ArrayBuffer },
-    ] as const;
+  if (supportsRawWebSocketFeatures) {
+    describe('Binary messages', () => {
+      const binaryInterceptor = createWebSocketInterceptor<BinaryWebSocketSchema>({
+        type,
+        baseURL: getBinaryBaseURL(type),
+        messageSaving: { enabled: true },
+      });
 
-    const sentPayloads = [
-      { payloadType: 'ArrayBuffer', createPayload: () => new Uint8Array([0x00, 0xff]).buffer },
-      { payloadType: 'Uint8Array', createPayload: () => new Uint8Array([0x00, 0xff]) },
-      { payloadType: 'Blob', createPayload: () => new Blob([new Uint8Array([0x00, 0xff])]) },
-    ];
+      beforeAll(async () => {
+        await binaryInterceptor.start();
+      });
 
-    it.each(
-      receivedBinaryTypes.flatMap(({ binaryType, receivedMessageType }) =>
-        sentPayloads.map((payload) => ({
-          ...payload,
-          binaryType,
-          binaryTypeName: binaryType ?? 'client default',
-          receivedMessageType,
-        })),
-      ),
-    )(
-      'should support responding to $payloadType binary messages received with the $binaryTypeName binary type',
-      async ({ binaryType, receivedMessageType, createPayload }) => {
-        binarySocket.binaryType = binaryType ?? binarySocket.binaryType;
+      beforeEach(async () => {
+        await Promise.resolve(binaryInterceptor.clear());
+      });
 
-        const binaryHandler = await binaryInterceptor
-          .message()
-          .with(new Uint8Array([0x00, 0xff]).buffer)
-          .respond(new Uint8Array([0xff, 0x00]).buffer)
-          .times(1);
+      afterEach(async () => {
+        await binaryInterceptor.checkTimes();
+      });
 
-        const responsePromise = waitForBinaryMessage(binarySocket);
-        binarySocket.send(createPayload());
+      afterAll(async () => {
+        await binaryInterceptor.stop();
+      });
 
-        const response = await responsePromise;
-        expect(response).toBeInstanceOf(receivedMessageType);
-        expect(await readBytes(response)).toEqual([0xff, 0x00]);
+      const receivedBinaryTypes = [
+        { binaryType: undefined, receivedMessageType: defaultBinaryMessageType },
+        { binaryType: 'arraybuffer', receivedMessageType: ArrayBuffer },
+      ] as const;
 
-        expect(binaryHandler.messages).toHaveLength(1);
-        expect(await readBytes(binaryHandler.messages[0].data)).toEqual([0x00, 0xff]);
-        expect(binaryHandler.messages[0].sender).toBe(binaryInterceptor.clients[0]);
-        expect(binaryHandler.messages[0].receiver).toBe(binaryInterceptor.server);
-      },
-    );
-  });
+      const sentPayloads = [
+        { payloadType: 'ArrayBuffer', createPayload: () => new Uint8Array([0x00, 0xff]).buffer },
+        { payloadType: 'Uint8Array', createPayload: () => new Uint8Array([0x00, 0xff]) },
+        { payloadType: 'Blob', createPayload: () => new Blob([new Uint8Array([0x00, 0xff])]) },
+      ];
+
+      it.each(
+        receivedBinaryTypes.flatMap(({ binaryType, receivedMessageType }) =>
+          sentPayloads.map((payload) => ({
+            ...payload,
+            binaryType,
+            binaryTypeName: binaryType ?? 'client default',
+            receivedMessageType,
+          })),
+        ),
+      )(
+        'should support responding to $payloadType binary messages received with the $binaryTypeName binary type',
+        async ({ binaryType, receivedMessageType, createPayload }) => {
+          const binarySocket = await openSocket<BinaryWebSocketSchema>(binaryInterceptor.baseURL);
+
+          try {
+            await waitFor(() => expect(binaryInterceptor.clients).toHaveLength(1));
+
+            binarySocket.binaryType = binaryType ?? binarySocket.binaryType;
+
+            const binaryHandler = await binaryInterceptor
+              .message()
+              .with(new Uint8Array([0x00, 0xff]).buffer)
+              .respond(new Uint8Array([0xff, 0x00]).buffer)
+              .times(1);
+
+            const responsePromise = waitForBinaryMessage(binarySocket);
+            binarySocket.send(createPayload());
+
+            const response = await responsePromise;
+            expect(response).toBeInstanceOf(receivedMessageType);
+            expect(await readBytes(response)).toEqual([0xff, 0x00]);
+
+            expect(binaryHandler.messages).toHaveLength(1);
+            expect(await readBytes(binaryHandler.messages[0].data)).toEqual([0x00, 0xff]);
+            expect(binaryHandler.messages[0].sender).toBe(binaryInterceptor.clients[0]);
+            expect(binaryHandler.messages[0].receiver).toBe(binaryInterceptor.server);
+          } finally {
+            await closeWebSocketClient(binarySocket);
+            await waitFor(() => expect(binaryInterceptor.clients).toHaveLength(0));
+          }
+        },
+      );
+    });
+  }
 }

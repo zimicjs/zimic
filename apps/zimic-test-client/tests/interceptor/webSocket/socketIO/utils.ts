@@ -1,75 +1,103 @@
-import type { WebSocketSchema } from '@zimic/ws';
-import { io, ManagerOptions, Socket } from 'socket.io-client';
+import { createSocketIOProtocol, type SocketIOPollingSchema } from '@zimic/interceptor/experimental/socket.io';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
+import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
+import type { WebSocketMessageData, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
+import { io } from 'socket.io-client';
 
-import type { ClientTestOptions, ClientTestWebSocket } from '../shared/client';
+import {
+  ClientTestFramedProtocol,
+  ClientTestWebSocket,
+  ClientTestWebSocketCloseListener,
+  ClientTestWebSocketLifecycleListener,
+  ClientTestWebSocketMessageListener,
+  waitForClientTestWebSocketOpen,
+} from '../shared/client';
 
-const CONNECTING = 0;
-const OPEN = 1;
-const CLOSED = 3;
-
-type ClientTestListener = (event: never) => void;
-
-function createSocketIOTestSocket<Schema extends WebSocketSchema>(
-  url: string,
-  transports: ManagerOptions['transports'],
-) {
+export function createSocketIOTestSocket<Schema extends WebSocketSchema>(url: string) {
   const { origin, pathname, searchParams } = new URL(url);
 
-  const socket: Socket = io(origin.replace(/^ws/, 'http'), {
-    path: `${pathname.replace(/\/$/, '')}/socket.io/`,
+  const socket = io(origin.replace(/^ws/, 'http'), {
+    path: `${pathname}/`,
     query: Object.fromEntries(searchParams),
-    transports,
     forceNew: true,
     reconnection: false,
   });
 
   const listeners = {
-    open: new Set<ClientTestListener>(),
-    error: new Set<ClientTestListener>(),
-    close: new Set<ClientTestListener>(),
-    message: new Set<ClientTestListener>(),
+    open: new Set<ClientTestWebSocketLifecycleListener>(),
+    error: new Set<ClientTestWebSocketLifecycleListener>(),
+    close: new Set<ClientTestWebSocketCloseListener>(),
+    message: new Set<ClientTestWebSocketMessageListener<Schema>>(),
   };
 
-  let readyState = CONNECTING;
+  let readyState: number = WebSocket.CONNECTING;
 
-  function dispatch(type: keyof typeof listeners, event: unknown) {
-    for (const listener of listeners[type]) {
-      listener(event as never);
+  function dispatchClose(code: number, reason: string) {
+    readyState = WebSocket.CLOSED;
+
+    for (const listener of listeners.close) {
+      listener({ code, reason });
     }
   }
 
   socket.on('connect', () => {
-    readyState = OPEN;
-    dispatch('open', {});
+    readyState = WebSocket.OPEN;
+
+    for (const listener of listeners.open) {
+      listener({});
+    }
   });
 
-  socket.on('connect_error', () => {
-    readyState = CLOSED;
-    dispatch('error', {});
-    dispatch('close', { code: 1006, reason: '' });
+  socket.on('connect_error', (error) => {
+    for (const listener of listeners.error) {
+      listener(error);
+    }
+
+    dispatchClose(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE, '');
   });
 
   socket.on('disconnect', (reason) => {
-    readyState = CLOSED;
-    dispatch('close', { code: 1000, reason });
+    dispatchClose(WEB_SOCKET_CLOSE_CODES.DEFAULT, reason);
   });
 
   socket.onAny((type: string, data: unknown) => {
-    dispatch('message', { data: JSON.stringify({ type, data }) });
+    // Socket.IO events carry decoded arguments, which the shared cases read as the JSON frames of a raw WebSocket.
+    const messageData = JSON.stringify({ type, data }) as WebSocketMessageData<WebSocketSchemaMessage<Schema>>;
+
+    for (const listener of listeners.message) {
+      listener({ data: messageData });
+    }
   });
 
-  const testSocket = {
+  type ClientTestListener = ClientTestWebSocketLifecycleListener &
+    ClientTestWebSocketCloseListener &
+    ClientTestWebSocketMessageListener<Schema>;
+
+  // The overloads pair each event type with its listener type, which one implementation signature cannot express.
+  const addEventListener = ((type: keyof typeof listeners, listener: ClientTestListener) => {
+    listeners[type].add(listener);
+  }) as ClientTestWebSocket<Schema>['addEventListener'];
+
+  const removeEventListener = ((type: keyof typeof listeners, listener: ClientTestListener) => {
+    listeners[type].delete(listener);
+  }) as ClientTestWebSocket<Schema>['removeEventListener'];
+
+  const testSocket: ClientTestWebSocket<Schema> = {
     binaryType: 'arraybuffer',
     protocol: '',
     url,
-    CLOSED,
+    CLOSED: WebSocket.CLOSED,
 
     get readyState() {
       return readyState;
     },
 
-    send(message: unknown) {
-      const { type, data } = JSON.parse(message as string) as { type: string; data: unknown };
+    send(message) {
+      if (typeof message !== 'string') {
+        throw new TypeError('Socket.IO test sockets send JSON messages only.');
+      }
+
+      const { type, data } = JSON.parse(message) as { type: string; data: unknown };
       socket.emit(type, data);
     },
 
@@ -77,33 +105,24 @@ function createSocketIOTestSocket<Schema extends WebSocketSchema>(
       socket.disconnect();
     },
 
-    addEventListener(type: keyof typeof listeners, listener: ClientTestListener) {
-      listeners[type].add(listener);
-    },
-
-    removeEventListener(type: keyof typeof listeners, listener: ClientTestListener) {
-      listeners[type].delete(listener);
-    },
+    addEventListener,
+    removeEventListener,
   };
 
-  return testSocket as unknown as ClientTestWebSocket<Schema>;
+  return testSocket;
 }
 
-export function createSocketIOClientTestOptions(
-  transports: ManagerOptions['transports'],
-): Pick<ClientTestOptions, 'openSocket' | 'createSocket'> {
-  return {
-    createSocket: (url) => createSocketIOTestSocket(url, transports),
+export const socketIOFramedProtocol: ClientTestFramedProtocol = {
+  path: '/socket.io',
 
-    openSocket: async <Schema extends WebSocketSchema>(url: string) => {
-      const socket = createSocketIOTestSocket<Schema>(url, transports);
+  create: ({ type, baseURL }) =>
+    createSocketIOProtocol({
+      polling: createHttpInterceptor<SocketIOPollingSchema>({ type, baseURL: baseURL.replace(/^ws/, 'http') }),
+    }),
+};
 
-      await new Promise((resolve, reject) => {
-        socket.addEventListener('open', resolve);
-        socket.addEventListener('error', reject);
-      });
-
-      return socket;
-    },
-  };
+export async function openSocketIOTestSocket<Schema extends WebSocketSchema>(url: string) {
+  const socket = createSocketIOTestSocket<Schema>(url);
+  await waitForClientTestWebSocketOpen(socket);
+  return socket;
 }
