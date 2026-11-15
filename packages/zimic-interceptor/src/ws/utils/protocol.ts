@@ -1,5 +1,7 @@
 import type { PossiblePromise } from '@zimic/utils/types';
 
+import { createPathMatchingURL } from '@/utils/urls';
+
 import type {
   WebSocketInterceptorProtocol,
   WebSocketInterceptorProtocolConnectionClaim,
@@ -32,4 +34,18 @@ export function isInternalWebSocketInterceptorProtocol<Message>(
   protocol: WebSocketInterceptorProtocol<Message> | undefined,
 ): protocol is InternalWebSocketInterceptorProtocol<Message> {
   return protocol !== undefined && INTERNAL_PROTOCOL_BRAND in protocol;
+}
+
+function removeTrailingSlash(url: string) {
+  return url.replace(/\/$/, '');
+}
+
+// Internal protocols serve the base URL of their interceptor, such as the Socket.IO path, so their interceptors do not
+// hold the connections to other paths under it.
+export function canInterceptorHoldConnection(interceptor: AnyWebSocketInterceptorImplementation, url: string) {
+  if (!interceptor.internalProtocol) {
+    return true;
+  }
+
+  return removeTrailingSlash(createPathMatchingURL(url)) === removeTrailingSlash(interceptor.baseURLAsString);
 }

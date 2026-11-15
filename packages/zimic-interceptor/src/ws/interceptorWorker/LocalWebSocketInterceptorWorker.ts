@@ -22,6 +22,7 @@ import {
   UNSUPPORTED_LOCAL_TRANSPORT_CLOSE_CODE,
   UNSUPPORTED_LOCAL_TRANSPORT_CLOSE_REASON,
 } from '../socketIO/constants';
+import { canInterceptorHoldConnection } from '../utils/protocol';
 import type { MSWWebSocketHandler, MSWWorker } from './types/msw';
 import { LocalWebSocketInterceptorWorkerOptions } from './types/options';
 import WebSocketInterceptorWorker from './WebSocketInterceptorWorker';
@@ -441,8 +442,11 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private findConnectionHolders(connectionURL: URL) {
     const connectionURLAsString = excludeNonPathParams(new URL(connectionURL)).href;
 
-    return this.registeredInterceptors.filter((registeredInterceptor) => {
-      return isURLUnderBaseURL(connectionURLAsString, registeredInterceptor.interceptor.baseURLAsString);
+    return this.registeredInterceptors.filter(({ interceptor }) => {
+      return (
+        isURLUnderBaseURL(connectionURLAsString, interceptor.baseURLAsString) &&
+        canInterceptorHoldConnection(interceptor, connectionURLAsString)
+      );
     });
   }
 

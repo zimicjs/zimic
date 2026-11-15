@@ -73,7 +73,6 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@zimic/interceptor/http': path.resolve(__dirname, './src/http/index.ts'),
       '@': path.resolve(__dirname, './src'),
       '@tests': path.resolve(__dirname, './tests'),
       '@scripts': path.resolve(__dirname, './scripts'),

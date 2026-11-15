@@ -1,10 +1,7 @@
-import type { HttpSchema } from '@zimic/http';
-// Imported through the package name so that bundling keeps the HTTP code in its own entry point. Sharing it in a chunk
-// breaks prebundlers that cannot resolve the dependencies of the chunk, such as Vite with strict node_modules.
-import { createHttpInterceptor, type LocalHttpInterceptor, type RemoteHttpInterceptor } from '@zimic/interceptor/http';
 import { ValidationError } from '@zimic/utils/validation';
 import { decodePacket, protocol as engineIOProtocol } from 'engine.io-parser';
 import * as defaultParser from 'socket.io-parser';
+import type { Packet } from 'socket.io-parser';
 
 import { convertArrayBufferToBase64 } from '@/utils/data';
 import { isServerSide } from '@/utils/environment';
@@ -21,8 +18,15 @@ import type { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSo
 import { UNKNOWN_SESSION_CLOSE_CODE, UNSUPPORTED_VERSION_CLOSE_CODE } from './constants';
 import type { SocketIOProtocol } from './createSocketIOProtocol';
 import DuplicateSocketIONamespaceError from './errors/DuplicateSocketIONamespaceError';
+import InvalidSocketIOPollingInterceptorError from './errors/InvalidSocketIOPollingInterceptorError';
 import MismatchedSocketIOProtocolOptionsError from './errors/MismatchedSocketIOProtocolOptionsError';
-import type { SocketIOMessage, SocketIOPacket, SocketIOParser } from './types';
+import type {
+  SocketIOMessage,
+  SocketIOParser,
+  SocketIOPollingInterceptor,
+  SocketIOPollingRequest,
+  SocketIOPollingResponse,
+} from './types';
 
 const { PacketType } = defaultParser;
 
@@ -67,28 +71,6 @@ const IGNORED_CONNECTION_CLAIM: WebSocketInterceptorProtocolConnectionClaim = {
   onFrame: ignoreConnectionEvent,
   onClose: ignoreConnectionEvent,
 };
-
-interface SocketIOPollingErrorBody {
-  code: number;
-  message: string;
-}
-
-type SocketIOPollingHttpSchema = HttpSchema<{
-  '/': {
-    GET: {
-      request: { searchParams: { EIO?: string; transport?: string; sid?: string } };
-      response: {
-        200: { body: string };
-        400: { body: SocketIOPollingErrorBody };
-        403: { body: SocketIOPollingErrorBody };
-      };
-    };
-    POST: {
-      request: { searchParams: { EIO?: string; transport?: string; sid?: string }; body?: string };
-      response: { 200: { body: string }; 400: { body: SocketIOPollingErrorBody } };
-    };
-  };
-}>;
 
 class SocketIOPollingTransport implements WebSocketInterceptorProtocolRawConnection {
   private queuedFrames: WebSocketInterceptorProtocolFrame[] = [];
@@ -150,17 +132,24 @@ interface SocketIOEngineSession {
 }
 
 export interface SocketIOEngineOptions {
-  polling: boolean;
+  polling: SocketIOPollingInterceptor | undefined;
   parser: SocketIOParser;
 }
 
 type AnySocketIOProtocol = SocketIOProtocol<SocketIOMessage>;
 
+// Parsers come from user code, and some declare other return types, such as `socket.io-msgpack-parser`.
 export function encodeSocketIOPacket(
   encoder: InstanceType<SocketIOParser['Encoder']>,
-  packet: SocketIOPacket,
+  packet: Packet,
 ): WebSocketInterceptorProtocolFrame[] {
-  return encoder.encode(packet).map((encodedChunk) => {
+  const encodedChunks = encoder.encode(packet);
+
+  if (!Array.isArray(encodedChunks)) {
+    throw new ValidationError('Socket.IO parsers must encode packets into arrays of chunks.');
+  }
+
+  return encodedChunks.map((encodedChunk: unknown) => {
     if (typeof encodedChunk === 'string') {
       return `${ENGINE_IO_MESSAGE_PACKET_PREFIX}${encodedChunk}`;
     }
@@ -191,9 +180,7 @@ class SocketIOEngine {
   private protocols = new Map<string, AnySocketIOProtocol>();
   private sessions = new Map<string, SocketIOEngineSession>();
   private encoder: InstanceType<SocketIOParser['Encoder']>;
-  private httpInterceptor:
-    LocalHttpInterceptor<SocketIOPollingHttpSchema> | RemoteHttpInterceptor<SocketIOPollingHttpSchema>;
-  private httpInterceptorStart: Promise<void>;
+  private pollingStart: Promise<void>;
   private baseURL: string;
 
   constructor(
@@ -202,55 +189,16 @@ class SocketIOEngine {
   ) {
     this.baseURL = interceptor.baseURLAsString;
     this.encoder = new options.parser.Encoder();
-
-    // Scoped to the Socket.IO path, because HTTP interceptors decide the unhandled requests under their base URL.
-    const pollingBaseURL = `${this.baseURL.replace(/^ws/, 'http').replace(/\/$/, '')}/socket.io`;
-
-    this.httpInterceptor =
-      interceptor.type === 'local'
-        ? createHttpInterceptor<SocketIOPollingHttpSchema>({
-            type: 'local',
-            baseURL: pollingBaseURL,
-            requestSaving: { enabled: false },
-          })
-        : createHttpInterceptor<SocketIOPollingHttpSchema>({
-            type: 'remote',
-            baseURL: pollingBaseURL,
-            auth: interceptor.auth,
-            requestSaving: { enabled: false },
-          });
-
-    this.httpInterceptorStart = this.startHttpInterceptor();
+    this.pollingStart = options.polling ? this.startPolling(options.polling) : Promise.resolve();
   }
 
-  private async startHttpInterceptor() {
-    await this.httpInterceptor.start();
-
-    if (this.options.polling) {
-      await this.httpInterceptor.get('/').respond((request) => this.respondToPoll(request));
-      await this.httpInterceptor.post('/').respond((request) => this.receivePollingPayload(request));
-    } else {
-      await this.httpInterceptor
-        .get('/')
-        .with({ searchParams: { transport: 'polling' } })
-        .respond(() => this.rejectDisabledPolling());
-      await this.httpInterceptor
-        .post('/')
-        .with({ searchParams: { transport: 'polling' } })
-        .respond(() => this.rejectDisabledPolling());
-    }
+  private async startPolling(polling: SocketIOPollingInterceptor) {
+    await polling.start();
+    await polling.get('/').respond((request) => this.respondToPoll(request));
+    await polling.post('/').respond((request) => this.receivePollingPayload(request));
   }
 
-  private rejectDisabledPolling() {
-    logger.warn(
-      'Socket.IO polling is disabled for this interceptor. Enable `polling` in `createSocketIOProtocol` or set',
-      "`transports: ['websocket']` in the client.",
-    );
-
-    return { status: 400, body: { code: 0, message: 'Transport unknown' } } as const;
-  }
-
-  private async respondToPoll(request: { url: string; searchParams: { get: (name: 'sid' | 'EIO') => string | null } }) {
+  private async respondToPoll(request: SocketIOPollingRequest): Promise<SocketIOPollingResponse<'GET'>> {
     const sessionId = request.searchParams.get('sid');
 
     if (sessionId === null) {
@@ -277,7 +225,7 @@ class SocketIOEngine {
     return { status: 200, body: await session.transport.poll() } as const;
   }
 
-  private openPollingSession(request: { url: string; searchParams: { get: (name: 'sid' | 'EIO') => string | null } }) {
+  private openPollingSession(request: SocketIOPollingRequest): SocketIOPollingResponse<'GET'> {
     const unsupportedVersionMessage = warnOfUnsupportedEngineIOVersion(request.searchParams.get('EIO'));
 
     if (unsupportedVersionMessage !== undefined) {
@@ -293,10 +241,7 @@ class SocketIOEngine {
     return { status: 200, body: this.createOpenPacket(session.id, ['websocket']) } as const;
   }
 
-  private receivePollingPayload(request: {
-    body: string | null;
-    searchParams: { get: (name: 'sid') => string | null };
-  }) {
+  private receivePollingPayload(request: SocketIOPollingRequest): SocketIOPollingResponse<'POST'> {
     const sessionId = request.searchParams.get('sid');
     const session = sessionId === null ? undefined : this.sessions.get(sessionId);
     const packets = typeof request.body === 'string' ? request.body.split(POLLING_PACKET_SEPARATOR) : [];
@@ -334,7 +279,7 @@ class SocketIOEngine {
     return needsNodeBuffer ? Buffer.from(chunk) : chunk;
   }
 
-  private receiveSocketPacket(session: SocketIOEngineSession, packet: SocketIOPacket) {
+  private receiveSocketPacket(session: SocketIOEngineSession, packet: Packet) {
     const protocol = this.protocols.get(packet.nsp);
 
     if (!protocol) {
@@ -366,7 +311,7 @@ class SocketIOEngine {
     }
   }
 
-  private sendSocketPacket(session: SocketIOEngineSession, packet: SocketIOPacket) {
+  private sendSocketPacket(session: SocketIOEngineSession, packet: Packet) {
     for (const frame of encodeSocketIOPacket(this.encoder, packet)) {
       session.transport.send(frame);
     }
@@ -428,8 +373,12 @@ class SocketIOEngine {
       throw new MismatchedSocketIOProtocolOptionsError('parser', this.baseURL);
     }
 
+    if (protocol.polling !== this.options.polling) {
+      throw new MismatchedSocketIOProtocolOptionsError('polling', this.baseURL);
+    }
+
     this.protocols.set(protocol.namespace, protocol);
-    return this.httpInterceptorStart;
+    return this.pollingStart;
   }
 
   async stop(protocol: AnySocketIOProtocol) {
@@ -445,8 +394,8 @@ class SocketIOEngine {
       this.closeSession(session);
     }
 
-    await Promise.allSettled([this.httpInterceptorStart]);
-    await this.httpInterceptor.stop();
+    await Promise.allSettled([this.pollingStart]);
+    await this.options.polling?.stop();
   }
 
   // A session stays open until the last namespace using it lets it go.
@@ -616,6 +565,40 @@ function getSocketIOEngineKey(interceptor: AnyWebSocketInterceptorImplementation
   return `${interceptor.type}:${interceptor.baseURLAsString}`;
 }
 
+function validatePollingInterceptor(
+  interceptor: AnyWebSocketInterceptorImplementation,
+  polling: SocketIOPollingInterceptor | undefined,
+) {
+  if (!polling) {
+    if (interceptor.type === 'local') {
+      throw new InvalidSocketIOPollingInterceptorError(
+        'local interceptors require one, because they serve Socket.IO over polling only.',
+      );
+    }
+    return;
+  }
+
+  if (polling.type !== interceptor.type) {
+    throw new InvalidSocketIOPollingInterceptorError(
+      `its type must be '${interceptor.type}', the same as the WebSocket interceptor.`,
+    );
+  }
+
+  const expectedBaseURL = interceptor.baseURLAsString.replace(/^ws/, 'http');
+
+  if (polling.baseURL !== expectedBaseURL) {
+    throw new InvalidSocketIOPollingInterceptorError(
+      `its base URL must be ${expectedBaseURL}, the WebSocket base URL with \`http\` instead of \`ws\`.`,
+    );
+  }
+
+  if (polling.isRunning) {
+    throw new InvalidSocketIOPollingInterceptorError(
+      'it must not be running, because the protocol starts and stops it.',
+    );
+  }
+}
+
 export function getOrCreateSocketIOEngine(
   interceptor: AnyWebSocketInterceptorImplementation,
   options: SocketIOEngineOptions,
@@ -625,6 +608,7 @@ export function getOrCreateSocketIOEngine(
   let engine = engines.get(key);
 
   if (!engine) {
+    validatePollingInterceptor(interceptor, options.polling);
     engine = new SocketIOEngine(interceptor, options);
     engines.set(key, engine);
   }

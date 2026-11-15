@@ -96,7 +96,7 @@ const peerPackageNamesByEntryFile: Record<string, PeerPackageName[]> = {
   'dist/experimental/ws.js': [],
   'dist/experimental/ws.mjs': [],
 
-  'experimental/socket.io.d.ts': ['@zimic/ws'],
+  'experimental/socket.io.d.ts': ['@zimic/ws', 'socket.io-parser'],
   'dist/experimental/socket.io.js': ['engine.io-parser', 'socket.io-parser'],
   'dist/experimental/socket.io.mjs': ['engine.io-parser', 'socket.io-parser'],
 

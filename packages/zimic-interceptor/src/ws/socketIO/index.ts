@@ -10,7 +10,7 @@ export type {
   SocketIOEventMessage,
   SocketIOMessage,
   SocketIOParser,
-  SocketIOPacket,
+  SocketIOPollingSchema,
   SocketIOProtocolOptions,
   SocketIOSchema,
 } from './types';

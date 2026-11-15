@@ -7,7 +7,6 @@
     "ignoreDeprecations": "6.0",
     "paths": {
       "@/*": ["./src/*"],
-      "@zimic/interceptor/http": ["./src/http/index.ts"],
       "@tests/*": ["./tests/*"],
       "@scripts/*": ["./scripts/*"],
       "@@/package.json": ["./package.json"]

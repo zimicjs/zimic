@@ -33,6 +33,7 @@ import {
   deserializeWebSocketMessageDataFromTransport,
   serializeWebSocketMessageDataForTransport,
 } from '../utils/messageData';
+import { canInterceptorHoldConnection } from '../utils/protocol';
 import { RemoteWebSocketInterceptorWorkerOptions } from './types/options';
 import WebSocketInterceptorWorker from './WebSocketInterceptorWorker';
 
@@ -243,7 +244,12 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     const holderCandidates = connection.interceptorIds.flatMap((interceptorId) => {
       const registeredInterceptor = this.registeredInterceptors.get(interceptorId);
-      return registeredInterceptor && isHolding(registeredInterceptor) ? [registeredInterceptor] : [];
+      const canHold =
+        registeredInterceptor &&
+        isHolding(registeredInterceptor) &&
+        canInterceptorHoldConnection(registeredInterceptor.interceptor, connection.url);
+
+      return canHold ? [registeredInterceptor] : [];
     });
 
     if (this.claimConnectionForProtocol(connection.clientId, connection.url, holderCandidates)) {

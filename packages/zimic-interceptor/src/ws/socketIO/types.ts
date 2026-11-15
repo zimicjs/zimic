@@ -1,11 +1,11 @@
+import type { PossiblePromise } from '@zimic/utils/types';
 import type { WebSocketSchema } from '@zimic/ws';
+import type { Packet } from 'socket.io-parser';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A Socket.IO event as seen by handlers. `type` is the event name, `data` is the first argument, and `args` holds the
- * remaining arguments, omitted when there are none. Unlike Socket.IO's `...args`, `args` does not include the first
- * argument.
+ * A Socket.IO event as seen by handlers, with the first argument as `data` and the remaining ones as `args`.
  */
 export interface SocketIOEventMessage<
   Type extends string = string,
@@ -14,8 +14,8 @@ export interface SocketIOEventMessage<
 > {
   /** The event name. */
   type: Type;
-  /** The first argument of the event. */
-  data: Data;
+  /** The first argument of the event, if any. */
+  data?: Data;
   /** The remaining arguments of the event, omitted when there are none. */
   args?: Args;
   /** Identifies the acknowledgement expected by the client. Present when the client passed an ack callback. */
@@ -25,8 +25,7 @@ export interface SocketIOEventMessage<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The acknowledgement of an event received with `ackId`. `data` is the first argument passed to the ack callback of the
- * client and `args` holds the remaining ones, omitted when there are none.
+ * The acknowledgement of an event received with `ackId`, with the arguments of the ack callback as `data` and `args`.
  */
 export interface SocketIOAckMessage<Data = unknown, Args extends unknown[] = unknown[]> {
   /** The `ackId` of the acknowledged event. */
@@ -37,53 +36,63 @@ export interface SocketIOAckMessage<Data = unknown, Args extends unknown[] = unk
   args?: Args;
 }
 
-/** Any message accepted by a Socket.IO protocol. */
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * Any message accepted by a Socket.IO protocol.
+ */
 export type SocketIOMessage = SocketIOEventMessage | SocketIOAckMessage;
 
-/** The events of one direction, declared as in `socket.io-client`. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * The events of one direction, declared as in `socket.io-client`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Parameters are contravariant, so only `any` accepts events with typed parameters.
 export type SocketIOEventsMap = Record<string, (...args: any[]) => void>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SocketIOAckCallback = (...args: any[]) => void;
-
-type SocketIOEventArguments<Parameters extends unknown[]> = Parameters extends [...infer Arguments, SocketIOAckCallback]
-  ? Arguments
-  : Parameters;
+type SocketIOAckCallback = SocketIOEventsMap[string];
 
 type SocketIOEventParameters<Event> = Event extends (...args: infer EventParameters) => void ? EventParameters : never;
 
 // Events declared with rest parameters, as in the default events map, have no known arguments.
-type SocketIOEventMessageFromArguments<
-  Type extends string,
-  Arguments extends unknown[],
-> = number extends Arguments['length']
-  ? SocketIOEventMessage<Type>
+type SocketIOArguments<Arguments extends unknown[]> = number extends Arguments['length']
+  ? { data?: unknown; args?: unknown[] }
   : Arguments extends [infer Data, ...infer Rest]
     ? Rest extends []
-      ? Omit<SocketIOEventMessage<Type, Data>, 'args'>
-      : SocketIOEventMessage<Type, Data, Rest> & { args: Rest }
-    : Omit<SocketIOEventMessage<Type, undefined>, 'args'>;
+      ? { data: Data }
+      : { data: Data; args: Rest }
+    : { data?: undefined };
 
-type SocketIOEventMessages<Events extends object> = {
-  [Type in keyof Events & string]: SocketIOEventMessageFromArguments<
-    Type,
+// A trailing callback, required or optional, declares the acknowledgement of the event instead of an argument.
+type SocketIOEventArguments<EventParameters extends unknown[]> =
+  Required<EventParameters> extends [...infer Arguments, SocketIOAckCallback] ? Arguments : EventParameters;
+
+type SocketIOEventAckId<EventParameters extends unknown[]> = number extends EventParameters['length']
+  ? { ackId?: number }
+  : EventParameters extends [...unknown[], SocketIOAckCallback]
+    ? { ackId: number }
+    : Required<EventParameters> extends [...unknown[], SocketIOAckCallback]
+      ? { ackId?: number }
+      : unknown;
+
+type SocketIOServerEventMessages<Events extends object> = {
+  [Type in keyof Events & string]: { type: Type; ackId?: number } & SocketIOArguments<
     SocketIOEventArguments<SocketIOEventParameters<Events[Type]>>
   >;
 }[keyof Events & string];
 
-type SocketIOAckMessageFromArguments<Arguments extends unknown[]> = Arguments extends [infer Data, ...infer Rest]
-  ? Rest extends []
-    ? Omit<SocketIOAckMessage<Data>, 'args'>
-    : SocketIOAckMessage<Data, Rest> & { args: Rest }
-  : Omit<SocketIOAckMessage, 'args' | 'data'>;
+type SocketIOClientEventMessages<Events extends object> = {
+  [Type in keyof Events & string]: { type: Type } & SocketIOArguments<
+    SocketIOEventArguments<SocketIOEventParameters<Events[Type]>>
+  > &
+    SocketIOEventAckId<SocketIOEventParameters<Events[Type]>>;
+}[keyof Events & string];
 
 type SocketIOAckMessageFromParameters<EventParameters extends unknown[]> = number extends EventParameters['length']
-  ? SocketIOAckMessage
-  : EventParameters extends [...unknown[], infer Callback]
-    ? Callback extends (...args: infer Arguments) => void
-      ? SocketIOAckMessageFromArguments<Arguments>
-      : never
+  ? { ackId: number } & SocketIOArguments<unknown[]>
+  : Required<EventParameters> extends [...unknown[], (...args: infer AckArguments) => void]
+    ? { ackId: number } & SocketIOArguments<AckArguments>
     : never;
 
 type SocketIOAckMessages<Events extends object> = {
@@ -93,25 +102,7 @@ type SocketIOAckMessages<Events extends object> = {
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The WebSocket schema of a Socket.IO server, with events declared as in `socket.io-client`. A trailing callback
- * parameter of a client event declares the type of its acknowledgement.
- *
- * @example
- *   import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
- *   import { createSocketIOProtocol, type SocketIOSchema } from '@zimic/interceptor/experimental/socket.io';
- *
- *   interface ServerToClientEvents {
- *     'user:created': (user: { id: string }) => void;
- *   }
- *
- *   interface ClientToServerEvents {
- *     'user:create': (input: { name: string }, ack: (user: { id: string }) => void) => void;
- *   }
- *
- *   const interceptor = createWebSocketInterceptor<SocketIOSchema<ServerToClientEvents, ClientToServerEvents>>({
- *     baseURL: 'ws://localhost:3000',
- *     protocol: createSocketIOProtocol(),
- *   });
+ * The WebSocket schema of a Socket.IO server, with events declared as in `socket.io-client`.
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#socketioschema `SocketIOSchema` API reference}
  */
@@ -119,10 +110,10 @@ export type SocketIOSchema<
   ServerToClientEvents extends object = SocketIOEventsMap,
   ClientToServerEvents extends object = SocketIOEventsMap,
 > = WebSocketSchema<{
-  '/socket.io/': {
+  '/': {
     message:
-      | SocketIOEventMessages<ServerToClientEvents>
-      | SocketIOEventMessages<ClientToServerEvents>
+      | SocketIOServerEventMessages<ServerToClientEvents>
+      | SocketIOClientEventMessages<ClientToServerEvents>
       | SocketIOAckMessages<ClientToServerEvents>;
   };
 }>;
@@ -135,30 +126,99 @@ export type SocketIOSchema<
  * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#custom-parsers Custom parsers}
  */
 export interface SocketIOParser {
-  /** Encodes a Socket.IO packet into string or binary chunks. */
-  Encoder: new () => { encode: (packet: SocketIOPacket) => unknown[] };
+  /** Encodes a Socket.IO packet into an array of string or binary chunks. */
+  Encoder: new () => { encode: (packet: Packet) => unknown };
 
   /** Decodes string or binary chunks, emitting `decoded` with each complete Socket.IO packet. */
   Decoder: new () => {
     add: (chunk: unknown) => void;
-    on: (event: 'decoded', listener: (packet: SocketIOPacket) => void) => unknown;
+    on: (event: 'decoded', listener: (packet: Packet) => void) => unknown;
   };
+}
+
+/** The search params of polling requests read by a Socket.IO protocol. */
+interface SocketIOPollingSearchParams {
+  EIO?: string;
+  sid?: string;
+}
+
+/** An Engine.IO error, answered to invalid polling requests. */
+interface SocketIOPollingErrorBody {
+  code: number;
+  message: string;
 }
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A Socket.IO protocol packet, as read and written by a {@link SocketIOParser}.
+ * The HTTP schema of the interceptor passed as the `polling` option of {@link createSocketIOProtocol}.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#createsocketioprotocol `createSocketIOProtocol` API reference}
  */
-export interface SocketIOPacket {
-  /** The packet type: 0 connect, 1 disconnect, 2 event, 3 ack, 4 connect error, 5 binary event, or 6 binary ack. */
-  type: number;
-  /** The namespace of the packet. */
-  nsp: string;
-  /** The acknowledgement ID of the packet, if any. */
-  id?: number;
-  /** The payload of the packet. */
-  data?: unknown;
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- HTTP schemas need the implicit index signature of type aliases.
+export type SocketIOPollingSchema = {
+  '/': {
+    GET: {
+      request: { searchParams: SocketIOPollingSearchParams };
+      response: {
+        200: { body: string };
+        400: { body: SocketIOPollingErrorBody };
+        403: { body: SocketIOPollingErrorBody };
+      };
+    };
+    POST: {
+      request: { searchParams: SocketIOPollingSearchParams; body?: string };
+      response: { 200: { body: string } };
+    };
+  };
+};
+
+/** A polling request, as read by a Socket.IO protocol. */
+export interface SocketIOPollingRequest {
+  /** The URL of the request. */
+  url: string;
+  /** The search params of the request, which identify the Engine.IO version and session. */
+  searchParams: { get: (name: keyof SocketIOPollingSearchParams) => string | null };
+  /** The packets sent by the client, or `null` if none. */
+  body: string | null;
+}
+
+/** The responses of a polling method, by status code. */
+type SocketIOPollingResponses<Method extends keyof SocketIOPollingSchema['/']> =
+  SocketIOPollingSchema['/'][Method]['response'];
+
+/** A response to a polling request, as declared by a Socket.IO protocol. */
+export type SocketIOPollingResponse<Method extends keyof SocketIOPollingSchema['/']> = {
+  [Status in keyof SocketIOPollingResponses<Method>]: { status: Status } & SocketIOPollingResponses<Method>[Status];
+}[keyof SocketIOPollingResponses<Method>];
+
+/** A handler of polling requests, declared by a Socket.IO protocol. */
+interface SocketIOPollingHandler<Method extends keyof SocketIOPollingSchema['/']> {
+  /** Declares the response to each polling request. */
+  respond: (
+    declaration: (request: SocketIOPollingRequest) => PossiblePromise<SocketIOPollingResponse<Method>>,
+  ) => unknown;
+}
+
+/**
+ * An HTTP interceptor of {@link SocketIOPollingSchema}, created with `createHttpInterceptor` from
+ * `@zimic/interceptor/http`.
+ */
+export interface SocketIOPollingInterceptor {
+  /** The type of the interceptor, the same as the WebSocket interceptor. */
+  readonly type: 'local' | 'remote';
+  /** The base URL of the interceptor, the WebSocket base URL with `http` instead of `ws`. */
+  readonly baseURL: string;
+  /** Whether the interceptor is running. The protocol starts and stops it. */
+  readonly isRunning: boolean;
+  /** Starts the interceptor. */
+  start: () => Promise<void>;
+  /** Stops the interceptor. */
+  stop: () => Promise<void>;
+  /** Declares a handler of the long-polling requests. */
+  get: (path: '/') => SocketIOPollingHandler<'GET'>;
+  /** Declares a handler of the packets sent by polling clients. */
+  post: (path: '/') => SocketIOPollingHandler<'POST'>;
 }
 
 /**
@@ -173,10 +233,10 @@ export interface SocketIOProtocolOptions {
   namespace?: string;
 
   /**
-   * Whether to intercept HTTP long-polling requests to `<base URL>/socket.io/`. If `false`, polling clients fail to
-   * connect and a warning is logged. Defaults to `true`.
+   * The HTTP interceptor serving polling requests, on the WebSocket base URL with `http` instead of `ws`, or none to
+   * disable polling.
    */
-  polling?: boolean;
+  polling?: SocketIOPollingInterceptor;
 
   /**
    * The parser used by the client, with the same shape as the `parser` option of `socket.io-client`. The protocols of

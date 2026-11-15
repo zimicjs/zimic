@@ -1,5 +1,6 @@
 import { ValidationError } from '@zimic/utils/validation';
 import * as defaultParser from 'socket.io-parser';
+import type { Packet } from 'socket.io-parser';
 
 import type {
   WebSocketInterceptorProtocol,
@@ -16,7 +17,7 @@ import {
   getOrCreateSocketIOEngine,
   SocketIOEngine,
 } from './SocketIOEngine';
-import type { SocketIOMessage, SocketIOPacket, SocketIOParser, SocketIOProtocolOptions } from './types';
+import type { SocketIOMessage, SocketIOParser, SocketIOPollingInterceptor, SocketIOProtocolOptions } from './types';
 
 const { PacketType } = defaultParser;
 
@@ -30,12 +31,18 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements InternalWebSo
   private engine?: SocketIOEngine;
   private encoder: InstanceType<SocketIOParser['Encoder']>;
 
-  constructor(private options: Required<Omit<SocketIOProtocolOptions, 'parser'>> & { parser: SocketIOParser }) {
+  constructor(
+    private options: { namespace: string; polling: SocketIOPollingInterceptor | undefined; parser: SocketIOParser },
+  ) {
     this.encoder = new options.parser.Encoder();
   }
 
   get namespace() {
     return this.options.namespace;
+  }
+
+  get polling() {
+    return this.options.polling;
   }
 
   get parser() {
@@ -82,7 +89,7 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements InternalWebSo
   }
 
   // Parsers such as `socket.io-parser` accept event names that are not strings, which handlers do not expect.
-  receiveEventPacket(client: InternalWebSocketInterceptorClient, packet: SocketIOPacket) {
+  receiveEventPacket(client: InternalWebSocketInterceptorClient, packet: Packet) {
     if (!Array.isArray(packet.data)) {
       return;
     }
@@ -114,7 +121,7 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements InternalWebSo
     return encodeSocketIOPacket(this.encoder, this.createSocketPacket(message));
   }
 
-  private createSocketPacket(message: SocketIOMessage): SocketIOPacket {
+  private createSocketPacket(message: SocketIOMessage): Packet {
     const { namespace } = this.options;
 
     const hasNoArguments = message.data === undefined && message.args === undefined;
@@ -133,21 +140,7 @@ export type { SocketIOProtocol };
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * Creates a protocol for the `protocol` option of `createWebSocketInterceptor`, to mock Socket.IO servers with
- * interceptor handlers. Handlers receive events as `{ type, data, args?, ackId? }`, and the protocol answers the
- * Engine.IO and Socket.IO handshakes and pings. Supports Socket.IO v3 and v4 (Engine.IO protocol 4, Socket.IO protocol
- * 5).
- *
- * Polling, enabled by default, intercepts HTTP requests to `<base URL>/socket.io/`. Use one protocol and one
- * interceptor for each namespace and base URL. Interceptors of namespaces on the same base URL share a connection and
- * must use the same `parser`, and the first one started sets the `polling` option. Each interceptor lists a client for
- * each socket that joins its namespace.
- *
- * @example
- *   const interceptor = createWebSocketInterceptor<SocketIOSchema<ServerToClientEvents, ClientToServerEvents>>({
- *     baseURL: 'ws://localhost:3000',
- *     protocol: createSocketIOProtocol(),
- *   });
+ * Creates a protocol to mock Socket.IO servers with WebSocket interceptor handlers.
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#createsocketioprotocol `createSocketIOProtocol` API reference}
  * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io Mocking Socket.IO servers}
@@ -157,7 +150,7 @@ export function createSocketIOProtocol<Message extends SocketIOMessage = SocketI
 ): WebSocketInterceptorProtocol<Message> {
   return new SocketIOProtocol<Message>({
     namespace: options.namespace ?? DEFAULT_NAMESPACE,
-    polling: options.polling ?? true,
+    polling: options.polling,
     parser: options.parser ?? defaultParser,
   });
 }
