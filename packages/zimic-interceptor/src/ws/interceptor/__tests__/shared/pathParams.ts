@@ -13,8 +13,7 @@ import {
   usingWebSocketClient,
 } from '@tests/utils/webSocket';
 
-import { WebSocketInterceptorOptions } from '../../types/options';
-import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions, WebSocketInterceptorOptionsWithoutProtocol } from './utils';
 
 type PathSchema = WebSocketSchema.Path<{
   message: { type: 'message' };
@@ -39,7 +38,7 @@ export function declarePathParamsWebSocketInterceptorTests(options: RuntimeShare
   ];
 
   let baseURL: string;
-  let interceptorOptions: WebSocketInterceptorOptions;
+  let interceptorOptions: WebSocketInterceptorOptionsWithoutProtocol;
 
   const Handler = type === 'local' ? LocalWebSocketConnectionHandler : RemoteWebSocketConnectionHandler;
 

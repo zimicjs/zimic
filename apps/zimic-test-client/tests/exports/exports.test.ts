@@ -542,9 +542,9 @@ describe('Exports', () => {
       expectTypeOf<WebSocketInterceptorPlatform>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorType>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorAuthOptions>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorOptions>().not.toBeAny();
-      expectTypeOf<LocalWebSocketInterceptorOptions>().not.toBeAny();
-      expectTypeOf<RemoteWebSocketInterceptorOptions>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorOptions<never>>().not.toBeAny();
+      expectTypeOf<LocalWebSocketInterceptorOptions<never>>().not.toBeAny();
+      expectTypeOf<RemoteWebSocketInterceptorOptions<never>>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorMessageSaving>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorConnectionSaving>().not.toBeAny();
       expectTypeOf<UnhandledMessageStrategy>().not.toBeAny();

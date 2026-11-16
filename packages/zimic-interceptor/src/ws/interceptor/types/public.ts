@@ -180,7 +180,7 @@ export interface RemoteWebSocketInterceptor<Schema extends WebSocketSchema> exte
   get type(): 'remote';
 
   /** The options used to authenticate the interceptor when connecting to an interceptor server. */
-  auth?: RemoteWebSocketInterceptorOptions['auth'];
+  auth?: RemoteWebSocketInterceptorOptions<Schema>['auth'];
 
   /**
    * Creates a message handler for client-to-server messages.

@@ -15,8 +15,7 @@ import {
 } from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorConnectionRequest } from '../../types/messages';
-import { WebSocketInterceptorOptions } from '../../types/options';
-import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions, WebSocketInterceptorOptionsWithoutProtocol } from './utils';
 
 type Message = { type: 'create'; body: { text: string; priority?: number } } | { type: 'delete'; id: string };
 
@@ -43,7 +42,7 @@ export function declareRestrictionWebSocketInterceptorTests(options: RuntimeShar
   const { getBaseURL, getInterceptorOptions } = options;
 
   let baseURL: string;
-  let interceptorOptions: WebSocketInterceptorOptions;
+  let interceptorOptions: WebSocketInterceptorOptionsWithoutProtocol;
 
   beforeEach(() => {
     baseURL = getBaseURL();

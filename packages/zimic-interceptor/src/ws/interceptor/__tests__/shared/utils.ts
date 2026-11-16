@@ -4,18 +4,25 @@ import { expect } from 'vitest';
 import { formatValueToLog } from '@/utils/logging';
 
 import {
-  WebSocketInterceptorOptions,
+  LocalWebSocketInterceptorOptions,
+  RemoteWebSocketInterceptorOptions,
   WebSocketInterceptorPlatform,
   WebSocketInterceptorType,
 } from '../../types/options';
 import { LocalWebSocketInterceptor, RemoteWebSocketInterceptor } from '../../types/public';
+
+// Shared suites reuse the same options to create interceptors of several schemas, so these options declare no
+// protocol, the only option typed by the schema.
+export type WebSocketInterceptorOptionsWithoutProtocol =
+  | Omit<LocalWebSocketInterceptorOptions<WebSocketSchema>, 'protocol'>
+  | Omit<RemoteWebSocketInterceptorOptions<WebSocketSchema>, 'protocol'>;
 
 export interface RuntimeSharedWebSocketInterceptorTestsOptions {
   platform: WebSocketInterceptorPlatform;
   type: WebSocketInterceptorType;
   getBaseURL: () => string;
   getOtherBaseURL?: () => string;
-  getInterceptorOptions: () => WebSocketInterceptorOptions;
+  getInterceptorOptions: () => WebSocketInterceptorOptionsWithoutProtocol;
   startServer?: () => Promise<void>;
   stopServer?: () => Promise<void>;
 }

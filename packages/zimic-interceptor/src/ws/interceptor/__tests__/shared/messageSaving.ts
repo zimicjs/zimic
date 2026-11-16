@@ -11,10 +11,9 @@ import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/util
 
 import MessageSavingSafeLimitExceededError from '../../errors/MessageSavingSafeLimitExceededError';
 import { createWebSocketInterceptor } from '../../factory';
-import { WebSocketInterceptorOptions } from '../../types/options';
 import { WebSocketInterceptorMessageSaving } from '../../types/public';
 import { DEFAULT_MESSAGE_SAVING_SAFE_LIMIT } from '../../WebSocketInterceptorImplementation';
-import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions, WebSocketInterceptorOptionsWithoutProtocol } from './utils';
 
 type MessageSchema = WebSocketSchema<{
   '/': {
@@ -26,7 +25,7 @@ export function declareMessageSavingWebSocketInterceptorTests(options: RuntimeSh
   const { platform, getBaseURL, getInterceptorOptions } = options;
 
   let baseURL: string;
-  let interceptorOptions: WebSocketInterceptorOptions;
+  let interceptorOptions: WebSocketInterceptorOptionsWithoutProtocol;
 
   beforeEach(() => {
     baseURL = getBaseURL();

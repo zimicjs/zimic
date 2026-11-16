@@ -46,7 +46,7 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
     return this.implementation.baseURLAsString;
   }
 
-  set baseURL(baseURL: LocalWebSocketInterceptorOptions['baseURL']) {
+  set baseURL(baseURL: LocalWebSocketInterceptorOptions<Schema>['baseURL']) {
     this.implementation.baseURL = new URL(baseURL);
   }
 

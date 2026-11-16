@@ -47,12 +47,8 @@ export namespace UnhandledMessageStrategy {
 export type UnhandledMessageStrategy =
   UnhandledMessageStrategy.Declaration | UnhandledMessageStrategy.DeclarationFactory;
 
-// Options declared without a schema accept the protocol of any schema, so they can create interceptors of any schema.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyWebSocketSchema = any;
-
 /** The options shared by local and remote WebSocket interceptors. */
-export interface SharedWebSocketInterceptorOptions<Schema extends WebSocketSchema = AnyWebSocketSchema> {
+interface SharedWebSocketInterceptorOptions<Schema extends WebSocketSchema> {
   /** The type of the interceptor, either `local` or `remote`. Defaults to `local`. */
   type?: WebSocketInterceptorType;
 
@@ -88,7 +84,7 @@ export interface SharedWebSocketInterceptorOptions<Schema extends WebSocketSchem
  * The options to create a local WebSocket interceptor.
  */
 export interface LocalWebSocketInterceptorOptions<
-  Schema extends WebSocketSchema = AnyWebSocketSchema,
+  Schema extends WebSocketSchema,
 > extends SharedWebSocketInterceptorOptions<Schema> {
   type?: 'local';
 }
@@ -110,7 +106,7 @@ export interface WebSocketInterceptorAuthOptions {
  * The options to create a remote WebSocket interceptor.
  */
 export interface RemoteWebSocketInterceptorOptions<
-  Schema extends WebSocketSchema = AnyWebSocketSchema,
+  Schema extends WebSocketSchema,
 > extends SharedWebSocketInterceptorOptions<Schema> {
   type: 'remote';
 
@@ -126,5 +122,5 @@ export interface RemoteWebSocketInterceptorOptions<
  *
  * The options to create a WebSocket interceptor.
  */
-export type WebSocketInterceptorOptions<Schema extends WebSocketSchema = AnyWebSocketSchema> =
+export type WebSocketInterceptorOptions<Schema extends WebSocketSchema> =
   LocalWebSocketInterceptorOptions<Schema> | RemoteWebSocketInterceptorOptions<Schema>;

@@ -16,17 +16,13 @@ import UnknownWebSocketInterceptorTypeError from '../../errors/UnknownWebSocketI
 import { createWebSocketInterceptor } from '../../factory';
 import LocalWebSocketInterceptor from '../../LocalWebSocketInterceptor';
 import RemoteWebSocketInterceptor from '../../RemoteWebSocketInterceptor';
-import {
-  RemoteWebSocketInterceptorOptions,
-  WebSocketInterceptorOptions,
-  WebSocketInterceptorType,
-} from '../../types/options';
+import { RemoteWebSocketInterceptorOptions, WebSocketInterceptorType } from '../../types/options';
 import {
   LocalWebSocketInterceptor as PublicLocalWebSocketInterceptor,
   RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor,
 } from '../../types/public';
 import WebSocketInterceptorStore from '../../WebSocketInterceptorStore';
-import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions, WebSocketInterceptorOptionsWithoutProtocol } from './utils';
 
 type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
 
@@ -43,7 +39,7 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
 
   let baseURL: string;
   let serverURL: URL;
-  let interceptorOptions: WebSocketInterceptorOptions;
+  let interceptorOptions: WebSocketInterceptorOptionsWithoutProtocol;
 
   async function expectClientToBeRejected() {
     const client = new WebSocketClient<MessageSchema>(baseURL);
@@ -505,12 +501,12 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
 
         expect(interceptor.auth).toBe(undefined);
 
-        const auth: RemoteWebSocketInterceptorOptions['auth'] = { token: 'token' };
+        const auth: RemoteWebSocketInterceptorOptions<MessageSchema>['auth'] = { token: 'token' };
 
         interceptor.auth = auth;
         expect(interceptor.auth).toEqual(auth);
 
-        const otherAuth: RemoteWebSocketInterceptorOptions['auth'] = { token: 'other-token' };
+        const otherAuth: RemoteWebSocketInterceptorOptions<MessageSchema>['auth'] = { token: 'other-token' };
         expect(otherAuth).not.toEqual(auth);
 
         interceptor.auth.token = otherAuth.token;
@@ -540,14 +536,14 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
           await interceptor.stop();
           expect(interceptor.isRunning).toBe(false);
 
-          const auth: RemoteWebSocketInterceptorOptions['auth'] = { token: 'token' };
+          const auth: RemoteWebSocketInterceptorOptions<MessageSchema>['auth'] = { token: 'token' };
 
           interceptor.auth = auth;
           expect(interceptor.auth).toEqual(auth);
 
           await interceptor.start();
 
-          const otherAuth: RemoteWebSocketInterceptorOptions['auth'] = { token: 'other-token' };
+          const otherAuth: RemoteWebSocketInterceptorOptions<MessageSchema>['auth'] = { token: 'other-token' };
           expect(otherAuth).not.toEqual(auth);
 
           expect(() => {
@@ -563,7 +559,7 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
       });
 
       it('should guard constructor-provided authentication options while running', async () => {
-        const auth: RemoteWebSocketInterceptorOptions['auth'] = { token: 'token' };
+        const auth: RemoteWebSocketInterceptorOptions<MessageSchema>['auth'] = { token: 'token' };
 
         await usingWebSocketInterceptor<{}>({ type, baseURL, auth }, (interceptor) => {
           expect(interceptor.isRunning).toBe(true);
