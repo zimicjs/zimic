@@ -3,6 +3,7 @@ import { joinURL, UnsupportedURLProtocolError } from '@zimic/utils/url';
 import { createInvalidTypeOfCases, ValidationError } from '@zimic/utils/validation';
 import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
+import { removeTrailingSlash } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectBypassedResponse } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -27,9 +28,9 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
   it('should handle base URLs and paths correctly', async () => {
     for (const { baseURL, path } of [
-      { baseURL: defaultBaseURL.toString().replace(/\/$/, ''), path: 'path' },
+      { baseURL: removeTrailingSlash(defaultBaseURL.toString()), path: 'path' },
       { baseURL: defaultBaseURL.toString(), path: 'path' },
-      { baseURL: defaultBaseURL.toString().replace(/\/$/, ''), path: '/path' },
+      { baseURL: removeTrailingSlash(defaultBaseURL.toString()), path: '/path' },
       { baseURL: defaultBaseURL.toString(), path: '/path' },
     ]) {
       await usingHttpInterceptor<{
@@ -41,7 +42,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
           };
         };
       }>({ ...interceptorOptions, baseURL }, async (interceptor) => {
-        expect(interceptor.baseURL).toBe(baseURL.replace(/\/$/, ''));
+        expect(interceptor.baseURL).toBe(removeTrailingSlash(baseURL));
 
         const handler = await promiseIfRemote(interceptor.get(path).respond({ status: 200 }), interceptor);
 
@@ -69,7 +70,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
   });
 
   it('should intercept requests sent to the base URL with a trailing slash', async () => {
-    const baseURL = joinURL(defaultBaseURL.replace(/\/$/, ''), 'path');
+    const baseURL = joinURL(removeTrailingSlash(defaultBaseURL), 'path');
 
     await usingHttpInterceptor<{
       '/': {
@@ -764,7 +765,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
         };
       };
     }>({ ...interceptorOptions, baseURL }, async (interceptor) => {
-      expect(interceptor.baseURL).toBe(baseURL.toString().replace(/\/$/, ''));
+      expect(interceptor.baseURL).toBe(removeTrailingSlash(baseURL.toString()));
 
       let handler = await promiseIfRemote(interceptor.get('/').respond({ status: 200 }), interceptor);
 
@@ -782,7 +783,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
       expect(interceptor.isRunning).toBe(false);
 
       interceptor.baseURL = newBaseURL;
-      expect(interceptor.baseURL).toBe(newBaseURL.replace(/\/$/, ''));
+      expect(interceptor.baseURL).toBe(removeTrailingSlash(newBaseURL));
 
       await interceptor.start();
       expect(interceptor.isRunning).toBe(true);
@@ -863,7 +864,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
         };
       };
     }>({ ...interceptorOptions, baseURL }, async (interceptor) => {
-      expect(interceptor.baseURL).toBe(baseURL.toString().replace(/\/$/, ''));
+      expect(interceptor.baseURL).toBe(removeTrailingSlash(baseURL.toString()));
 
       let handler = await promiseIfRemote(interceptor.get('/').respond({ status: 200 }), interceptor);
 
@@ -887,7 +888,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
         ),
       );
 
-      expect(interceptor.baseURL).toBe(baseURL.replace(/\/$/, ''));
+      expect(interceptor.baseURL).toBe(removeTrailingSlash(baseURL));
 
       handler = await promiseIfRemote(interceptor.get('/').respond({ status: 200 }), interceptor);
 
@@ -947,7 +948,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
       const interceptor = createHttpInterceptor({ ...interceptorOptions, baseURL: supportedBaseURL });
 
-      expect(interceptor.baseURL).toBe(supportedBaseURL.replace(/\/$/, ''));
+      expect(interceptor.baseURL).toBe(removeTrailingSlash(supportedBaseURL));
     },
   );
 
@@ -974,6 +975,6 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
     const interceptor = createHttpInterceptor({ ...interceptorOptions, baseURL: baseURLWithNonPathParameters });
 
-    expect(interceptor.baseURL).toBe(defaultBaseURL.replace(/\/$/, ''));
+    expect(interceptor.baseURL).toBe(removeTrailingSlash(defaultBaseURL));
   });
 }

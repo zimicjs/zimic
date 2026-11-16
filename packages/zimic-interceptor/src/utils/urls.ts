@@ -6,6 +6,10 @@ export function isURLUnderBaseURL(url: string, baseURL: string) {
   return url.startsWith(baseURL) && new URL(url).origin === new URL(baseURL).origin;
 }
 
+export function removeTrailingSlash(url: string) {
+  return url.replace(/\/$/, '');
+}
+
 // Base URLs at the root path are bare origins, so a URL at the root path is matched without its slash.
 export function createPathMatchingURL(url: string) {
   const urlWithoutNonPathParams = excludeNonPathParams(new URL(url));
