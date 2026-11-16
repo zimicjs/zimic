@@ -27,7 +27,7 @@ interface ChatMessage {
 
 type ChatSchema = WebSocketSchema<{ '/': { message: ChatMessage } }>;
 type ChatFrameSchema = WebSocketSchema<{ '/': { message: string } }>;
-type BinaryFrameSchema = WebSocketSchema<{ '/': { message: Blob } }>;
+type BinaryFrameSchema = WebSocketSchema<{ '/': { message: Blob | ArrayBuffer } }>;
 
 const CONTROL_FRAME = 'control';
 const FRAME_PREFIX = 'chat:';
@@ -1126,7 +1126,8 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
 
     await usingWebSocketInterceptor<ChatSchema>({ type, baseURL, protocol: claimingProtocol }, async () => {
       await usingWebSocketClient<BinaryFrameSchema>(baseURL, async (client) => {
-        client.send(new Blob([createBinaryMessage(0x00, 0xff)]));
+        // Node's native WebSocket drops a Blob sent right before closing, so the frame is an ArrayBuffer.
+        client.send(createBinaryMessage(0x00, 0xff));
         await client.close();
       });
 
