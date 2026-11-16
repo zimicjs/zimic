@@ -107,6 +107,11 @@ abstract class WebSocketInterceptorWorker {
   private messageHandlers: WebSocketMessageHandler[] = [];
   private connectionHandlers: WebSocketConnectionHandler[] = [];
 
+  // Clients whose holders let the connection go. A client that closes leaves its interceptors without being released,
+  // because a real server still receives the messages sent before the close.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private releasedClients = new WeakSet<InternalWebSocketInterceptorClient<any>>();
+
   abstract start(): Promise<void>;
 
   protected async sharedStart(internalStart: () => Promise<void>) {
@@ -535,7 +540,7 @@ abstract class WebSocketInterceptorWorker {
     options.signal.addEventListener(
       'abort',
       () => {
-        interceptor.removeClient(client);
+        this.releaseClient(interceptor, client);
       },
       { once: true },
     );
@@ -629,9 +634,19 @@ abstract class WebSocketInterceptorWorker {
     await newestHolder?.interceptor.logUnhandledMessageIfNecessary(message, newestHolder.client.url);
   }
 
-  // A holder lists the client from the moment it accepts the connection until it lets the connection go.
+  // Makes a holder let the connection go, such as when its interceptor is cleared or stopped, so it ignores the messages
+  // it is still handling.
+  protected releaseClient<Schema extends WebSocketSchema>(
+    interceptor: AnyWebSocketInterceptorImplementation<Schema>,
+    client: InternalWebSocketInterceptorClient<Schema>,
+  ) {
+    interceptor.removeClient(client);
+    this.releasedClients.add(client);
+  }
+
+  // A holder holds the connection from the moment it accepts it until it lets it go.
   private isHoldingConnection(holder: WebSocketConnectionHolder) {
-    return holder.interceptor.clients.includes(holder.client);
+    return !this.releasedClients.has(holder.client);
   }
 
   // Handlers that failed only on restrictions record their diffs. The newest handler that failed for any other cause

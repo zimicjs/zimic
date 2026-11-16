@@ -543,7 +543,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     for (const registeredInterceptor of selectedInterceptors) {
       for (const [client, registration] of registeredInterceptor.clients) {
         registeredInterceptor.clients.delete(client);
-        registeredInterceptor.interceptor.removeClient(client);
+        this.releaseClient(registeredInterceptor.interceptor, client);
 
         // Clearing or stopping one interceptor must not affect the others, so a shared connection stays open until its
         // last holder lets it go.

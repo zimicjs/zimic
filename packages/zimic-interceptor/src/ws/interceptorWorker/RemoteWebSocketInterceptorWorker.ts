@@ -375,7 +375,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     for (const registeredInterceptor of selectedInterceptors) {
       for (const client of registeredInterceptor.clients.values()) {
-        registeredInterceptor.interceptor.removeClient(client);
+        this.releaseClient(registeredInterceptor.interceptor, client);
       }
 
       if (options.preserveInterceptorRegistration) {
