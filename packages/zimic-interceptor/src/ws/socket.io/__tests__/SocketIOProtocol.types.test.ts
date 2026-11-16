@@ -5,8 +5,10 @@ import { describe, expectTypeOf, it } from 'vitest';
 
 import { createHttpInterceptor } from '@/http';
 import { createWebSocketInterceptor } from '@/ws/interceptor/factory';
+import type { WebSocketInterceptorProtocol } from '@/ws/interceptor/types/protocol';
 
 import { createSocketIOProtocol } from '../factory';
+import type { SocketIOMessage } from '../types/messages';
 import type { SocketIOParser } from '../types/options';
 import type { SocketIOPollingSchema } from '../types/polling';
 import type { SocketIOSchema } from '../types/schema';
@@ -182,6 +184,11 @@ describe('SocketIOProtocol > Types', () => {
     }
 
     expectTypeOf(createProtocols).toBeFunction();
+  });
+
+  it('should create WebSocket interceptor protocols', () => {
+    expectTypeOf(createSocketIOProtocol()).toExtend<WebSocketInterceptorProtocol<SocketIOMessage>>();
+    expectTypeOf(createSocketIOProtocol<ChatMessage>()).toExtend<WebSocketInterceptorProtocol<ChatMessage>>();
   });
 
   it('should accept Socket.IO protocols in interceptors of Socket.IO schemas', () => {

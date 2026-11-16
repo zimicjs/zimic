@@ -65,7 +65,13 @@ export type {
 export type {
   WebSocketInterceptorProtocol,
   WebSocketInterceptorProtocolClient,
+  WebSocketInterceptorProtocolClientOptions,
+  WebSocketInterceptorProtocolConnection,
+  WebSocketInterceptorProtocolConnectionClaim,
+  WebSocketInterceptorProtocolContext,
   WebSocketInterceptorProtocolFrame,
+  WebSocketInterceptorProtocolOpenClientResult,
+  WebSocketInterceptorProtocolOpenedClient,
 } from './interceptor/types/protocol';
 
 export type { InferWebSocketInterceptorSchema } from './interceptor/types/schema';

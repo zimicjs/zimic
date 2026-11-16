@@ -19,9 +19,11 @@ import {
 } from '../interceptor/types/messages';
 import { WebSocketInterceptorPlatform } from '../interceptor/types/options';
 import type {
-  WebSocketInterceptorProtocolClientOpening,
   WebSocketInterceptorProtocolClientOptions,
+  WebSocketInterceptorProtocolConnection,
+  WebSocketInterceptorProtocolConnectionClaim,
   WebSocketInterceptorProtocolFrame,
+  WebSocketInterceptorProtocolOpenClientResult,
 } from '../interceptor/types/protocol';
 import {
   createWebSocketInterceptorClient,
@@ -88,7 +90,8 @@ export interface WebSocketConnectionHandling {
 
 const UNHANDLED_CONNECTION_HANDLING: WebSocketConnectionHandling = Object.freeze({ action: 'accept' });
 
-// Internal protocols encode every message their clients send, so the clients they open send only encoded frames.
+// Clients opened by a protocol send the frames its `encode` returns. Without `encode`, a binary message is passed on as
+// given, which may be a `Blob` or a view instead of an `ArrayBuffer`.
 function asEncodedFrame(data: WebSocketMessageData<WebSocketMessageSchema>) {
   return data as WebSocketInterceptorProtocolFrame;
 }
@@ -371,6 +374,50 @@ abstract class WebSocketInterceptorWorker {
     }
   }
 
+  // A claimed connection has a single holder, the newest holder whose protocol claims it, as the newest handler takes
+  // precedence. Other holders do not receive it, and the connection handlers do not decide it. Holders are ordered from
+  // oldest to newest. Claims run protocol code that no caller awaits, so their errors are logged.
+  protected claimConnectionWithProtocols(
+    connection: WebSocketInterceptorProtocolConnection,
+    holders: { interceptor: AnyWebSocketInterceptorImplementation }[],
+  ): WebSocketInterceptorProtocolConnectionClaim | undefined {
+    for (const { interceptor } of holders.toReversed()) {
+      try {
+        const claim = interceptor.protocol?.claimConnection?.(connection);
+
+        if (claim) {
+          return {
+            onFrame: (frame) => {
+              try {
+                claim.onFrame(frame);
+              } catch (error) {
+                console.error(error);
+              }
+            },
+            onClose: () => {
+              try {
+                claim.onClose();
+              } catch (error) {
+                console.error(error);
+              }
+            },
+          };
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    return undefined;
+  }
+
+  // A protocol that claims connections serves the ones it claims, so its interceptor holds no other connection.
+  protected filterHoldersWithoutClaimingProtocols<
+    Holder extends { interceptor: AnyWebSocketInterceptorImplementation },
+  >(holders: Holder[]) {
+    return holders.filter(({ interceptor }) => interceptor.protocol?.claimConnection === undefined);
+  }
+
   // A protocol decides what each frame means to its interceptor, as interceptors may decode different messages from one
   // frame. So, unlike holders without a decoding protocol, whose messages are tried together, each decoding holder
   // handles what it decodes.
@@ -436,7 +483,7 @@ abstract class WebSocketInterceptorWorker {
   }
 
   // Decoded messages reach handlers unchanged, because the protocol already decided what each message is.
-  async handleDecodedMessage(
+  private async handleDecodedMessage(
     interceptor: AnyWebSocketInterceptorImplementation,
     client: InternalWebSocketInterceptorClient,
     message: unknown,
@@ -445,12 +492,12 @@ abstract class WebSocketInterceptorWorker {
     await this.handleMessageWithHandlers(message as ReceivedWebSocketMessageData<WebSocketMessageSchema>, holders);
   }
 
-  // Runs the connection handlers of one interceptor for a client on a connection claimed by its protocol. As with a
-  // pending WebSocket connection, an interceptor that lets the client go while it is decided does not list it.
+  // Runs the connection handlers of one interceptor for a client opened by its protocol. As with a pending WebSocket
+  // connection, an interceptor that lets the client go while it is decided does not list it.
   async openProtocolClient(
     interceptor: AnyWebSocketInterceptorImplementation,
-    options: WebSocketInterceptorProtocolClientOptions,
-  ): Promise<WebSocketInterceptorProtocolClientOpening> {
+    options: WebSocketInterceptorProtocolClientOptions<unknown>,
+  ): Promise<WebSocketInterceptorProtocolOpenClientResult> {
     function isHolding(candidate: AnyWebSocketInterceptorImplementation) {
       return candidate === interceptor && !options.signal.aborted;
     }
@@ -458,11 +505,11 @@ abstract class WebSocketInterceptorWorker {
     const handling = await this.handleConnectionWithHandlers({ url: options.url, protocols: [] }, isHolding);
 
     if (!isHolding(interceptor)) {
-      return { action: 'abort' };
+      return { status: 'aborted' };
     }
 
     if (handling.action === 'reject') {
-      return { action: 'reject' };
+      return { status: 'rejected' };
     }
 
     // Sending and closing through the interceptor's list makes a client retained after its interceptor lets it go do
@@ -484,11 +531,24 @@ abstract class WebSocketInterceptorWorker {
     });
 
     interceptor.addClient(client);
-    options.onOpen(client);
 
-    void this.applyConnectionEffect(handling, [{ registeredInterceptor: { interceptor }, client }]);
+    options.signal.addEventListener(
+      'abort',
+      () => {
+        interceptor.removeClient(client);
+      },
+      { once: true },
+    );
 
-    return { action: 'accept' };
+    options.onOpen({
+      receive: (message) => {
+        void this.handleDecodedMessage(interceptor, client, message);
+      },
+    });
+
+    await this.applyConnectionEffect(handling, [{ registeredInterceptor: { interceptor }, client }]);
+
+    return { status: 'accepted' };
   }
 
   // The handlers of all interceptors holding the connection are tried together, from the last created to the first, so

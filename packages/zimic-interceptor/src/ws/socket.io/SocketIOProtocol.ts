@@ -3,12 +3,13 @@ import * as defaultParser from 'socket.io-parser';
 import type { Packet } from 'socket.io-parser';
 
 import type {
+  WebSocketInterceptorProtocol,
+  WebSocketInterceptorProtocolClientOptions,
+  WebSocketInterceptorProtocolConnection,
+  WebSocketInterceptorProtocolContext,
   WebSocketInterceptorProtocolFrame,
-  WebSocketInterceptorProtocolRawConnection,
+  WebSocketInterceptorProtocolOpenedClient,
 } from '../interceptor/types/protocol';
-import type { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
-import type { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
-import { INTERNAL_PROTOCOL_BRAND, type InternalWebSocketInterceptorProtocol } from '../utils/protocol';
 import SharedSocketIOProtocolError from './errors/SharedSocketIOProtocolError';
 import {
   deleteSocketIOEngine,
@@ -22,13 +23,15 @@ import type { SocketIOPollingInterceptor } from './types/polling';
 
 const { PacketType } = defaultParser;
 
-class SocketIOProtocol<Message extends SocketIOMessage> implements InternalWebSocketInterceptorProtocol<Message> {
-  readonly [INTERNAL_PROTOCOL_BRAND] = true;
-
-  interceptor!: AnyWebSocketInterceptorImplementation;
-
+class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInterceptorProtocol<Message> {
+  // Assigned on start, before the engine can open clients for this protocol.
+  private context!: WebSocketInterceptorProtocolContext<Message>;
   private engine?: SocketIOEngine;
   private encoder: InstanceType<SocketIOParser['Encoder']>;
+
+  // The interceptor stops its protocol after a failed start, so the stops following the starts rejected because another
+  // interceptor uses this instance leave that interceptor running.
+  private numberOfRejectedSharedStarts = 0;
 
   constructor(
     private options: { namespace: string; polling: SocketIOPollingInterceptor | undefined; parser: SocketIOParser },
@@ -48,31 +51,32 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements InternalWebSo
     return this.options.parser;
   }
 
-  async start(interceptor: AnyWebSocketInterceptorImplementation) {
+  async start(context: WebSocketInterceptorProtocolContext<Message>) {
     if (this.engine) {
+      this.numberOfRejectedSharedStarts++;
       throw new SharedSocketIOProtocolError();
     }
 
-    this.interceptor = interceptor;
+    const engine = getOrCreateSocketIOEngine(context.interceptor, this.options);
+    this.context = context;
 
-    const engine = getOrCreateSocketIOEngine(interceptor, this.options);
+    // An engine that rejects the namespace synchronously does not register it, so it is not stopped with this protocol.
     const engineStart = engine.start(this);
     this.engine = engine;
 
-    // The interceptor stops only protocols that started, so a failed start undoes itself.
-    try {
-      await engineStart;
-    } catch (error) {
-      await this.stop();
-      throw error;
-    }
+    await engineStart;
   }
 
   async stop() {
+    if (this.numberOfRejectedSharedStarts > 0) {
+      this.numberOfRejectedSharedStarts--;
+      return;
+    }
+
     const engineStop = this.engine?.stop(this);
 
     if (this.engine?.isStopping) {
-      deleteSocketIOEngine(this.interceptor);
+      deleteSocketIOEngine(this.context.interceptor);
     }
 
     await engineStop;
@@ -83,13 +87,17 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements InternalWebSo
     this.engine?.clear(this);
   }
 
-  claimConnection(url: string, connection: WebSocketInterceptorProtocolRawConnection) {
-    return this.engine?.claimConnection(url, connection);
+  claimConnection(connection: WebSocketInterceptorProtocolConnection) {
+    return this.engine?.claimConnection(connection);
+  }
+
+  openClient(options: WebSocketInterceptorProtocolClientOptions<Message>) {
+    return this.context.openClient(options);
   }
 
   // Parsers are user-provided and `socket.io-parser` accepts event names that are not strings, so the arguments are
   // validated before reaching handlers.
-  receiveEventPacket(client: InternalWebSocketInterceptorClient, packet: Packet) {
+  receiveEventPacket(client: WebSocketInterceptorProtocolOpenedClient<SocketIOMessage>, packet: Packet) {
     const socketArguments: unknown = packet.data;
 
     if (!Array.isArray(socketArguments)) {
@@ -102,7 +110,7 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements InternalWebSo
       return;
     }
 
-    this.interceptor.handleProtocolMessage(client, {
+    client.receive({
       type,
       data,
       ...(args.length > 0 && { args }),

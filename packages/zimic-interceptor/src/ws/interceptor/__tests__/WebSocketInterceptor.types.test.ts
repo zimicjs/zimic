@@ -15,7 +15,7 @@ import type { LocalWebSocketMessageHandler, RemoteWebSocketMessageHandler } from
 
 import { createWebSocketInterceptor } from '../factory';
 import { UnhandledMessageStrategy, WebSocketInterceptorOptions, WebSocketInterceptorType } from '../types/options';
-import type { WebSocketInterceptorProtocol } from '../types/protocol';
+import type { WebSocketInterceptorProtocol, WebSocketInterceptorProtocolContext } from '../types/protocol';
 import { LocalWebSocketInterceptor, RemoteWebSocketInterceptor, WebSocketInterceptor } from '../types/public';
 import { InferWebSocketInterceptorSchema } from '../types/schema';
 import { declareWebSocketInterceptorTypes } from './shared/utils';
@@ -117,6 +117,57 @@ describe('WebSocketInterceptor > Types', () => {
     }
 
     expectTypeOf(createInterceptor).toBeFunction();
+  });
+
+  it('should accept protocols with lifecycle members', () => {
+    function createInterceptor() {
+      const lifecycleProtocol: WebSocketInterceptorProtocol<Message> = {
+        start: async (context) => {
+          expectTypeOf(context.interceptor).toEqualTypeOf<{ type: WebSocketInterceptorType; baseURL: string }>();
+
+          const result = await context.openClient({
+            url: context.interceptor.baseURL,
+            signal: new AbortController().signal,
+            sendFrame: (frame) => {
+              expectTypeOf(frame).toEqualTypeOf<string | ArrayBuffer>();
+            },
+            close: () => undefined,
+            onOpen: (client) => {
+              client.receive({ type: 'delete', id: '1' });
+            },
+          });
+
+          expectTypeOf(result.status).toEqualTypeOf<'accepted' | 'rejected' | 'aborted'>();
+        },
+        stop: () => undefined,
+        clear: () => undefined,
+        claimConnection: (connection) => ({
+          onFrame: (frame) => connection.send(frame),
+          onClose: () => connection.close(1000, connection.url),
+        }),
+      };
+
+      createWebSocketInterceptor<MessageSchema>({ baseURL: 'ws://localhost:3000', protocol: lifecycleProtocol });
+    }
+
+    expectTypeOf(createInterceptor).toBeFunction();
+  });
+
+  it('should not accept messages other than the messages of the schema in clients opened by protocols', () => {
+    function openClient(context: WebSocketInterceptorProtocolContext<Message>) {
+      void context.openClient({
+        url: context.interceptor.baseURL,
+        signal: new AbortController().signal,
+        sendFrame: () => undefined,
+        close: () => undefined,
+        onOpen: (client) => {
+          // @ts-expect-error The message is not declared in the schema.
+          client.receive({ type: 'unknown' });
+        },
+      });
+    }
+
+    expectTypeOf(openClient).toBeFunction();
   });
 
   it('should not accept options of a schema with messages other than the messages of the schema', () => {

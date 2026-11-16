@@ -23,8 +23,8 @@ import RemoteWebSocketConnectionHandler from '../../../connectionHandler/RemoteW
 import { InternalWebSocketConnectionHandler } from '../../../connectionHandler/types/public';
 import LocalWebSocketMessageHandler from '../../../messageHandler/LocalWebSocketMessageHandler';
 import RemoteWebSocketMessageHandler from '../../../messageHandler/RemoteWebSocketMessageHandler';
-import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../types/options';
-import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
+import { UnhandledMessageStrategy } from '../../types/options';
+import { RuntimeSharedWebSocketInterceptorTestsOptions, WebSocketInterceptorOptionsWithoutProtocol } from './utils';
 
 type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
 
@@ -52,7 +52,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
   const { type, getBaseURL, getInterceptorOptions } = options;
 
   let baseURL: string;
-  let interceptorOptions: WebSocketInterceptorOptions;
+  let interceptorOptions: WebSocketInterceptorOptionsWithoutProtocol;
 
   const Handler = type === 'local' ? LocalWebSocketMessageHandler : RemoteWebSocketMessageHandler;
   const ConnectionHandler = type === 'local' ? LocalWebSocketConnectionHandler : RemoteWebSocketConnectionHandler;
@@ -322,7 +322,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     );
   });
 
-  it('should clear only clients owned by the selected interceptor', async () => {
+  it('should clear only clients held by the selected interceptor', async () => {
     const firstBaseURL = `${baseURL}/first`;
     const secondBaseURL = `${baseURL}/second`;
 
@@ -363,7 +363,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
     );
   });
 
-  it('should clear only clients owned by the selected interceptor with the same base URL', async () => {
+  it('should clear only clients held by the selected interceptor with the same base URL', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (firstInterceptor) => {
       await usingWebSocketInterceptor<MessageSchema>(
         interceptorOptions,

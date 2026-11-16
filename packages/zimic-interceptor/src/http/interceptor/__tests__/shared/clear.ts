@@ -275,10 +275,10 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
   // is cleared while messages are being handled": clearing a WebSocket interceptor detaches it from its connections, so
   // it no longer decides the strategy of their messages, while a cleared HTTP interceptor still decides it for requests.
 
-  // No HTTP counterpart for "should clear only clients owned by the selected interceptor": WebSocket connections are
+  // No HTTP counterpart for "should clear only clients held by the selected interceptor": WebSocket connections are
   // long-lived, so one can outlive the clear of an interceptor holding it.
 
-  // No HTTP counterpart for "should clear only clients owned by the selected interceptor with the same base URL":
+  // No HTTP counterpart for "should clear only clients held by the selected interceptor with the same base URL":
   // WebSocket connections are long-lived, so one can outlive the clear of an interceptor holding it.
 
   // No HTTP counterpart for "should keep connections shared with another interceptor open after cleared": WebSocket

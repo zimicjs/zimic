@@ -20,10 +20,7 @@ import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 import NotRunningWebSocketInterceptorError from '../interceptor/errors/NotRunningWebSocketInterceptorError';
 import UnknownWebSocketInterceptorPlatformError from '../interceptor/errors/UnknownWebSocketInterceptorPlatformError';
 import { WebSocketInterceptorPlatform } from '../interceptor/types/options';
-import type {
-  WebSocketInterceptorProtocolConnectionClaim,
-  WebSocketInterceptorProtocolFrame,
-} from '../interceptor/types/protocol';
+import type { WebSocketInterceptorProtocolConnectionClaim } from '../interceptor/types/protocol';
 import {
   createWebSocketInterceptorClient,
   InternalWebSocketInterceptorClient,
@@ -33,7 +30,6 @@ import {
   deserializeWebSocketMessageDataFromTransport,
   serializeWebSocketMessageDataForTransport,
 } from '../utils/messageData';
-import { canInterceptorHoldConnection } from '../utils/protocol';
 import { RemoteWebSocketInterceptorWorkerOptions } from './types/options';
 import WebSocketInterceptorWorker from './WebSocketInterceptorWorker';
 
@@ -199,31 +195,28 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     return this.sendQueue;
   }
 
-  // A claimed connection has a single owner, the engine of the newest holder's protocol, as the newest handler takes
-  // precedence. Other holders on an overlapping base URL do not receive it, and the connection handlers do not decide
-  // it. The protocol closes it, so the server keeps it open after its holders let it go.
-  private claimConnectionForProtocol(clientId: string, url: string, holders: RegisteredWebSocketInterceptor[]) {
-    const rawConnection = {
-      send: (frame: WebSocketInterceptorProtocolFrame) => {
-        void this.enqueueSend(clientId, frame);
+  // The protocol closes a claimed connection, so the server keeps it open after its holders let it go.
+  private claimConnection(clientId: string, url: string, holders: RegisteredWebSocketInterceptor[]) {
+    const claim = this.claimConnectionWithProtocols(
+      {
+        url,
+        send: (frame) => {
+          void this.enqueueSend(clientId, frame);
+        },
+        close: (code, reason) => {
+          void this.enqueueServerEvent(() => {
+            this.webSocketClient.send('interceptors/ws/clients/disconnect', { clientId, code, reason });
+          });
+        },
       },
-      close: (code?: number, reason?: string) => {
-        void this.enqueueServerEvent(() => {
-          this.webSocketClient.send('interceptors/ws/clients/disconnect', { clientId, code, reason });
-        });
-      },
-    };
+      holders,
+    );
 
-    for (const { interceptor } of holders.toReversed()) {
-      const claim = interceptor.internalProtocol?.claimConnection(url, rawConnection);
-
-      if (claim) {
-        this.claimedConnections.set(clientId, claim);
-        return true;
-      }
+    if (claim) {
+      this.claimedConnections.set(clientId, claim);
     }
 
-    return false;
+    return claim !== undefined;
   }
 
   private connectClient = async ({
@@ -244,24 +237,21 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     const holderCandidates = connection.interceptorIds.flatMap((interceptorId) => {
       const registeredInterceptor = this.registeredInterceptors.get(interceptorId);
-      const canHold =
-        registeredInterceptor &&
-        isHolding(registeredInterceptor) &&
-        canInterceptorHoldConnection(registeredInterceptor.interceptor, connection.url);
-
-      return canHold ? [registeredInterceptor] : [];
+      return registeredInterceptor && isHolding(registeredInterceptor) ? [registeredInterceptor] : [];
     });
 
-    if (this.claimConnectionForProtocol(connection.clientId, connection.url, holderCandidates)) {
+    if (this.claimConnection(connection.clientId, connection.url, holderCandidates)) {
       return { action: 'claim' };
     }
+
+    const holderInterceptors = this.filterHoldersWithoutClaimingProtocols(holderCandidates);
 
     this.decidingClientIds.add(connection.clientId);
 
     const handling = await this.handleConnectionWithHandlers(
       { url: connection.url, protocols: connection.protocols },
       (interceptor) => {
-        return holderCandidates.some((registeredInterceptor) => {
+        return holderInterceptors.some((registeredInterceptor) => {
           return registeredInterceptor.interceptor === interceptor && isHolding(registeredInterceptor);
         });
       },
@@ -279,7 +269,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       client: InternalWebSocketInterceptorClient;
     }[] = [];
 
-    for (const registeredInterceptor of holderCandidates) {
+    for (const registeredInterceptor of holderInterceptors) {
       if (!isHolding(registeredInterceptor)) {
         continue;
       }
@@ -296,7 +286,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
         protocol: registeredInterceptor.interceptor.protocol,
       });
 
-      // The registry is intentionally schema-erased because one remote worker owns interceptors for any schema.
+      // The registry is intentionally schema-erased because one remote worker registers interceptors for any schema.
       registeredInterceptor.clients.set(connection.clientId, client);
       this.addClientToInterceptor(registeredInterceptor.interceptor, client);
       holders.push({ registeredInterceptor, client });

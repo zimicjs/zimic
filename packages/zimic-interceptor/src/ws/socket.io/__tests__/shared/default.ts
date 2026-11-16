@@ -18,6 +18,7 @@ import type { Packet } from 'socket.io-parser';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createHttpInterceptor } from '@/http';
+import { removeTrailingSlash } from '@/utils/urls';
 import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
@@ -102,7 +103,7 @@ async function usingSocketManager(
   const { origin, pathname } = new URL(baseURL);
 
   const manager = new Manager(origin.replace(/^ws/, 'http'), {
-    path: `${pathname.replace(/\/$/, '')}/`,
+    path: `${removeTrailingSlash(pathname)}/`,
     reconnection: false,
     ...options,
   });
@@ -1630,7 +1631,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     });
   });
 
-  // Local interceptors serve Socket.IO over polling only, so only remote WebSocket connections are claimed by a protocol.
+  // Local interceptors serve Socket.IO over polling only, so only remote WebSocket clients connect.
   if (type === 'remote') {
     describe('Overlapping base URLs', () => {
       it('should connect WebSocket clients through the interceptor of their Socket.IO path', async () => {

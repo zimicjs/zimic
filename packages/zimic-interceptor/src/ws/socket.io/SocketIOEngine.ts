@@ -5,15 +5,16 @@ import type { Packet } from 'socket.io-parser';
 
 import { isServerSide } from '@/utils/environment';
 import { logger } from '@/utils/logging';
+import { createPathMatchingURL, removeTrailingSlash } from '@/utils/urls';
 import { isWebSocketBinaryMessageData, normalizeBufferSource } from '@/ws/utils/messageData';
 
 import type {
+  WebSocketInterceptorProtocolConnection,
   WebSocketInterceptorProtocolConnectionClaim,
+  WebSocketInterceptorProtocolContext,
   WebSocketInterceptorProtocolFrame,
-  WebSocketInterceptorProtocolRawConnection,
+  WebSocketInterceptorProtocolOpenedClient,
 } from '../interceptor/types/protocol';
-import type { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
-import type { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
 import {
   CLOSE_PACKET,
   ENGINE_IO_MESSAGE_PACKET_PREFIX,
@@ -22,6 +23,8 @@ import {
   PING_PACKET,
   POLLING_PACKET_SEPARATOR,
   UNKNOWN_SESSION_CLOSE_CODE,
+  UNSUPPORTED_LOCAL_TRANSPORT_CLOSE_CODE,
+  UNSUPPORTED_LOCAL_TRANSPORT_CLOSE_REASON,
   UNSUPPORTED_VERSION_CLOSE_CODE,
   UPGRADE_PACKET,
   UPGRADE_PROBE_PACKET,
@@ -69,14 +72,27 @@ const IGNORED_CONNECTION_CLAIM: WebSocketInterceptorProtocolConnectionClaim = {
   onClose: ignoreConnectionEvent,
 };
 
+// Aborting the controller of a namespace connection releases its client, whether pending or open.
 type SocketIONamespaceConnection =
-  { state: 'pending'; abort: () => void } | { state: 'open'; client: InternalWebSocketInterceptorClient };
+  | {
+      state: 'pending';
+      abortController: AbortController;
+    }
+  | {
+      state: 'open';
+      abortController: AbortController;
+      client: WebSocketInterceptorProtocolOpenedClient<SocketIOMessage>;
+    };
+
+type SocketIOTransport = Omit<WebSocketInterceptorProtocolConnection, 'url'>;
+
+export type SocketIOEngineInterceptor = WebSocketInterceptorProtocolContext<SocketIOMessage>['interceptor'];
 
 /** An Engine.IO connection, which carries the namespaces its client joined. */
 interface SocketIOEngineSession {
   id: string;
   url: string;
-  transport: WebSocketInterceptorProtocolRawConnection;
+  transport: SocketIOTransport;
   decoder: InstanceType<SocketIOParser['Decoder']>;
   connections: Map<string, SocketIONamespaceConnection>;
   pingTimer: ReturnType<typeof setInterval>;
@@ -87,7 +103,10 @@ export interface SocketIOEngineOptions {
   parser: SocketIOParser;
 }
 
-type AnySocketIOProtocol = SocketIOProtocol<SocketIOMessage>;
+// The engine serves the namespaces of any schema, whose events it decodes from clients without checking them against the
+// schema, as decoders of other protocols do.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnySocketIOProtocol = SocketIOProtocol<any>;
 
 // Parsers come from user code, and some declare other return types, such as `socket.io-msgpack-parser`.
 export function encodeSocketIOPacket(
@@ -132,13 +151,11 @@ class SocketIOEngine {
   private sessions = new Map<string, SocketIOEngineSession>();
   private encoder: InstanceType<SocketIOParser['Encoder']>;
   private pollingStart: Promise<void>;
-  private baseURL: string;
 
   constructor(
-    interceptor: AnyWebSocketInterceptorImplementation,
+    private interceptor: SocketIOEngineInterceptor,
     private options: SocketIOEngineOptions,
   ) {
-    this.baseURL = interceptor.baseURLAsString;
     this.encoder = new options.parser.Encoder();
     this.pollingStart = options.polling ? this.startPolling(options.polling) : Promise.resolve();
   }
@@ -282,7 +299,7 @@ class SocketIOEngine {
   }
 
   // Unresponsive clients are not detected, so their sessions stay open until their namespaces are cleared or stopped.
-  private createSession(url: string, transport: WebSocketInterceptorProtocolRawConnection) {
+  private createSession(url: string, transport: SocketIOTransport) {
     const session: SocketIOEngineSession = {
       id: crypto.randomUUID(),
       url,
@@ -318,15 +335,15 @@ class SocketIOEngine {
 
   start(protocol: AnySocketIOProtocol) {
     if (this.protocols.has(protocol.namespace)) {
-      throw new DuplicateSocketIONamespaceError(protocol.namespace, this.baseURL);
+      throw new DuplicateSocketIONamespaceError(protocol.namespace, this.interceptor.baseURL);
     }
 
     if (protocol.parser !== this.options.parser) {
-      throw new MismatchedSocketIOProtocolOptionsError('parser', this.baseURL);
+      throw new MismatchedSocketIOProtocolOptionsError('parser', this.interceptor.baseURL);
     }
 
     if (protocol.polling !== this.options.polling) {
-      throw new MismatchedSocketIOProtocolOptionsError('polling', this.baseURL);
+      throw new MismatchedSocketIOProtocolOptionsError('polling', this.interceptor.baseURL);
     }
 
     this.protocols.set(protocol.namespace, protocol);
@@ -378,11 +395,7 @@ class SocketIOEngine {
     const connection = session.connections.get(protocol.namespace);
     session.connections.delete(protocol.namespace);
 
-    if (connection?.state === 'pending') {
-      connection.abort();
-    } else if (connection?.state === 'open') {
-      protocol.interceptor.removeClient(connection.client);
-    }
+    connection?.abortController.abort();
   }
 
   private connectNamespace(protocol: AnySocketIOProtocol, session: SocketIOEngineSession) {
@@ -391,10 +404,10 @@ class SocketIOEngine {
     }
 
     const abortController = new AbortController();
-    const pendingConnection: SocketIONamespaceConnection = { state: 'pending', abort: () => abortController.abort() };
+    const pendingConnection: SocketIONamespaceConnection = { state: 'pending', abortController };
     session.connections.set(protocol.namespace, pendingConnection);
 
-    void this.openNamespaceClient(protocol, session, abortController.signal)
+    void this.openNamespaceClient(protocol, session, abortController)
       .catch((error: unknown) => {
         console.error(error);
       })
@@ -408,17 +421,19 @@ class SocketIOEngine {
   private async openNamespaceClient(
     protocol: AnySocketIOProtocol,
     session: SocketIOEngineSession,
-    signal: AbortSignal,
+    abortController: AbortController,
   ) {
-    const opening = await protocol.interceptor.openProtocolClient({
+    const result = await protocol.openClient({
       url: session.url,
-      signal,
+      signal: abortController.signal,
       sendFrame: (frame) => session.transport.send(frame),
       close: () => this.disconnectNamespace(protocol, session),
-      onOpen: (client) => this.joinNamespace(protocol, session, client),
+      onOpen: (client: WebSocketInterceptorProtocolOpenedClient<SocketIOMessage>) => {
+        this.joinNamespace(protocol, session, { state: 'open', abortController, client });
+      },
     });
 
-    if (opening.action === 'reject') {
+    if (result.status === 'rejected') {
       this.sendSocketPacket(session, {
         type: PacketType.CONNECT_ERROR,
         nsp: protocol.namespace,
@@ -431,9 +446,9 @@ class SocketIOEngine {
   private joinNamespace(
     protocol: AnySocketIOProtocol,
     session: SocketIOEngineSession,
-    client: InternalWebSocketInterceptorClient,
+    connection: SocketIONamespaceConnection,
   ) {
-    session.connections.set(protocol.namespace, { state: 'open', client });
+    session.connections.set(protocol.namespace, connection);
     this.sendSocketPacket(session, {
       type: PacketType.CONNECT,
       nsp: protocol.namespace,
@@ -441,11 +456,25 @@ class SocketIOEngine {
     });
   }
 
-  // A polling client upgrades by opening a WebSocket connection with its session ID, which carries the existing session.
+  // The engine serves only the Socket.IO path, which is its base URL, so connections to other paths under it are left to
+  // other interceptors. A polling client upgrades by opening a WebSocket connection with its session ID, which carries
+  // the existing session.
   claimConnection(
-    url: string,
-    connection: WebSocketInterceptorProtocolRawConnection,
-  ): WebSocketInterceptorProtocolConnectionClaim {
+    connection: WebSocketInterceptorProtocolConnection,
+  ): WebSocketInterceptorProtocolConnectionClaim | undefined {
+    const { url } = connection;
+
+    if (removeTrailingSlash(createPathMatchingURL(url)) !== removeTrailingSlash(this.interceptor.baseURL)) {
+      return undefined;
+    }
+
+    // `socket.io-client` keeps the `WebSocket` constructor found when it loads, which may be before interceptors replace
+    // it, so local interceptors serve polling only.
+    if (this.interceptor.type === 'local') {
+      connection.close(UNSUPPORTED_LOCAL_TRANSPORT_CLOSE_CODE, UNSUPPORTED_LOCAL_TRANSPORT_CLOSE_REASON);
+      return IGNORED_CONNECTION_CLAIM;
+    }
+
     const searchParams = new URL(url).searchParams;
     const unsupportedVersionMessage = warnOfUnsupportedEngineIOVersion(searchParams.get('EIO'));
 
@@ -495,7 +524,7 @@ class SocketIOEngine {
     };
   }
 
-  private openWebSocketSession(url: string, connection: WebSocketInterceptorProtocolRawConnection) {
+  private openWebSocketSession(url: string, connection: WebSocketInterceptorProtocolConnection) {
     if (this.isStopping) {
       connection.close();
       return IGNORED_CONNECTION_CLAIM;
@@ -513,12 +542,12 @@ class SocketIOEngine {
 
 const engines = new Map<string, SocketIOEngine>();
 
-function getSocketIOEngineKey(interceptor: AnyWebSocketInterceptorImplementation) {
-  return `${interceptor.type}:${interceptor.baseURLAsString}`;
+function getSocketIOEngineKey(interceptor: SocketIOEngineInterceptor) {
+  return `${interceptor.type}:${interceptor.baseURL}`;
 }
 
 function validatePollingInterceptor(
-  interceptor: AnyWebSocketInterceptorImplementation,
+  interceptor: SocketIOEngineInterceptor,
   polling: SocketIOPollingInterceptor | undefined,
 ) {
   if (!polling) {
@@ -536,7 +565,7 @@ function validatePollingInterceptor(
     );
   }
 
-  const expectedBaseURL = interceptor.baseURLAsString.replace(/^ws/, 'http');
+  const expectedBaseURL = interceptor.baseURL.replace(/^ws/, 'http');
 
   if (polling.baseURL !== expectedBaseURL) {
     throw new InvalidSocketIOPollingInterceptorError(
@@ -551,10 +580,7 @@ function validatePollingInterceptor(
   }
 }
 
-export function getOrCreateSocketIOEngine(
-  interceptor: AnyWebSocketInterceptorImplementation,
-  options: SocketIOEngineOptions,
-) {
+export function getOrCreateSocketIOEngine(interceptor: SocketIOEngineInterceptor, options: SocketIOEngineOptions) {
   const key = getSocketIOEngineKey(interceptor);
 
   let engine = engines.get(key);
@@ -568,7 +594,7 @@ export function getOrCreateSocketIOEngine(
   return engine;
 }
 
-export function deleteSocketIOEngine(interceptor: AnyWebSocketInterceptorImplementation) {
+export function deleteSocketIOEngine(interceptor: SocketIOEngineInterceptor) {
   engines.delete(getSocketIOEngineKey(interceptor));
 }
 
