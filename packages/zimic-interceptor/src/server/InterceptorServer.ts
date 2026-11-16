@@ -69,40 +69,40 @@ class InterceptorServer implements PublicInterceptorServer {
   private httpRuntimeLoadingPromise?: Promise<HttpInterceptorServerRuntime>;
   private webSocketRuntime?: WebSocketInterceptorServerRuntime;
 
-  _hostname: string;
-  _port: number | undefined;
+  #hostname: string;
+  #port: number | undefined;
   logUnhandledRequests: boolean;
   tokensDirectory?: string;
 
   private workerProtocols = new Map<Socket, InterceptorServerRPCProtocol>();
 
   constructor(options: InterceptorServerOptions) {
-    this._hostname = options.hostname ?? DEFAULT_HOSTNAME;
-    this._port = options.port;
+    this.#hostname = options.hostname ?? DEFAULT_HOSTNAME;
+    this.#port = options.port;
     this.logUnhandledRequests = options.logUnhandledRequests ?? DEFAULT_LOG_UNHANDLED_REQUESTS;
     this.tokensDirectory = options.tokensDirectory;
   }
 
   get hostname() {
-    return this._hostname;
+    return this.#hostname;
   }
 
   set hostname(newHostname: string) {
     if (this.isRunning) {
       throw new RunningInterceptorServerError('Did you forget to stop it before changing the hostname?');
     }
-    this._hostname = newHostname;
+    this.#hostname = newHostname;
   }
 
   get port() {
-    return this._port;
+    return this.#port;
   }
 
   set port(newPort: number | undefined) {
     if (this.isRunning) {
       throw new RunningInterceptorServerError('Did you forget to stop it before changing the port?');
     }
-    this._port = newPort;
+    this.#port = newPort;
   }
 
   get isRunning() {
