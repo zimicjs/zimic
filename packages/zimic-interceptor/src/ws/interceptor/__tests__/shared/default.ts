@@ -1,7 +1,7 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
-import { ValidationError } from '@zimic/utils/validation';
-import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+import { createInvalidTypeOfCases, ValidationError } from '@zimic/utils/validation';
+import { WebSocketClient, WebSocketMessageSchema, WebSocketSchema } from '@zimic/ws';
 import { afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import InterceptorWebSocketClient from '@/utils/webSocket/WebSocketClient';
@@ -17,6 +17,7 @@ import { createWebSocketInterceptor } from '../../factory';
 import LocalWebSocketInterceptor from '../../LocalWebSocketInterceptor';
 import RemoteWebSocketInterceptor from '../../RemoteWebSocketInterceptor';
 import { RemoteWebSocketInterceptorOptions, WebSocketInterceptorType } from '../../types/options';
+import type { WebSocketInterceptorProtocol } from '../../types/protocol';
 import {
   LocalWebSocketInterceptor as PublicLocalWebSocketInterceptor,
   RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor,
@@ -109,6 +110,24 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
       }).toThrow(expectedError);
     });
   });
+
+  const invalidProtocols = createInvalidTypeOfCases('object', { optional: true });
+
+  it.each(invalidProtocols)(
+    'should throw an error if provided a protocol that is not an object ($label)',
+    async ({ value, actualType }) => {
+      const handler = vi.fn();
+
+      // @ts-expect-error Forcing an invalid protocol type.
+      const invalidProtocol: WebSocketInterceptorProtocol<WebSocketMessageSchema> = value;
+
+      await expect(async () => {
+        await usingWebSocketInterceptor({ ...interceptorOptions, protocol: invalidProtocol }, handler);
+      }).rejects.toThrow(new ValidationError(`Expected options.protocol to be object, but got ${actualType}.`));
+
+      expect(handler).not.toHaveBeenCalled();
+    },
+  );
 
   it('should initialize with the correct platform', async () => {
     await usingWebSocketInterceptor<{}>(interceptorOptions, { start: false }, async (interceptor) => {
