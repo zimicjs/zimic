@@ -168,7 +168,7 @@ export function declarePollingSocketIOProtocolTests(options: PollingSocketIOProt
                 upgradingSocket.addEventListener('close', resolve, { once: true });
               });
 
-              expect(closeEvent.code).toBe(4001);
+              expect(closeEvent.code).toBe(4000);
               expect(closeEvent.reason).toBe('Session ID unknown');
               expect(interceptor.clients).toHaveLength(1);
               expect(socket.connected).toBe(true);
@@ -196,14 +196,12 @@ export function declarePollingSocketIOProtocolTests(options: PollingSocketIOProt
               upgradingSocket.addEventListener('open', () => resolve(), { once: true });
             });
 
-            const closeResponse = await fetch(`${pollingURL}&sid=${sid}`, { method: 'POST', body: '1' });
-            expect(closeResponse.status).toBe(200);
-
             const closeEventPromise = new Promise<CloseEvent>((resolve) => {
               upgradingSocket.addEventListener('close', resolve, { once: true });
             });
 
-            upgradingSocket.send('2probe');
+            const closeResponse = await fetch(`${pollingURL}&sid=${sid}`, { method: 'POST', body: '1' });
+            expect(closeResponse.status).toBe(200);
 
             const closeEvent = await closeEventPromise;
             expect(closeEvent.code).toBe(1005);
@@ -256,6 +254,83 @@ export function declarePollingSocketIOProtocolTests(options: PollingSocketIOProt
             });
           },
         );
+      });
+
+      it('should complete pending polls of clients finishing their upgrade', async () => {
+        const pollingURL = `${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling`;
+
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async () => {
+          const openPacket = await (await fetch(pollingURL)).text();
+          const { sid } = JSON.parse(openPacket.slice(1)) as { sid: string };
+          const sessionURL = `${pollingURL}&sid=${sid}`;
+
+          const upgradingSocket = new WebSocket(`${baseURL}/?EIO=4&transport=websocket&sid=${sid}`);
+
+          try {
+            const probeReplyPromise = new Promise<unknown>((resolve) => {
+              upgradingSocket.addEventListener('message', (event) => resolve(event.data), { once: true });
+            });
+
+            await new Promise<void>((resolve) => {
+              upgradingSocket.addEventListener('open', () => resolve(), { once: true });
+            });
+
+            upgradingSocket.send('2probe');
+            expect(await probeReplyPromise).toBe('3probe');
+
+            // No poll was pending during the probe, so its noop was queued.
+            const probePoll = await fetch(sessionURL);
+            expect(await probePoll.text()).toBe('6');
+
+            // Either poll may reach the session first, and the other one overlaps it, which shows the first is pending.
+            const polls = [fetch(sessionURL), fetch(sessionURL)];
+            const overlappingPoll = await Promise.race(polls);
+            expect(overlappingPoll.status).toBe(400);
+
+            upgradingSocket.send('5');
+
+            const pendingPoll = (await Promise.all(polls)).find((poll) => poll !== overlappingPoll);
+            expect(pendingPoll?.status).toBe(200);
+            expect(await pendingPoll?.text()).toBe('6');
+          } finally {
+            upgradingSocket.close();
+          }
+        });
+      });
+
+      it('should close upgrading WebSocket connections when the interceptor stops', async () => {
+        const pollingURL = `${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling`;
+
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+          const openPacket = await (await fetch(pollingURL)).text();
+          const { sid } = JSON.parse(openPacket.slice(1)) as { sid: string };
+
+          const upgradingSocket = new WebSocket(`${baseURL}/?EIO=4&transport=websocket&sid=${sid}`);
+
+          try {
+            const probeReplyPromise = new Promise<unknown>((resolve) => {
+              upgradingSocket.addEventListener('message', (event) => resolve(event.data), { once: true });
+            });
+
+            await new Promise<void>((resolve) => {
+              upgradingSocket.addEventListener('open', () => resolve(), { once: true });
+            });
+
+            upgradingSocket.send('2probe');
+            expect(await probeReplyPromise).toBe('3probe');
+
+            const closeEventPromise = new Promise<CloseEvent>((resolve) => {
+              upgradingSocket.addEventListener('close', resolve, { once: true });
+            });
+
+            await interceptor.stop();
+
+            const closeEvent = await closeEventPromise;
+            expect(closeEvent.code).toBe(1005);
+          } finally {
+            upgradingSocket.close();
+          }
+        });
       });
 
       it('should close WebSocket connections opened while the last namespace stops', async () => {
@@ -322,9 +397,9 @@ export function declarePollingSocketIOProtocolTests(options: PollingSocketIOProt
             });
 
             expect(socketEvents).toEqual(['open', 'close']);
-            expect(closeEvent.code).toBe(4002);
+            expect(closeEvent.code).toBe(4000);
             expect(closeEvent.reason).toBe(
-              'Local Socket.IO interceptors support polling; use a remote interceptor for WebSocket transports',
+              'Local Socket.IO interceptors support polling. Use a remote interceptor for WebSocket transports',
             );
             expect(interceptor.clients).toHaveLength(0);
           } finally {

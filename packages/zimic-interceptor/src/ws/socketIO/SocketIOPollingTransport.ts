@@ -1,12 +1,10 @@
 import { convertArrayBufferToBase64 } from '@/utils/data';
 
-import type {
-  WebSocketInterceptorProtocolConnection,
-  WebSocketInterceptorProtocolFrame,
-} from '../interceptor/types/protocol';
+import type { WebSocketInterceptorProtocolFrame } from '../interceptor/types/protocol';
 import { CLOSE_PACKET, POLLING_PACKET_SEPARATOR } from './constants';
+import type { SocketIOTransport } from './SocketIOEngine';
 
-class SocketIOPollingTransport implements Omit<WebSocketInterceptorProtocolConnection, 'url'> {
+class SocketIOPollingTransport implements SocketIOTransport {
   private queuedFrames: WebSocketInterceptorProtocolFrame[] = [];
   private resolvePendingPoll?: (body: string) => void;
 

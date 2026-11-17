@@ -1,7 +1,5 @@
-// Codes in the application range, because Socket.IO has no close codes for these cases.
-export const UNSUPPORTED_VERSION_CLOSE_CODE = 4000;
-export const UNKNOWN_SESSION_CLOSE_CODE = 4001;
-export const UNSUPPORTED_LOCAL_TRANSPORT_CLOSE_CODE = 4002;
+// A code in the application range, because Socket.IO has no close codes for rejected connections.
+export const SOCKET_IO_REJECTION_CLOSE_CODE = 4000;
 
 export const UNSUPPORTED_LOCAL_TRANSPORT_CLOSE_REASON =
   'Local Socket.IO interceptors support polling. Use a remote interceptor for WebSocket transports';
