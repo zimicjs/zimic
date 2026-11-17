@@ -1,7 +1,7 @@
 import { describe } from 'vitest';
 
 import { declareClientTests } from '../shared/client';
-import { createSocketIOTestSocket, openSocketIOTestSocket, socketIOFramedProtocol } from './utils';
+import { createSocketIOTestSocket, openSocketIOTestSocket, socketIOInterceptorProtocol } from './utils';
 
 describe('Socket.IO client (Node.js)', () => {
   declareClientTests({
@@ -9,6 +9,6 @@ describe('Socket.IO client (Node.js)', () => {
     defaultBinaryMessageType: Blob,
     openSocket: openSocketIOTestSocket,
     createSocket: createSocketIOTestSocket,
-    framedProtocol: socketIOFramedProtocol,
+    interceptorProtocol: socketIOInterceptorProtocol,
   });
 });

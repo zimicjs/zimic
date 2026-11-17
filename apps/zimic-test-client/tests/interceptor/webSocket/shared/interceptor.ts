@@ -117,11 +117,11 @@ export function declareWebSocketInterceptorTests({
   defaultBinaryMessageType,
   openSocket,
   createSocket,
-  framedProtocol,
+  interceptorProtocol,
 }: ClientTestOptionsByWorkerType) {
-  // Framed protocols choose their own connection path and cannot express raw WebSocket features: close codes and
+  // Interceptor protocols choose their own connection path and cannot express raw WebSocket features: close codes and
   // reasons, subprotocols, and binary frames sent as messages.
-  const supportsRawWebSocketFeatures = framedProtocol === undefined;
+  const supportsRawWebSocketFeatures = interceptorProtocol === undefined;
 
   const nodeMajorVersion = platform === 'node' ? Number(process.versions.node.split('.')[0]) : null;
 
@@ -168,22 +168,22 @@ export function declareWebSocketInterceptorTests({
     expect(settled.closeCodes).toEqual(refusedSocketBehavior.closeCodes);
   }
 
-  const userBaseURL = `${getUserBaseURL(type)}${framedProtocol?.path ?? ''}`;
+  const userBaseURL = `${getUserBaseURL(type)}${interceptorProtocol?.path ?? ''}`;
 
   const userInterceptor = createWebSocketInterceptor<UserWebSocketSchema>({
     type,
     baseURL: userBaseURL,
     messageSaving: { enabled: true },
-    protocol: framedProtocol?.create({ type, baseURL: userBaseURL }),
+    protocol: interceptorProtocol?.create({ type, baseURL: userBaseURL }),
   });
 
-  const notificationBaseURL = `${getNotificationBaseURL(type)}${framedProtocol?.path ?? ''}`;
+  const notificationBaseURL = `${getNotificationBaseURL(type)}${interceptorProtocol?.path ?? ''}`;
 
   const notificationInterceptor = createWebSocketInterceptor<NotificationWebSocketSchema>({
     type,
     baseURL: notificationBaseURL,
     messageSaving: { enabled: true },
-    protocol: framedProtocol?.create({ type, baseURL: notificationBaseURL }),
+    protocol: interceptorProtocol?.create({ type, baseURL: notificationBaseURL }),
   });
 
   const interceptors = [userInterceptor, notificationInterceptor];

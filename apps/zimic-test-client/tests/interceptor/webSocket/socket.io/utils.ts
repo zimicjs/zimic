@@ -5,7 +5,7 @@ import type { WebSocketMessageData, WebSocketSchema, WebSocketSchemaMessage } fr
 import { io } from 'socket.io-client';
 
 import {
-  ClientTestFramedProtocol,
+  ClientTestInterceptorProtocol,
   ClientTestWebSocket,
   ClientTestWebSocketCloseListener,
   ClientTestWebSocketLifecycleListener,
@@ -112,7 +112,7 @@ export function createSocketIOTestSocket<Schema extends WebSocketSchema>(url: st
   return testSocket;
 }
 
-export const socketIOFramedProtocol: ClientTestFramedProtocol = {
+export const socketIOInterceptorProtocol: ClientTestInterceptorProtocol = {
   path: '/socket.io',
 
   create: ({ type, baseURL }) =>

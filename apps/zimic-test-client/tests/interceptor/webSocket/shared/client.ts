@@ -71,16 +71,15 @@ export async function waitForClientTestWebSocketOpen(socket: OpeningClientTestWe
   });
 }
 
-// The messages of the schemas whose interceptors use a framed protocol.
-interface ClientTestFramedProtocolMessage {
+interface ClientTestInterceptorProtocolMessage {
   type: string;
   data: unknown;
 }
 
-export interface ClientTestFramedProtocol {
-  // Clients of the protocol connect to this path, such as `/socket.io`, which ends the base URL of each interceptor.
+export interface ClientTestInterceptorProtocol {
+  // The path clients of the protocol connect to, such as `/socket.io`, appended to each interceptor base URL.
   path: string;
-  create: <Message extends ClientTestFramedProtocolMessage>(options: {
+  create: <Message extends ClientTestInterceptorProtocolMessage>(options: {
     type: WebSocketInterceptorType;
     baseURL: string;
   }) => WebSocketInterceptorProtocol<Message>;
@@ -93,13 +92,12 @@ export interface ClientTestOptions {
     url: string,
     protocols?: string | string[],
   ) => Promise<ClientTestWebSocket<Schema>>;
-  // Starts connecting without waiting for the outcome, so tests can observe refused connections through their `open`,
-  // `error`, and `close` events.
+  // Returns before the connection settles, so tests can observe refused connections.
   createSocket: <Schema extends WebSocketSchema>(
     url: string,
     protocols?: string | string[],
   ) => ClientTestWebSocket<Schema>;
-  framedProtocol?: ClientTestFramedProtocol;
+  interceptorProtocol?: ClientTestInterceptorProtocol;
 }
 
 export interface ClientTestOptionsByWorkerType extends ClientTestOptions {
