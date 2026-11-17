@@ -1,6 +1,6 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
-import type { ManagerOptions } from 'socket.io-client';
+import type { ManagerOptions, Socket } from 'socket.io-client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
@@ -28,7 +28,7 @@ import {
 const PING_INTERVAL = 25000;
 
 export function declareClientsSocketIOProtocolTests(options: SharedSocketIOProtocolTestsOptions) {
-  const { type, getBaseURL: getServerBaseURL, PollingTransport } = options;
+  const { type, getBaseURL: getServerBaseURL, PollingTransport, WebSocketTransport } = options;
 
   let baseURL: string;
   let polling: SocketIOPollingInterceptor;
@@ -43,6 +43,15 @@ export function declareClientsSocketIOProtocolTests(options: SharedSocketIOProto
     savingOptions?: SocketIOTestSavingOptions,
   ) {
     return createSocketIOInterceptorOptions({ type, baseURL, polling }, protocolOptions, savingOptions);
+  }
+
+  // `socket.io-client` stops polling while it upgrades, and keeps the connection open until its ping timeout if the
+  // upgrading WebSocket closes before the upgrade ends, as with Socket.IO servers that close mid-upgrade. Stopping a
+  // remote interceptor closes that WebSocket, so connections are let go only after the upgrade.
+  async function waitForSocketTransportUpgrade(socket: Socket, transports: ManagerOptions['transports']) {
+    if (transports?.some((transport) => transport === WebSocketTransport)) {
+      await waitFor(() => expect(socket.io.engine.transport.name).toBe('websocket'));
+    }
   }
 
   describe.each(getSocketIOTransportCases(options))('Transport: $transportName', ({ transports }) => {
@@ -62,8 +71,9 @@ export function declareClientsSocketIOProtocolTests(options: SharedSocketIOProto
             return true;
           });
 
-          await usingSocket(baseURL, { transports }, async () => {
+          await usingSocket(baseURL, { transports }, async (socket) => {
             await decisionStartedPromise;
+            await waitForSocketTransportUpgrade(socket, transports);
             await letGo(interceptor);
             decisionReleasedPromise.resolve();
           });
@@ -102,6 +112,7 @@ export function declareClientsSocketIOProtocolTests(options: SharedSocketIOProto
             });
 
             await decisionStartedPromise;
+            await waitForSocketTransportUpgrade(socket, transports);
             await letGo(interceptor);
             decisionReleasedPromise.resolve();
 
