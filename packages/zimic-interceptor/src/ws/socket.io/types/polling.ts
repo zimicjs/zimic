@@ -32,7 +32,10 @@ export type SocketIOPollingSchema = {
     };
     POST: {
       request: { searchParams: SocketIOPollingSearchParams; body?: string };
-      response: { 200: { body: string } };
+      response: {
+        200: { body: string };
+        400: { body: SocketIOPollingErrorBody };
+      };
     };
   };
 };

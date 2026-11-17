@@ -215,23 +215,35 @@ class SocketIOEngine {
     }
 
     const session = this.createSession(request.url.replace(/^http/, 'ws'), new SocketIOPollingTransport());
-    return { status: 200, body: this.createOpenPacket(session.id, ['websocket']) } as const;
+
+    // Local interceptors serve polling only, so their clients are not offered an upgrade to WebSocket.
+    const upgrades = this.interceptor.type === 'remote' ? ['websocket'] : [];
+
+    return { status: 200, body: this.createOpenPacket(session.id, upgrades) } as const;
   }
 
   private receivePollingPayload(request: SocketIOPollingRequest): SocketIOPollingResponse<'POST'> {
     const sessionId = request.searchParams.get('sid');
-    const session = sessionId === null ? undefined : this.sessions.get(sessionId);
+
+    if (sessionId === null) {
+      return { status: 200, body: 'ok' } as const;
+    }
+
+    const session = this.sessions.get(sessionId);
+
+    if (!session) {
+      return { status: 400, body: ENGINE_IO_ERRORS.UNKNOWN_SESSION_ID } as const;
+    }
+
     const packets = typeof request.body === 'string' ? request.body.split(POLLING_PACKET_SEPARATOR) : [];
 
-    if (session) {
-      for (const packet of packets) {
-        if (packet === CLOSE_PACKET) {
-          this.closeSession(session);
-          break;
-        }
-
-        this.receiveFrame(session, packet);
+    for (const packet of packets) {
+      if (packet === CLOSE_PACKET) {
+        this.closeSession(session);
+        break;
       }
+
+      this.receiveFrame(session, packet);
     }
 
     return { status: 200, body: 'ok' } as const;

@@ -10,7 +10,6 @@ describe.each(testMatrix)('SocketIOProtocol (browser, $type)', ({ type }) => {
   const authenticatedServer = inject('authenticatedInterceptorServer');
 
   declareSocketIOProtocolTests({
-    platform: 'browser',
     type,
     getBaseURL: () => getBrowserBaseURL(type).replace(/^http/, 'ws'),
     getAuthenticatedBaseURL: () => authenticatedServer.url.replace(/^http/, 'ws'),

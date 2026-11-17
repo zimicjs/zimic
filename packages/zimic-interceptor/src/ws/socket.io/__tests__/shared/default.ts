@@ -26,7 +26,7 @@ import { waitForWebSocketClientClose } from '@tests/utils/webSocket';
 
 import { createWebSocketInterceptor } from '../../../interceptor/factory';
 import type { WebSocketInterceptorClient } from '../../../interceptor/types/messages';
-import type { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '../../../interceptor/types/options';
+import type { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import type {
   LocalWebSocketInterceptor,
   RemoteWebSocketInterceptor,
@@ -82,7 +82,6 @@ type HealthSchema = HttpSchema<{
 }>;
 
 interface SharedSocketIOTestsOptions {
-  platform: WebSocketInterceptorPlatform;
   type: WebSocketInterceptorType;
   getBaseURL: () => string;
   getAuthenticatedBaseURL: () => string;
@@ -157,7 +156,6 @@ async function waitForSocketDisconnection(socket: Socket) {
 
 export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions) {
   const {
-    platform,
     type,
     getBaseURL: getServerBaseURL,
     getAuthenticatedBaseURL,
@@ -960,29 +958,18 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
           expect(interceptor.clients).toHaveLength(0);
         });
       });
-    }
 
-    // In Node.js, the default WebSocket transport of `socket.io-client` uses the `ws` package instead of the global
-    // `WebSocket`, so local interceptors do not receive its upgrade probe.
-    if (type === 'local' && platform === 'browser') {
-      it('should keep clients with the default transports connected over polling after their upgrade fails', async () => {
-        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
-          const handler = await interceptor.message().with({ type: 'event' }).times(1);
+      it('should not offer upgrades to polling clients', async () => {
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async () => {
+          const openPacket = await (await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling`)).text();
 
-          await usingSocket(baseURL, {}, async (socket) => {
-            const upgradeErrorPromise = new Promise<void>((resolve) => {
-              socket.io.engine.once('upgradeError', () => resolve());
-            });
-
-            await waitForSocketConnection(socket);
-            await upgradeErrorPromise;
-
-            socket.emit('event', 'after upgrade error');
-            await waitFor(() => expect(handler.messages).toHaveLength(1));
-
-            expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'after upgrade error' });
-            expect(socket.io.engine.transport.name).toBe('polling');
-            expect(socket.connected).toBe(true);
+          expect(openPacket.charAt(0)).toBe('0');
+          expect(JSON.parse(openPacket.slice(1))).toEqual({
+            sid: expect.any(String) as string,
+            upgrades: [],
+            pingInterval: 25000,
+            pingTimeout: 20000,
+            maxPayload: 1000000,
           });
         });
       });
@@ -996,6 +983,19 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
         });
 
         expect(response.status).toBe(200);
+        expect(interceptor.clients).toHaveLength(0);
+      });
+    });
+
+    it('should answer polling packets of unknown sessions with an unknown session error', async () => {
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        const response = await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling&sid=unknown`, {
+          method: 'POST',
+          body: '40',
+        });
+
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({ code: 1, message: 'Session ID unknown' });
         expect(interceptor.clients).toHaveLength(0);
       });
     });

@@ -38,7 +38,6 @@ describe.each(testMatrix)('SocketIOProtocol (node, $type)', ({ type }) => {
   });
 
   declareSocketIOProtocolTests({
-    platform: 'node',
     type,
     getBaseURL: () => getNodeBaseURL(type, server).replace(/^http/, 'ws'),
     getAuthenticatedBaseURL: () => `ws://localhost:${authenticatedServer.port}`,
