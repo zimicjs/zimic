@@ -27,10 +27,6 @@ export type SocketIOTestSavingOptions = Pick<
   'messageSaving' | 'connectionSaving'
 >;
 
-export const MESSAGE_SAVING: SocketIOTestSavingOptions = { messageSaving: { enabled: true } };
-
-export const CONNECTION_SAVING: SocketIOTestSavingOptions = { connectionSaving: { enabled: true } };
-
 export interface SharedSocketIOProtocolTestsOptions {
   type: WebSocketInterceptorType;
   getBaseURL: () => string;
@@ -38,8 +34,7 @@ export interface SharedSocketIOProtocolTestsOptions {
   WebSocketTransport: typeof SocketIOWebSocketTransport;
 }
 
-// The base URLs of the WebSocket and polling interceptors end with the Socket.IO path, which is the `path` option of
-// the clients.
+// Interceptor base URLs end with the Socket.IO path, the `path` option of clients.
 export function getSocketIOBaseURL(serverBaseURL: string) {
   return `${serverBaseURL}/socket.io`;
 }

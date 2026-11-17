@@ -23,6 +23,7 @@ describe.each(testMatrix)('SocketIOProtocol (node, $type) > Events', ({ type }) 
   });
 
   declareEventsSocketIOProtocolTests({
+    platform: 'node',
     type,
     getBaseURL: () => getNodeBaseURL(type, server).replace(/^http/, 'ws'),
     PollingTransport: NodeXHR,

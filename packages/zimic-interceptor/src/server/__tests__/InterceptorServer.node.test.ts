@@ -2093,7 +2093,6 @@ describe('Interceptor server', () => {
         });
       });
 
-      // Protocols such as Socket.IO claim the connections they serve, so no interceptor holds them.
       it('should close client connections claimed by a protocol when the worker disconnects', async () => {
         server = createInternalInterceptorServer();
         await server.start();

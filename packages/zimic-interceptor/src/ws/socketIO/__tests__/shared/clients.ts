@@ -17,7 +17,6 @@ import type { WebSocketInterceptorPlatform } from '../../../interceptor/types/op
 import type { SocketIOProtocolOptions } from '../../types/options';
 import {
   AnySchema,
-  CONNECTION_SAVING,
   createSocketIOInterceptorOptions,
   createSocketIOPollingInterceptor,
   getSocketIOBaseURL,
@@ -64,9 +63,7 @@ export function declareClientsSocketIOProtocolTests(options: ClientsSocketIOProt
     return createSocketIOInterceptorOptions({ type, baseURL, polling }, protocolOptions, savingOptions);
   }
 
-  // `socket.io-client` stops polling while it upgrades, and keeps the connection open until its ping timeout if the
-  // upgrading WebSocket closes before the upgrade ends, as with Socket.IO servers that close mid-upgrade. Stopping a
-  // remote interceptor closes that WebSocket, so connections are let go only after the upgrade.
+  // `socket.io-client` hangs until its ping timeout if its upgrading WebSocket closes, so tests let go only after it.
   async function waitForSocketTransportUpgrade(socket: Socket, transports: ManagerOptions['transports']) {
     if (transports?.some((transport) => transport === WebSocketTransport)) {
       await waitFor(() => expect(socket.io.engine.transport.name).toBe('websocket'));
@@ -228,7 +225,7 @@ export function declareClientsSocketIOProtocolTests(options: ClientsSocketIOProt
 
   it('should run connection effects with the polling client', async () => {
     await usingWebSocketInterceptor<AnySchema>(
-      getSocketIOInterceptorOptions({}, CONNECTION_SAVING),
+      getSocketIOInterceptorOptions({}, { connectionSaving: { enabled: true } }),
       async (interceptor) => {
         const handler = await interceptor
           .connection()
@@ -292,9 +289,7 @@ export function declareClientsSocketIOProtocolTests(options: ClientsSocketIOProt
             await usingSocket(baseURL, { transports: [WebSocketTransport] }, async (socket) => {
               await waitForSocketConnection(socket);
 
-              // A stopping server reports the close of each connection before closing the worker socket, so no public
-              // path drops the worker socket alone, as a crashed server or a lost network does. The worker socket is
-              // closed directly instead.
+              // No public path drops only the worker socket, as a crashed server or lost network does.
               const worker = store.getRemoteWorker(new URL(baseURL), { auth: undefined });
               // eslint-disable-next-line @typescript-eslint/dot-notation
               worker?.webSocketClient['socket']?.close();

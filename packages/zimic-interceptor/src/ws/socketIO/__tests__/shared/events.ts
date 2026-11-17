@@ -4,9 +4,12 @@ import type { Socket } from 'socket.io-client';
 import msgpackParser from 'socket.io-msgpack-parser';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { usingSocket, waitForSocketConnection } from '@tests/utils/socketIO';
 
+import { verifyUnhandledMessageWarning } from '../../../interceptor/__tests__/shared/utils';
+import type { UnhandledMessageStrategy, WebSocketInterceptorPlatform } from '../../../interceptor/types/options';
 import type { LocalWebSocketInterceptor, RemoteWebSocketInterceptor } from '../../../interceptor/types/public';
 import type { SocketIOMessage } from '../../types/messages';
 import type { SocketIOProtocolOptions } from '../../types/options';
@@ -16,7 +19,6 @@ import {
   createSocketIOPollingInterceptor,
   getSocketIOBaseURL,
   getSocketIOTransportCases,
-  MESSAGE_SAVING,
   SharedSocketIOProtocolTestsOptions,
   SocketIOPollingInterceptor,
   SocketIOTestSavingOptions,
@@ -49,8 +51,12 @@ type ChatInterceptor = LocalWebSocketInterceptor<ChatSchema> | RemoteWebSocketIn
 
 type BinarySchema = SocketIOSchema<BinaryServerToClientEvents, BinaryClientToServerEvents>;
 
-export function declareEventsSocketIOProtocolTests(options: SharedSocketIOProtocolTestsOptions) {
-  const { type, getBaseURL: getServerBaseURL } = options;
+interface EventsSocketIOProtocolTestsOptions extends SharedSocketIOProtocolTestsOptions {
+  platform: WebSocketInterceptorPlatform;
+}
+
+export function declareEventsSocketIOProtocolTests(options: EventsSocketIOProtocolTestsOptions) {
+  const { platform, type, getBaseURL: getServerBaseURL } = options;
 
   let baseURL: string;
   let polling: SocketIOPollingInterceptor;
@@ -90,7 +96,7 @@ export function declareEventsSocketIOProtocolTests(options: SharedSocketIOProtoc
       },
     ])('should intercept events with $eventDescription as messages', async ({ emit, expectedMessage }) => {
       await usingWebSocketInterceptor<ChatSchema>(
-        getSocketIOInterceptorOptions({}, MESSAGE_SAVING),
+        getSocketIOInterceptorOptions({}, { messageSaving: { enabled: true } }),
         async (interceptor) => {
           const handler = await interceptor.message().with({ type: expectedMessage.type }).times(1);
 
@@ -101,6 +107,40 @@ export function declareEventsSocketIOProtocolTests(options: SharedSocketIOProtoc
 
             await waitFor(() => expect(handler.messages).toHaveLength(1));
             expect(handler.messages[0].data).toStrictEqual(expectedMessage);
+          });
+        },
+      );
+    });
+
+    it('should report unhandled events as messages from their session', async () => {
+      const onUnhandledMessage = vi.fn<UnhandledMessageStrategy.DeclarationFactory>(() => ({ log: true }));
+
+      await usingWebSocketInterceptor<ChatSchema>(
+        { ...getSocketIOInterceptorOptions(), onUnhandledMessage },
+        async (interceptor) => {
+          await usingSocket(baseURL, { transports }, async (socket) => {
+            await waitForSocketConnection(socket);
+
+            const sessionURL = interceptor.clients[0].url;
+            expect(sessionURL.startsWith(`${baseURL}/?EIO=4&transport=`)).toBe(true);
+
+            await usingIgnoredConsole(['warn', 'error'], async (console) => {
+              socket.emit('user:join', { name: 'Name' });
+
+              await waitFor(() => {
+                expect(console.warn).toHaveBeenCalledTimes(1);
+              });
+              expect(console.error).toHaveBeenCalledTimes(0);
+
+              const expectedMessage = { type: 'user:join', data: { name: 'Name' } };
+              expect(onUnhandledMessage.mock.calls).toEqual([[expectedMessage]]);
+
+              await verifyUnhandledMessageWarning(console.warn.mock.calls[0], {
+                data: expectedMessage,
+                url: sessionURL,
+                platform,
+              });
+            });
           });
         },
       );
@@ -176,7 +216,7 @@ export function declareEventsSocketIOProtocolTests(options: SharedSocketIOProtoc
 
     it('should intercept binary attachments as array buffers', async () => {
       await usingWebSocketInterceptor<BinarySchema>(
-        getSocketIOInterceptorOptions({}, MESSAGE_SAVING),
+        getSocketIOInterceptorOptions({}, { messageSaving: { enabled: true } }),
         async (interceptor) => {
           const handler = await interceptor.message().with({ type: 'file' }).times(1);
 

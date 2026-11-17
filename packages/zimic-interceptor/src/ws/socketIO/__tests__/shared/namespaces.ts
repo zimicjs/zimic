@@ -1,4 +1,6 @@
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
+import type { PacketType } from 'socket.io-parser';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
@@ -14,12 +16,10 @@ import type { SocketIOProtocolOptions } from '../../types/options';
 import {
   AnySchema,
   AnySocketIOInterceptor,
-  CONNECTION_SAVING,
   createSocketIOInterceptorOptions,
   createSocketIOPollingInterceptor,
   getSocketIOBaseURL,
   getSocketIOTransportCases,
-  MESSAGE_SAVING,
   SharedSocketIOProtocolTestsOptions,
   SocketIOPollingInterceptor,
   SocketIOTestInterceptor,
@@ -54,29 +54,32 @@ export function declareNamespacesSocketIOProtocolTests(options: SharedSocketIOPr
 
   describe.each(getSocketIOTransportCases(options))('Transport: $transportName', ({ transports }) => {
     it('should handle each namespace with its own interceptor', async () => {
-      await usingNamespaceInterceptors(MESSAGE_SAVING, async (rootInterceptor, adminInterceptor) => {
-        const rootHandler = await rootInterceptor
-          .message()
-          .with({ type: 'event' })
-          .respond({ type: 'reply', data: 'root' });
-        const adminHandler = await adminInterceptor
-          .message()
-          .with({ type: 'event' })
-          .respond({ type: 'reply', data: 'admin' });
+      await usingNamespaceInterceptors(
+        { messageSaving: { enabled: true } },
+        async (rootInterceptor, adminInterceptor) => {
+          const rootHandler = await rootInterceptor
+            .message()
+            .with({ type: 'event' })
+            .respond({ type: 'reply', data: 'root' });
+          const adminHandler = await adminInterceptor
+            .message()
+            .with({ type: 'event' })
+            .respond({ type: 'reply', data: 'admin' });
 
-        await usingSocket(baseURL, { transports, nsp: '/admin' }, async (adminSocket) => {
-          await waitForSocketConnection(adminSocket);
+          await usingSocket(baseURL, { transports, nsp: '/admin' }, async (adminSocket) => {
+            await waitForSocketConnection(adminSocket);
 
-          const replyPromise = new Promise<string>((resolve) => {
-            adminSocket.once('reply', resolve);
+            const replyPromise = new Promise<string>((resolve) => {
+              adminSocket.once('reply', resolve);
+            });
+            adminSocket.emit('event', 'data');
+
+            expect(await replyPromise).toBe('admin');
+            expect(adminHandler.messages).toHaveLength(1);
+            expect(rootHandler.messages).toHaveLength(0);
           });
-          adminSocket.emit('event', 'data');
-
-          expect(await replyPromise).toBe('admin');
-          expect(adminHandler.messages).toHaveLength(1);
-          expect(rootHandler.messages).toHaveLength(0);
-        });
-      });
+        },
+      );
     });
 
     it('should list a client only in the interceptors of the namespaces it joined', async () => {
@@ -96,22 +99,25 @@ export function declareNamespacesSocketIOProtocolTests(options: SharedSocketIOPr
     });
 
     it('should run connection handlers only for the namespaces a client joined', async () => {
-      await usingNamespaceInterceptors(CONNECTION_SAVING, async (rootInterceptor, adminInterceptor) => {
-        const rootHandler = await rootInterceptor.connection().times(1);
-        const adminHandler = await adminInterceptor.connection().times(1);
+      await usingNamespaceInterceptors(
+        { connectionSaving: { enabled: true } },
+        async (rootInterceptor, adminInterceptor) => {
+          const rootHandler = await rootInterceptor.connection().times(1);
+          const adminHandler = await adminInterceptor.connection().times(1);
 
-        await usingSocketManager(baseURL, { transports }, async (manager) => {
-          await waitForSocketConnection(manager.socket('/'));
+          await usingSocketManager(baseURL, { transports }, async (manager) => {
+            await waitForSocketConnection(manager.socket('/'));
 
-          expect(rootHandler.connections).toHaveLength(1);
-          expect(adminHandler.connections).toHaveLength(0);
+            expect(rootHandler.connections).toHaveLength(1);
+            expect(adminHandler.connections).toHaveLength(0);
 
-          await waitForSocketConnection(manager.socket('/admin'));
+            await waitForSocketConnection(manager.socket('/admin'));
 
-          expect(rootHandler.connections).toHaveLength(1);
-          expect(adminHandler.connections).toHaveLength(1);
-        });
-      });
+            expect(rootHandler.connections).toHaveLength(1);
+            expect(adminHandler.connections).toHaveLength(1);
+          });
+        },
+      );
     });
 
     it('should open one Engine.IO connection for the namespaces of a manager', async () => {
@@ -136,45 +142,93 @@ export function declareNamespacesSocketIOProtocolTests(options: SharedSocketIOPr
     });
 
     it('should remove only the client of the namespace a socket disconnects from', async () => {
-      await usingNamespaceInterceptors(MESSAGE_SAVING, async (rootInterceptor, adminInterceptor) => {
-        const rootHandler = await rootInterceptor.message().with({ type: 'event' }).times(1);
+      await usingNamespaceInterceptors(
+        { messageSaving: { enabled: true } },
+        async (rootInterceptor, adminInterceptor) => {
+          const rootHandler = await rootInterceptor.message().with({ type: 'event' }).times(1);
 
-        await usingSocketManager(baseURL, { transports }, async (manager) => {
-          const rootSocket = manager.socket('/');
-          const adminSocket = manager.socket('/admin');
+          await usingSocketManager(baseURL, { transports }, async (manager) => {
+            const rootSocket = manager.socket('/');
+            const adminSocket = manager.socket('/admin');
 
-          await Promise.all([waitForSocketConnection(rootSocket), waitForSocketConnection(adminSocket)]);
+            await Promise.all([waitForSocketConnection(rootSocket), waitForSocketConnection(adminSocket)]);
 
-          adminSocket.disconnect();
+            adminSocket.disconnect();
 
-          await waitFor(() => expect(adminInterceptor.clients).toHaveLength(0));
-          expect(rootInterceptor.clients).toHaveLength(1);
+            await waitFor(() => expect(adminInterceptor.clients).toHaveLength(0));
+            expect(rootInterceptor.clients).toHaveLength(1);
 
-          rootSocket.emit('event', 'data');
-          await waitFor(() => expect(rootHandler.messages).toHaveLength(1));
-        });
-      });
+            rootSocket.emit('event', 'data');
+            await waitFor(() => expect(rootHandler.messages).toHaveLength(1));
+          });
+        },
+      );
     });
 
     it('should keep other namespaces connected when the interceptor of one namespace is cleared', async () => {
-      await usingNamespaceInterceptors(MESSAGE_SAVING, async (rootInterceptor, adminInterceptor) => {
-        const rootHandler = await rootInterceptor.message().with({ type: 'event' }).times(1);
+      await usingNamespaceInterceptors(
+        { messageSaving: { enabled: true } },
+        async (rootInterceptor, adminInterceptor) => {
+          const rootHandler = await rootInterceptor.message().with({ type: 'event' }).times(1);
+
+          await usingSocketManager(baseURL, { transports }, async (manager) => {
+            const rootSocket = manager.socket('/');
+            const adminSocket = manager.socket('/admin');
+
+            await Promise.all([waitForSocketConnection(rootSocket), waitForSocketConnection(adminSocket)]);
+
+            const adminDisconnectionPromise = waitForSocketDisconnection(adminSocket);
+
+            await adminInterceptor.clear();
+            await adminDisconnectionPromise;
+
+            expect(rootSocket.connected).toBe(true);
+
+            rootSocket.emit('event', 'data');
+            await waitFor(() => expect(rootHandler.messages).toHaveLength(1));
+          });
+        },
+      );
+    });
+
+    it('should not disconnect a namespace whose interceptor is cleared while its connection is decided', async () => {
+      const decisionStartedPromise = createPromiseWithResolvers<void>();
+      const decisionReleasedPromise = createPromiseWithResolvers<void>();
+
+      await usingNamespaceInterceptors({}, async (rootInterceptor, adminInterceptor) => {
+        await adminInterceptor.connection().with(async () => {
+          decisionStartedPromise.resolve();
+          await decisionReleasedPromise;
+          return true;
+        });
 
         await usingSocketManager(baseURL, { transports }, async (manager) => {
           const rootSocket = manager.socket('/');
-          const adminSocket = manager.socket('/admin');
+          await waitForSocketConnection(rootSocket);
 
-          await Promise.all([waitForSocketConnection(rootSocket), waitForSocketConnection(adminSocket)]);
+          const adminPacketTypes: PacketType[] = [];
+          manager.on('packet', (packet) => {
+            if (packet.nsp === '/admin') {
+              adminPacketTypes.push(packet.type);
+            }
+          });
 
-          const adminDisconnectionPromise = waitForSocketDisconnection(adminSocket);
+          manager.socket('/admin');
+          await decisionStartedPromise;
 
           await adminInterceptor.clear();
-          await adminDisconnectionPromise;
+          decisionReleasedPromise.resolve();
 
+          const markerPromise = new Promise<void>((resolve) => {
+            rootSocket.once('marker', () => resolve());
+          });
+          rootInterceptor.server.send({ type: 'marker', data: 'root' });
+
+          await markerPromise;
+
+          // Packets arrive in order, so receiving the marker first proves the admin namespace received nothing.
+          expect(adminPacketTypes).toEqual([]);
           expect(rootSocket.connected).toBe(true);
-
-          rootSocket.emit('event', 'data');
-          await waitFor(() => expect(rootHandler.messages).toHaveLength(1));
         });
       });
     });
@@ -192,7 +246,7 @@ export function declareNamespacesSocketIOProtocolTests(options: SharedSocketIOPr
 
             // Started after the connection opened, so the root interceptor was its only holder when it connected.
             await usingWebSocketInterceptor<AnySchema>(
-              getSocketIOInterceptorOptions({ namespace: '/admin' }, MESSAGE_SAVING),
+              getSocketIOInterceptorOptions({ namespace: '/admin' }, { messageSaving: { enabled: true } }),
               async (adminInterceptor) => {
                 const adminHandler = await adminInterceptor.message().with({ type: 'event' }).times(1);
 

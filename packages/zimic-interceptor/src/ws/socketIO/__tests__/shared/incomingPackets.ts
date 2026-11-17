@@ -16,7 +16,6 @@ import {
   createSocketIOInterceptorOptions,
   createSocketIOPollingInterceptor,
   getSocketIOBaseURL,
-  MESSAGE_SAVING,
   SharedSocketIOProtocolTestsOptions,
   SocketIOPollingInterceptor,
   SocketIOTestSavingOptions,
@@ -48,7 +47,7 @@ export function declareIncomingPacketsSocketIOProtocolTests(options: SharedSocke
 
   it('should keep one client when a socket sends a second connect packet for its namespace', async () => {
     await usingWebSocketInterceptor<AnySchema>(
-      getSocketIOInterceptorOptions({}, MESSAGE_SAVING),
+      getSocketIOInterceptorOptions({}, { messageSaving: { enabled: true } }),
       async (interceptor) => {
         const handler = await interceptor.message().with({ type: 'event' }).times(1);
 
@@ -134,7 +133,7 @@ export function declareIncomingPacketsSocketIOProtocolTests(options: SharedSocke
 
   it('should not intercept events whose name is not a string', async () => {
     await usingWebSocketInterceptor<AnySchema>(
-      getSocketIOInterceptorOptions({}, MESSAGE_SAVING),
+      getSocketIOInterceptorOptions({}, { messageSaving: { enabled: true } }),
       async (interceptor) => {
         const handler = await interceptor.message();
 
@@ -174,7 +173,7 @@ export function declareIncomingPacketsSocketIOProtocolTests(options: SharedSocke
   it('should not intercept events that the parser decodes without an array of arguments', async () => {
     await usingIgnoredConsole(['error'], async (console) => {
       await usingWebSocketInterceptor<AnySchema>(
-        getSocketIOInterceptorOptions({ parser: bareEventParser }, MESSAGE_SAVING),
+        getSocketIOInterceptorOptions({ parser: bareEventParser }, { messageSaving: { enabled: true } }),
         async (interceptor) => {
           const handler = await interceptor.message();
 
@@ -215,7 +214,7 @@ export function declareIncomingPacketsSocketIOProtocolTests(options: SharedSocke
 
   it('should not intercept events whose ack ID is not an integer', async () => {
     await usingWebSocketInterceptor<AnySchema>(
-      getSocketIOInterceptorOptions({ parser: stringAckIdParser }, MESSAGE_SAVING),
+      getSocketIOInterceptorOptions({ parser: stringAckIdParser }, { messageSaving: { enabled: true } }),
       async (interceptor) => {
         const handler = await interceptor.message();
 
@@ -234,7 +233,7 @@ export function declareIncomingPacketsSocketIOProtocolTests(options: SharedSocke
 
   it('should not intercept acks sent by clients', async () => {
     await usingWebSocketInterceptor<AnySchema>(
-      getSocketIOInterceptorOptions({}, MESSAGE_SAVING),
+      getSocketIOInterceptorOptions({}, { messageSaving: { enabled: true } }),
       async (interceptor) => {
         const handler = await interceptor.message();
 
@@ -257,7 +256,7 @@ export function declareIncomingPacketsSocketIOProtocolTests(options: SharedSocke
     const pollingURL = `${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling`;
 
     await usingWebSocketInterceptor<AnySchema>(
-      getSocketIOInterceptorOptions({}, MESSAGE_SAVING),
+      getSocketIOInterceptorOptions({}, { messageSaving: { enabled: true } }),
       async (interceptor) => {
         const handler = await interceptor.message();
 

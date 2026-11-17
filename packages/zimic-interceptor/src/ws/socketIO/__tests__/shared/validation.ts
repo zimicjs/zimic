@@ -46,8 +46,7 @@ export function declareValidationSocketIOProtocolTests(options: SharedSocketIOPr
     return createSocketIOInterceptorOptions({ type, baseURL, polling }, protocolOptions, savingOptions);
   }
 
-  // Local interceptors close every WebSocket connection before reading its Engine.IO version, because they serve
-  // Socket.IO over polling only.
+  // Local interceptors serve Socket.IO over polling only.
   if (type === 'remote') {
     describe('Unsupported versions', () => {
       const unsupportedVersionCases = [

@@ -11,8 +11,7 @@ import {
 } from '../../types/options';
 import { LocalWebSocketInterceptor, RemoteWebSocketInterceptor } from '../../types/public';
 
-// Shared suites reuse the same options to create interceptors of several schemas, so these options declare no
-// protocol, the only option typed by the schema.
+// Shared suites reuse these options across schemas, so they omit the schema-typed protocol.
 export type WebSocketInterceptorOptionsWithoutProtocol =
   | Omit<LocalWebSocketInterceptorOptions<WebSocketSchema>, 'protocol'>
   | Omit<RemoteWebSocketInterceptorOptions<WebSocketSchema>, 'protocol'>;

@@ -49,7 +49,7 @@ export function declareRoutingSocketIOProtocolTests(options: SharedSocketIOProto
     return createSocketIOInterceptorOptions({ type, baseURL, polling }, protocolOptions, savingOptions);
   }
 
-  // Local interceptors serve Socket.IO over polling only, so only remote WebSocket clients connect.
+  // Local interceptors serve Socket.IO over polling only.
   if (type === 'remote') {
     describe('Overlapping base URLs', () => {
       it('should connect WebSocket clients through the interceptor of their Socket.IO path', async () => {

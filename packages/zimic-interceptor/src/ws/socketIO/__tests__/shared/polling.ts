@@ -22,7 +22,6 @@ import {
   createSocketIOInterceptorOptions,
   createSocketIOPollingInterceptor,
   getSocketIOBaseURL,
-  MESSAGE_SAVING,
   SharedSocketIOProtocolTestsOptions,
   SocketIOPollingInterceptor,
   SocketIOTestSavingOptions,
@@ -32,6 +31,21 @@ import {
 interface PollingSocketIOProtocolTestsOptions extends SharedSocketIOProtocolTestsOptions {
   getAuthenticatedBaseURL: () => string;
   getValidToken: () => string;
+}
+
+// No public call pauses a stop, so the polling interceptor holds it until released.
+function pausePollingInterceptorStop(polling: SocketIOPollingInterceptor) {
+  const stopStartedPromise = createPromiseWithResolvers<void>();
+  const stopReleasedPromise = createPromiseWithResolvers<void>();
+  const stopPolling = polling.stop.bind(polling);
+
+  vi.spyOn(polling, 'stop').mockImplementation(async () => {
+    stopStartedPromise.resolve();
+    await stopReleasedPromise;
+    await stopPolling();
+  });
+
+  return { stopStartedPromise, releaseStop: () => stopReleasedPromise.resolve() };
 }
 
 export function declarePollingSocketIOProtocolTests(options: PollingSocketIOProtocolTestsOptions) {
@@ -69,9 +83,8 @@ export function declarePollingSocketIOProtocolTests(options: PollingSocketIOProt
   describe('Polling sessions', () => {
     const pollingTransports: ManagerOptions['transports'] = [PollingTransport];
 
-    // Local interceptors serve Socket.IO over polling only, so only remote clients upgrade to WebSocket.
+    // Local interceptors serve Socket.IO over polling only.
     if (type === 'remote') {
-      // Holds the upgrade of polling clients until released, so tests decide when it happens.
       function createDeferredUpgradeTransports() {
         const upgradeReleasePromise = createPromiseWithResolvers<void>();
 
@@ -92,7 +105,7 @@ export function declarePollingSocketIOProtocolTests(options: PollingSocketIOProt
         const { transports, releaseUpgrade } = createDeferredUpgradeTransports();
 
         await usingWebSocketInterceptor<AnySchema>(
-          getSocketIOInterceptorOptions({}, MESSAGE_SAVING),
+          getSocketIOInterceptorOptions({}, { messageSaving: { enabled: true } }),
           async (interceptor) => {
             const handler = await interceptor.message().with({ type: 'event' }).times(2);
 
@@ -214,7 +227,7 @@ export function declarePollingSocketIOProtocolTests(options: PollingSocketIOProt
 
       it('should keep polling clients connected after their WebSocket upgrade closes', async () => {
         await usingWebSocketInterceptor<AnySchema>(
-          getSocketIOInterceptorOptions({}, MESSAGE_SAVING),
+          getSocketIOInterceptorOptions({}, { messageSaving: { enabled: true } }),
           async (interceptor) => {
             const handler = await interceptor.message().with({ type: 'event' }).times(1);
 
@@ -334,22 +347,13 @@ export function declarePollingSocketIOProtocolTests(options: PollingSocketIOProt
       });
 
       it('should close WebSocket connections opened while the last namespace stops', async () => {
-        const pollingStopStartedPromise = createPromiseWithResolvers<void>();
-        const pollingStopReleasedPromise = createPromiseWithResolvers<void>();
-        const stopPolling = polling.stop.bind(polling);
-
-        // No public call pauses a stop, so the polling interceptor holds it to open a connection while it runs.
-        vi.spyOn(polling, 'stop').mockImplementation(async () => {
-          pollingStopStartedPromise.resolve();
-          await pollingStopReleasedPromise;
-          await stopPolling();
-        });
+        const { stopStartedPromise, releaseStop } = pausePollingInterceptorStop(polling);
 
         await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
           const stopPromise = interceptor.stop();
 
           try {
-            await pollingStopStartedPromise;
+            await stopStartedPromise;
 
             const socket = new WebSocket(`${baseURL}/?EIO=4&transport=websocket`);
 
@@ -368,14 +372,14 @@ export function declarePollingSocketIOProtocolTests(options: PollingSocketIOProt
               socket.close();
             }
           } finally {
-            pollingStopReleasedPromise.resolve();
+            releaseStop();
             await stopPromise;
           }
         });
       });
     }
 
-    // Local interceptors serve Socket.IO over polling only, so they close WebSocket connections.
+    // Local interceptors serve Socket.IO over polling only.
     if (type === 'local') {
       it('should close WebSocket connections naming polling as the supported transport', async () => {
         await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
@@ -501,35 +505,26 @@ export function declarePollingSocketIOProtocolTests(options: PollingSocketIOProt
     });
 
     it('should not open polling sessions while the last namespace stops', async () => {
-      const pollingStopStartedPromise = createPromiseWithResolvers<void>();
-      const pollingStopReleasedPromise = createPromiseWithResolvers<void>();
-      const stopPolling = polling.stop.bind(polling);
-
-      // No public call pauses a stop, so the polling interceptor holds it to open a session while it runs.
-      vi.spyOn(polling, 'stop').mockImplementation(async () => {
-        pollingStopStartedPromise.resolve();
-        await pollingStopReleasedPromise;
-        await stopPolling();
-      });
+      const { stopStartedPromise, releaseStop } = pausePollingInterceptorStop(polling);
 
       await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
         const stopPromise = interceptor.stop();
 
         try {
-          await pollingStopStartedPromise;
+          await stopStartedPromise;
 
           const response = await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling`);
 
           expect(response.status).toBe(403);
           expect(await response.json()).toEqual({ code: 4, message: 'Forbidden' });
         } finally {
-          pollingStopReleasedPromise.resolve();
+          releaseStop();
           await stopPromise;
         }
       });
     });
 
-    // Local interceptors serve Socket.IO over polling only, so only remote clients connect over WebSocket.
+    // Local interceptors serve Socket.IO over polling only.
     if (type === 'remote') {
       it('should connect WebSocket clients without a polling interceptor', async () => {
         await usingWebSocketInterceptor<AnySchema>(
@@ -565,20 +560,31 @@ export function declarePollingSocketIOProtocolTests(options: PollingSocketIOProt
       );
     });
 
-    it('should answer polling requests with the supported protocol error for EIO=3', async () => {
-      await usingIgnoredConsole(['warn'], async () => {
-        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
-          const response = await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=3&transport=polling`);
+    it.each([
+      {
+        versionDescription: 'EIO=3',
+        versionQuery: 'EIO=3&',
+        expectedMessage: 'Engine.IO protocol version 3 is not supported. Use version 4.',
+      },
+      {
+        versionDescription: 'no Engine.IO version',
+        versionQuery: '',
+        expectedMessage: 'Engine.IO protocol version unknown is not supported. Use version 4.',
+      },
+    ])(
+      'should reject polling requests with an unsupported Engine.IO version ($versionDescription)',
+      async ({ versionQuery, expectedMessage }) => {
+        await usingIgnoredConsole(['warn'], async () => {
+          await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+            const response = await fetch(`${baseURL.replace(/^ws/, 'http')}/?${versionQuery}transport=polling`);
 
-          expect(response.status).toBe(400);
-          expect(await response.json()).toEqual({
-            code: 5,
-            message: 'Engine.IO protocol version 3 is not supported. Use version 4.',
+            expect(response.status).toBe(400);
+            expect(await response.json()).toEqual({ code: 5, message: expectedMessage });
+            expect(interceptor.clients).toHaveLength(0);
           });
-          expect(interceptor.clients).toHaveLength(0);
         });
-      });
-    });
+      },
+    );
 
     it('should log unsupported Engine.IO versions of polling requests', async () => {
       await usingIgnoredConsole(['warn'], async (console) => {
@@ -653,7 +659,7 @@ export function declarePollingSocketIOProtocolTests(options: PollingSocketIOProt
       );
     });
 
-    // Remote interceptors serve Socket.IO over WebSocket, so they do not need a polling interceptor.
+    // Local interceptors serve Socket.IO over polling only.
     if (type === 'local') {
       it('should not start a local interceptor without a polling interceptor', async () => {
         await usingIgnoredConsole(['error'], async () => {
@@ -754,20 +760,11 @@ export function declarePollingSocketIOProtocolTests(options: PollingSocketIOProt
     }
 
     it('should start after the polling interceptor of the last namespace of a base URL stops', async () => {
-      const pollingStopStartedPromise = createPromiseWithResolvers<void>();
-      const pollingStopReleasedPromise = createPromiseWithResolvers<void>();
-      const stopPolling = polling.stop.bind(polling);
-
-      // No public call pauses a stop, so the polling interceptor holds it to start another interceptor while it runs.
-      vi.spyOn(polling, 'stop').mockImplementation(async () => {
-        pollingStopStartedPromise.resolve();
-        await pollingStopReleasedPromise;
-        await stopPolling();
-      });
+      const { stopStartedPromise, releaseStop } = pausePollingInterceptorStop(polling);
 
       await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (stoppingInterceptor) => {
         const stopPromise = stoppingInterceptor.stop();
-        await pollingStopStartedPromise;
+        await stopStartedPromise;
 
         const nextInterceptorPromise = usingWebSocketInterceptor<AnySchema>(
           getSocketIOInterceptorOptions(),
@@ -781,9 +778,33 @@ export function declarePollingSocketIOProtocolTests(options: PollingSocketIOProt
           },
         );
 
-        pollingStopReleasedPromise.resolve();
+        releaseStop();
 
         await Promise.all([stopPromise, nextInterceptorPromise]);
+      });
+    });
+
+    it('should start after the polling interceptor of the last namespace of a base URL fails to stop', async () => {
+      const stopError = new Error('Polling stop failed');
+      const stopPolling = polling.stop.bind(polling);
+
+      // No public path makes the polling interceptor reject a stop, so it stops and then rejects.
+      vi.spyOn(polling, 'stop').mockImplementationOnce(async () => {
+        await stopPolling();
+        throw stopError;
+      });
+
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (stoppingInterceptor) => {
+        await expect(stoppingInterceptor.stop()).rejects.toBe(stopError);
+      });
+
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (nextInterceptor) => {
+        expect(polling.isRunning).toBe(true);
+
+        await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
+          await waitForSocketConnection(socket);
+          expect(nextInterceptor.clients).toHaveLength(1);
+        });
       });
     });
   });
