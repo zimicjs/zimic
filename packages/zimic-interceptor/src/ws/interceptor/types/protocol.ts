@@ -71,7 +71,8 @@ export interface WebSocketInterceptorProtocolClientOptions<Message> {
 
   /**
    * Sends a message to the client, called with each message sent to it by a handler, `client.send`, or `server.send`,
-   * as given.
+   * as given. Those senders also accept the JSON text of a message, and user code may bypass their types, so validate
+   * each message before sending it.
    */
   send: (message: Message) => void;
 

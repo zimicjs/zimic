@@ -446,8 +446,8 @@ abstract class WebSocketInterceptorWorker {
       protocols: [],
       send: (message) => {
         if (interceptor.clients.includes(client)) {
-          // Clients are schema-erased, but their public types accept the messages of the interceptor schema, which are
-          // the messages of its protocol. User code may bypass those types, so protocols validate what they send.
+          // Clients are schema-erased. Their public types accept the messages of the interceptor schema and the JSON
+          // text of those messages, and user code may bypass the types, so protocols validate what they send.
           options.send(message as Message);
         }
       },
