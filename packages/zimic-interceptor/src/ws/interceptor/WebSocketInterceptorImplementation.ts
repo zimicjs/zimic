@@ -55,7 +55,7 @@ class WebSocketInterceptorImplementation<
   #baseURL!: URL;
 
   messageSaving: WebSocketInterceptorMessageSaving;
-  messageStore: WebSocketInterceptorMessageStore<Schema>;
+  readonly messageStore: WebSocketInterceptorMessageStore<Schema>;
 
   connectionSaving: WebSocketInterceptorConnectionSaving;
   private numberOfSavedConnections = 0;
@@ -73,7 +73,7 @@ class WebSocketInterceptorImplementation<
   #server: InternalWebSocketInterceptorServer<Schema>;
   #clients: InternalWebSocketInterceptorClient<Schema>[] = [];
 
-  protocol: WebSocketInterceptorProtocol<WebSocketSchemaMessage<Schema>> | undefined;
+  readonly protocol: WebSocketInterceptorProtocol<WebSocketSchemaMessage<Schema>> | undefined;
 
   private createWorker: () => WebSocketInterceptorWorker;
   private deleteWorker: () => void;
@@ -125,9 +125,14 @@ class WebSocketInterceptorImplementation<
     this.#server = createWebSocketInterceptorServer(
       () => this.baseURLAsString,
       (data, options) => {
-        const recipients = options?.to === undefined ? this.#clients : [options.to].flat();
+        const requestedRecipients = options?.to === undefined ? undefined : [options.to].flat();
 
-        for (const client of this.#clients.filter((client) => recipients.includes(client))) {
+        const recipients =
+          requestedRecipients === undefined
+            ? [...this.#clients]
+            : this.#clients.filter((client) => requestedRecipients.includes(client));
+
+        for (const client of recipients) {
           client.send(data);
         }
       },
