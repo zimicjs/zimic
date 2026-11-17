@@ -3,6 +3,7 @@ import { waitFor } from '@zimic/utils/time';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { describe, expect, it, vi } from 'vitest';
 
+import InterceptorWebSocketClient from '@/utils/webSocket/WebSocketClient';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import {
@@ -157,6 +158,38 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
         },
       );
     });
+
+    // Remote-only: only remote interceptors register with the interceptor server after their protocol starts, and that
+    // registration can fail. Local registrations cannot fail once the worker is running.
+    if (type === 'remote') {
+      it('should stop the protocol if the interceptor fails to register after starting it', async () => {
+        const baseURL = getBaseURL();
+        const stop = vi.fn<() => void>();
+
+        await usingWebSocketInterceptor<ChatSchema>(
+          { type, baseURL, protocol: { ...protocol, stop } },
+          { start: false },
+          async (interceptor) => {
+            const registrationError = new Error('Registration failed');
+
+            // No public path makes the server reject a registration, so only the registration request is failed.
+            const requestSpy = vi
+              .spyOn(InterceptorWebSocketClient.prototype, 'request')
+              .mockRejectedValueOnce(registrationError);
+
+            try {
+              await expect(interceptor.start()).rejects.toBe(registrationError);
+
+              expect(requestSpy).toHaveBeenNthCalledWith(1, 'interceptors/ws/workers/reset', expect.anything());
+            } finally {
+              requestSpy.mockRestore();
+            }
+
+            expect(stop).toHaveBeenCalledTimes(1);
+          },
+        );
+      });
+    }
 
     it('should stop the protocol when the interceptor stops', async () => {
       const baseURL = getBaseURL();
