@@ -1,6 +1,6 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
-import { WebSocketSchema } from '@zimic/ws';
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { expect, it, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
@@ -12,6 +12,7 @@ import {
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
 
+import type { WebSocketInterceptorClient } from '../../types/messages';
 import type { WebSocketInterceptorType } from '../../types/options';
 import type {
   WebSocketInterceptorProtocol,
@@ -506,6 +507,46 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
     });
   });
 
+  it.each([
+    {
+      method: 'send',
+      callReleasedClient: (client: WebSocketInterceptorClient<ChatSchema>) => {
+        client.send({ text: 'released' });
+      },
+    },
+    {
+      method: 'close',
+      callReleasedClient: (client: WebSocketInterceptorClient<ChatSchema>) => {
+        client.close();
+      },
+    },
+  ])('should ignore $method calls of opened clients released by their signal', async ({ callReleasedClient }) => {
+    const baseURL = getBaseURL();
+    const contextPromise = createPromiseWithResolvers<WebSocketInterceptorProtocolContext<ChatMessage>>();
+    const send = vi.fn<(message: ChatMessage) => void>();
+    const close = vi.fn<(code?: number, reason?: string) => void>();
+
+    const servingProtocol: WebSocketInterceptorProtocol<ChatMessage> = {
+      ...protocol,
+      start: (context) => contextPromise.resolve(context),
+    };
+
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL, protocol: servingProtocol }, async (interceptor) => {
+      const context = await contextPromise;
+      const abortController = new AbortController();
+
+      await context.openClient({ url: baseURL, signal: abortController.signal, send, close, onOpen: vi.fn() });
+
+      const releasedClient = interceptor.clients[0];
+      abortController.abort();
+
+      callReleasedClient(releasedClient);
+
+      expect(send).not.toHaveBeenCalled();
+      expect(close).not.toHaveBeenCalled();
+    });
+  });
+
   it('should give the URL of claimed connections to the protocol', async () => {
     const baseURL = getBaseURL();
     const connectionURL = `${baseURL}/chat?id=1`;
@@ -540,6 +581,26 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
         client.send('frame');
 
         await waitFor(() => expect(onFrame).toHaveBeenCalledExactlyOnceWith('frame'));
+      });
+    });
+  });
+
+  it('should give the binary frames of claimed connections to the protocol as array buffers', async () => {
+    const baseURL = getBaseURL();
+    const onFrame = vi.fn<(frame: WebSocketInterceptorProtocolFrame) => void>();
+
+    const claimingProtocol: WebSocketInterceptorProtocol<ChatMessage> = {
+      ...protocol,
+      claimConnection: () => ({ onFrame, onClose: vi.fn() }),
+    };
+
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL, protocol: claimingProtocol }, async () => {
+      await usingWebSocketClient<BinaryFrameSchema>(baseURL, async (client) => {
+        client.send(new Blob([createBinaryMessage(0x00, 0xff)]));
+
+        await waitFor(() => expect(onFrame).toHaveBeenCalledTimes(1));
+
+        expect(onFrame.mock.calls[0][0]).toStrictEqual(createBinaryMessage(0x00, 0xff));
       });
     });
   });
@@ -773,6 +834,27 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
     });
   });
 
+  it('should give connections to other interceptors if claiming them throws', async () => {
+    const baseURL = getBaseURL();
+
+    const failingProtocol: WebSocketInterceptorProtocol<ChatMessage> = {
+      ...protocol,
+      claimConnection: () => {
+        throw new Error('Claim failed');
+      },
+    };
+
+    await usingIgnoredConsole(['error'], async () => {
+      await usingWebSocketInterceptor<ChatFrameSchema>({ type, baseURL }, async (plainInterceptor) => {
+        await usingWebSocketInterceptor<ChatSchema>({ type, baseURL, protocol: failingProtocol }, async () => {
+          await usingWebSocketClient<ChatFrameSchema>(baseURL, async () => {
+            await waitFor(() => expect(plainInterceptor.clients).toHaveLength(1));
+          });
+        });
+      });
+    });
+  });
+
   it('should log errors thrown while claiming connections', async () => {
     const baseURL = getBaseURL();
     const claimError = new Error('Claim failed');
@@ -797,29 +879,46 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
     });
   });
 
-  it('should log errors thrown by the claims of connections', async () => {
-    const baseURL = getBaseURL();
-    const frameError = new Error('Frame failed');
+  it.each([
+    {
+      hookName: 'onFrame',
+      triggerHook: (client: WebSocketClient<ChatFrameSchema>) => {
+        client.send('frame');
+      },
+    },
+    {
+      hookName: 'onClose',
+      triggerHook: async (client: WebSocketClient<ChatFrameSchema>) => {
+        await client.close();
+      },
+    },
+  ] as const)(
+    'should log errors thrown by the $hookName hook of connection claims',
+    async ({ hookName, triggerHook }) => {
+      const baseURL = getBaseURL();
+      const hookError = new Error(`${hookName} failed`);
 
-    const failingProtocol: WebSocketInterceptorProtocol<ChatMessage> = {
-      ...protocol,
-      claimConnection: () => ({
-        onFrame: () => {
-          throw frameError;
-        },
-        onClose: vi.fn(),
-      }),
-    };
+      const failingProtocol: WebSocketInterceptorProtocol<ChatMessage> = {
+        ...protocol,
+        claimConnection: () => ({
+          onFrame: vi.fn(),
+          onClose: vi.fn(),
+          [hookName]: () => {
+            throw hookError;
+          },
+        }),
+      };
 
-    await usingIgnoredConsole(['error'], async (console) => {
-      await usingWebSocketInterceptor<ChatSchema>({ type, baseURL, protocol: failingProtocol }, async () => {
-        await usingWebSocketClient<ChatFrameSchema>(baseURL, async (client) => {
-          client.send('frame');
+      await usingIgnoredConsole(['error'], async (console) => {
+        await usingWebSocketInterceptor<ChatSchema>({ type, baseURL, protocol: failingProtocol }, async () => {
+          await usingWebSocketClient<ChatFrameSchema>(baseURL, async (client) => {
+            await triggerHook(client);
 
-          await waitFor(() => expect(console.error).toHaveBeenCalledTimes(1));
-          expect(console.error).toHaveBeenCalledWith(frameError);
+            await waitFor(() => expect(console.error).toHaveBeenCalledTimes(1));
+            expect(console.error).toHaveBeenCalledWith(hookError);
+          });
         });
       });
-    });
-  });
+    },
+  );
 }
