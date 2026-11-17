@@ -59,6 +59,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     this.webSocketClient = new WebSocketClient({
       url: options.serverURL.toString(),
       onUnexpectedClose: () => {
+        this.releaseClaimedConnections();
         logUnexpectedServerDisconnection(options.serverURL);
       },
     });
@@ -161,15 +162,15 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     const clientId = this.findClientId(client);
 
     if (clientId) {
-      // Queued after earlier sends, so the client receives them before the connection closes, as in local mode.
-      await this.enqueueServerEvent(() => {
-        this.webSocketClient.send('interceptors/ws/clients/disconnect', {
-          clientId,
-          code,
-          reason,
-        });
-      });
+      await this.disconnectClient(clientId, code, reason);
     }
+  }
+
+  // Queued after earlier sends, so the client receives them before the connection closes, as in local mode.
+  private disconnectClient(clientId: string, code?: number, reason?: string) {
+    return this.enqueueServerEvent(() => {
+      this.webSocketClient.send('interceptors/ws/clients/disconnect', { clientId, code, reason });
+    });
   }
 
   private enqueueSend<Message extends WebSocketMessageSchema>(clientId: string, data: WebSocketMessageData<Message>) {
@@ -197,6 +198,9 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   }
 
   private claimConnection(clientId: string, url: string, holders: RegisteredWebSocketInterceptor[]) {
+    // Protocols may close a connection while handling its close, when the server no longer has it.
+    let isClosed = false;
+
     const claim = this.claimConnectionWithProtocols(
       {
         url,
@@ -204,19 +208,34 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
           void this.enqueueSend(clientId, frame);
         },
         close: (code, reason) => {
-          void this.enqueueServerEvent(() => {
-            this.webSocketClient.send('interceptors/ws/clients/disconnect', { clientId, code, reason });
-          });
+          if (!isClosed) {
+            void this.disconnectClient(clientId, code, reason);
+          }
         },
       },
       holders,
     );
 
     if (claim) {
-      this.claimedConnections.set(clientId, claim);
+      this.claimedConnections.set(clientId, {
+        onFrame: claim.onFrame,
+        onClose: () => {
+          isClosed = true;
+          claim.onClose();
+        },
+      });
     }
 
     return claim !== undefined;
+  }
+
+  // The server no longer reports the close of claimed connections once the worker disconnects.
+  private releaseClaimedConnections() {
+    for (const claim of this.claimedConnections.values()) {
+      claim.onClose();
+    }
+
+    this.claimedConnections.clear();
   }
 
   private connectClient = async ({

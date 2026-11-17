@@ -3,6 +3,8 @@ import { waitFor } from '@zimic/utils/time';
 import type { ManagerOptions, Socket } from 'socket.io-client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import WebSocketInterceptorStore from '@/ws/interceptor/WebSocketInterceptorStore';
+import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import {
   usingSocket,
@@ -11,6 +13,7 @@ import {
   waitForSocketDisconnection,
 } from '@tests/utils/socketIO';
 
+import type { WebSocketInterceptorPlatform } from '../../../interceptor/types/options';
 import type { SocketIOProtocolOptions } from '../../types/options';
 import {
   AnySchema,
@@ -27,8 +30,24 @@ import {
 
 const PING_INTERVAL = 25000;
 
-export function declareClientsSocketIOProtocolTests(options: SharedSocketIOProtocolTestsOptions) {
-  const { type, getBaseURL: getServerBaseURL, PollingTransport, WebSocketTransport } = options;
+interface ClientsSocketIOProtocolTestsOptions extends SharedSocketIOProtocolTestsOptions {
+  platform: WebSocketInterceptorPlatform;
+  startServer?: () => Promise<void>;
+  stopServer?: () => Promise<void>;
+}
+
+export function declareClientsSocketIOProtocolTests(options: ClientsSocketIOProtocolTestsOptions) {
+  const {
+    platform,
+    type,
+    getBaseURL: getServerBaseURL,
+    PollingTransport,
+    WebSocketTransport,
+    startServer,
+    stopServer,
+  } = options;
+
+  const store = new WebSocketInterceptorStore();
 
   let baseURL: string;
   let polling: SocketIOPollingInterceptor;
@@ -227,4 +246,69 @@ export function declareClientsSocketIOProtocolTests(options: SharedSocketIOProto
       },
     );
   });
+
+  // Only remote interceptors connect to an interceptor server, and browser tests cannot stop their shared server.
+  if (type === 'remote' && platform === 'node') {
+    it('should stop pinging WebSocket clients after the interceptor server stops', async () => {
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+
+      try {
+        await usingIgnoredConsole(['warn', 'error'], async (console) => {
+          await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async () => {
+            await usingSocket(baseURL, { transports: [WebSocketTransport] }, async (socket) => {
+              await waitForSocketConnection(socket);
+
+              await stopServer?.();
+
+              try {
+                // The worker warns once it observes the server disconnection.
+                await waitFor(() => expect(console.warn).toHaveBeenCalled());
+
+                await vi.advanceTimersByTimeAsync(PING_INTERVAL);
+
+                expect(console.error).not.toHaveBeenCalled();
+              } finally {
+                await startServer?.();
+              }
+            });
+          });
+        });
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  }
+
+  // Only remote interceptors connect to an interceptor server, through which they serve WebSocket clients.
+  if (type === 'remote') {
+    it('should stop pinging WebSocket clients after the connection to the interceptor server drops', async () => {
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+
+      try {
+        await usingIgnoredConsole(['warn', 'error'], async (console) => {
+          await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async () => {
+            await usingSocket(baseURL, { transports: [WebSocketTransport] }, async (socket) => {
+              await waitForSocketConnection(socket);
+
+              // A stopping server reports the close of each connection before closing the worker socket, so no public
+              // path drops the worker socket alone, as a crashed server or a lost network does. The worker socket is
+              // closed directly instead.
+              const worker = store.getRemoteWorker(new URL(baseURL), { auth: undefined });
+              // eslint-disable-next-line @typescript-eslint/dot-notation
+              worker?.webSocketClient['socket']?.close();
+
+              // The worker warns once it observes the server disconnection.
+              await waitFor(() => expect(console.warn).toHaveBeenCalled());
+
+              await vi.advanceTimersByTimeAsync(PING_INTERVAL);
+
+              expect(console.error).not.toHaveBeenCalled();
+            });
+          });
+        });
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  }
 }

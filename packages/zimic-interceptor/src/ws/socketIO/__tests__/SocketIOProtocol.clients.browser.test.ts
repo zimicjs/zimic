@@ -8,6 +8,7 @@ import { declareClientsSocketIOProtocolTests } from './shared/clients';
 
 describe.each(testMatrix)('SocketIOProtocol (browser, $type) > Clients', ({ type }) => {
   declareClientsSocketIOProtocolTests({
+    platform: 'browser',
     type,
     getBaseURL: () => getBrowserBaseURL(type).replace(/^http/, 'ws'),
     PollingTransport: XHR,
