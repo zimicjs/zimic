@@ -79,12 +79,18 @@ describe('WebSocketInterceptor > Types', () => {
 
       interceptor.server.send(message);
       interceptor.server.send(JSON.stringify(message));
+    }
 
+    expectTypeOf(declareSends).toBeFunction();
+  });
+
+  it('should not accept messages that are not declared in the schema in server sends', () => {
+    function declareSend(interceptor: LocalWebSocketInterceptor<MessageSchema>) {
       // @ts-expect-error The message is not declared in the schema.
       interceptor.server.send({ type: 'unknown' });
     }
 
-    expectTypeOf(declareSends).toBeFunction();
+    expectTypeOf(declareSend).toBeFunction();
   });
 
   it('should accept decoded and stringified messages in client sends', () => {
@@ -94,12 +100,20 @@ describe('WebSocketInterceptor > Types', () => {
 
       client.send(message);
       client.send(JSON.stringify(message));
+    }
+
+    expectTypeOf(declareSends).toBeFunction();
+  });
+
+  it('should not accept messages that are not declared in the schema in client sends', () => {
+    function declareSend(interceptor: LocalWebSocketInterceptor<MessageSchema>) {
+      const client = interceptor.clients[0];
 
       // @ts-expect-error The message is not declared in the schema.
       client.send({ type: 'unknown' });
     }
 
-    expectTypeOf(declareSends).toBeFunction();
+    expectTypeOf(declareSend).toBeFunction();
   });
 
   it('should accept protocols of the messages of the schema', () => {

@@ -119,8 +119,8 @@ describe('SocketIOProtocol > Types', () => {
     expectTypeOf<Message>().not.toHaveProperty('ackId');
   });
 
-  it('should make the ack ID of events of default event maps optional', () => {
-    type Message = Extract<WebSocketSchemaMessage<SocketIOSchema>, { type: string }>;
+  it('should make the ack ID of client events of default event maps optional', () => {
+    type Message = Extract<WebSocketSchemaMessage<SocketIOSchema<object>>, { type: string }>;
 
     expectTypeOf<Message['ackId']>().toEqualTypeOf<number | undefined>();
   });
@@ -141,8 +141,8 @@ describe('SocketIOProtocol > Types', () => {
     expectTypeOf(declareHandler).toBeFunction();
   });
 
-  it('should not accept messages that do not match the events', () => {
-    function sendMessages() {
+  it('should not accept events with data that does not match the event', () => {
+    function sendMessage() {
       const interceptor = createWebSocketInterceptor<SocketIOSchema<ServerToClientEvents, ClientToServerEvents>>({
         baseURL: 'ws://localhost:3000/socket.io',
         protocol: createSocketIOProtocol(),
@@ -150,15 +150,51 @@ describe('SocketIOProtocol > Types', () => {
 
       // @ts-expect-error The data of `user:created` is a user.
       interceptor.server.send({ type: 'user:created', data: 'user' });
+    }
+
+    expectTypeOf(sendMessage).toBeFunction();
+  });
+
+  it('should not accept events that are not declared in the schema', () => {
+    function sendMessage() {
+      const interceptor = createWebSocketInterceptor<SocketIOSchema<ServerToClientEvents, ClientToServerEvents>>({
+        baseURL: 'ws://localhost:3000/socket.io',
+        protocol: createSocketIOProtocol(),
+      });
 
       // @ts-expect-error `user:deleted` is not an event of the schema.
       interceptor.server.send({ type: 'user:deleted', data: { id: '1' } });
+    }
+
+    expectTypeOf(sendMessage).toBeFunction();
+  });
+
+  it('should not accept acks with arguments that do not match the ack callback', () => {
+    function sendMessage() {
+      const interceptor = createWebSocketInterceptor<SocketIOSchema<ServerToClientEvents, ClientToServerEvents>>({
+        baseURL: 'ws://localhost:3000/socket.io',
+        protocol: createSocketIOProtocol(),
+      });
 
       // @ts-expect-error The `user:create` ack callback receives a source as its second argument.
       interceptor.server.send({ ackId: 1, data: { id: '1' } });
     }
 
-    expectTypeOf(sendMessages).toBeFunction();
+    expectTypeOf(sendMessage).toBeFunction();
+  });
+
+  it('should not accept ack IDs in server events', () => {
+    function sendMessage() {
+      const interceptor = createWebSocketInterceptor<SocketIOSchema<ServerToClientEvents, ClientToServerEvents>>({
+        baseURL: 'ws://localhost:3000/socket.io',
+        protocol: createSocketIOProtocol(),
+      });
+
+      // @ts-expect-error Server events do not expect acknowledgements from clients.
+      interceptor.server.send({ type: 'user:created', data: { id: '1' }, ackId: 1 });
+    }
+
+    expectTypeOf(sendMessage).toBeFunction();
   });
 
   it('should accept the default parser and socket.io-msgpack-parser as parsers', () => {
