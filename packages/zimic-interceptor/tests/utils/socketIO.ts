@@ -18,14 +18,12 @@ export async function usingSocketManager(
   try {
     await callback(manager);
   } finally {
-    const { engine } = manager;
-
-    if (engine.readyState !== 'closed') {
+    if (manager.engine.readyState !== 'closed') {
       const closePromise = new Promise<void>((resolve) => {
-        engine.once('close', () => resolve());
+        manager.engine.once('close', () => resolve());
       });
 
-      engine.close();
+      manager.engine.close();
       await closePromise;
     }
   }

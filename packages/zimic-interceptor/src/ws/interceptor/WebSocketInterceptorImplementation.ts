@@ -86,17 +86,19 @@ class WebSocketInterceptorImplementation<
   private connectionSavingGeneration = {};
 
   constructor(options: {
+    type: WebSocketInterceptorType;
     baseURL: URL;
     messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
     connectionSaving?: Partial<WebSocketInterceptorConnectionSaving>;
     onUnhandledMessage?: UnhandledMessageStrategy;
     protocol: WebSocketInterceptorProtocol<WebSocketSchemaMessage<Schema>> | undefined;
-    type: WebSocketInterceptorType;
     MessageHandler: MessageHandlerConstructor;
     ConnectionHandler: WebSocketConnectionHandlerConstructor;
     createWorker: () => WebSocketInterceptorWorker;
     deleteWorker: () => void;
   }) {
+    this.type = options.type;
+
     this.baseURL = options.baseURL;
 
     this.messageSaving = {
@@ -111,8 +113,6 @@ class WebSocketInterceptorImplementation<
     };
 
     this.onUnhandledMessage = options.onUnhandledMessage;
-
-    this.type = options.type;
 
     this.protocol = options.protocol;
 

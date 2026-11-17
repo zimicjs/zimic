@@ -26,12 +26,12 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
     const baseURL = new URL(options.baseURL);
 
     this.implementation = new WebSocketInterceptorImplementation<Schema>({
+      type: 'remote',
       baseURL,
       messageSaving: options.messageSaving,
       connectionSaving: options.connectionSaving,
       onUnhandledMessage: options.onUnhandledMessage,
       protocol: options.protocol,
-      type: 'remote',
       MessageHandler: RemoteWebSocketMessageHandler,
       ConnectionHandler: RemoteWebSocketConnectionHandler,
       createWorker: () => {

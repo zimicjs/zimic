@@ -65,18 +65,18 @@ interface SharedWebSocketInterceptorOptions<Schema extends WebSocketSchema> {
   connectionSaving?: Partial<WebSocketInterceptorConnectionSaving>;
 
   /**
-   * The strategy applied to client messages that no handler matches. Defaults to logging a warning for each unhandled
-   * message.
-   */
-  onUnhandledMessage?: UnhandledMessageStrategy;
-
-  /**
    * Serves a framed protocol, such as Socket.IO, on its own transports, opening the clients whose messages handlers
    * receive. With a protocol, the interceptor holds only the WebSocket connections its protocol claims.
    *
    * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#protocol-option `protocol` option}
    */
   protocol?: WebSocketInterceptorProtocol<WebSocketSchemaMessage<Schema>>;
+
+  /**
+   * The strategy applied to client messages that no handler matches. Defaults to logging a warning for each unhandled
+   * message.
+   */
+  onUnhandledMessage?: UnhandledMessageStrategy;
 }
 
 /**

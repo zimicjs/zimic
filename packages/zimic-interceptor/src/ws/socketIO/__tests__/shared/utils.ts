@@ -1,6 +1,7 @@
 import type { ManagerOptions, NodeXHR, WebSocket as SocketIOWebSocketTransport, XHR } from 'socket.io-client';
 
-import { createHttpInterceptor } from '@/http';
+import { createHttpInterceptor } from '@/http/interceptor/factory';
+import { LocalHttpInterceptor, RemoteHttpInterceptor } from '@/http/interceptor/types/public';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
 import type { WebSocketInterceptorOptions, WebSocketInterceptorType } from '../../../interceptor/types/options';
@@ -51,7 +52,8 @@ export function createSocketIOPollingInterceptor(type: WebSocketInterceptorType,
   });
 }
 
-export type SocketIOPollingInterceptor = ReturnType<typeof createSocketIOPollingInterceptor>;
+export type SocketIOPollingInterceptor =
+  LocalHttpInterceptor<SocketIOPollingSchema> | RemoteHttpInterceptor<SocketIOPollingSchema>;
 
 interface SocketIOTestContext {
   type: WebSocketInterceptorType;

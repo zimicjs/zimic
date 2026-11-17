@@ -86,8 +86,10 @@ describe('WebSocketInterceptor > Types', () => {
 
   it('should not accept messages that are not declared in the schema in server sends', () => {
     function declareSend(interceptor: LocalWebSocketInterceptor<MessageSchema>) {
-      // @ts-expect-error The message is not declared in the schema.
-      interceptor.server.send({ type: 'unknown' });
+      interceptor.server.send(
+        // @ts-expect-error The message is not declared in the schema.
+        { type: 'unknown' },
+      );
     }
 
     expectTypeOf(declareSend).toBeFunction();
@@ -109,8 +111,10 @@ describe('WebSocketInterceptor > Types', () => {
     function declareSend(interceptor: LocalWebSocketInterceptor<MessageSchema>) {
       const client = interceptor.clients[0];
 
-      // @ts-expect-error The message is not declared in the schema.
-      client.send({ type: 'unknown' });
+      client.send(
+        // @ts-expect-error The message is not declared in the schema.
+        { type: 'unknown' },
+      );
     }
 
     expectTypeOf(declareSend).toBeFunction();
@@ -136,11 +140,14 @@ describe('WebSocketInterceptor > Types', () => {
   it('should accept protocols with lifecycle members', () => {
     function createInterceptor() {
       const lifecycleProtocol: WebSocketInterceptorProtocol<Message> = {
-        start: async (context) => {
-          expectTypeOf(context.interceptor).toEqualTypeOf<{ type: WebSocketInterceptorType; baseURL: string }>();
+        start: async ({ interceptor, openClient }) => {
+          expectTypeOf(interceptor).toEqualTypeOf<{
+            type: WebSocketInterceptorType;
+            baseURL: string;
+          }>();
 
-          const result = await context.openClient({
-            url: context.interceptor.baseURL,
+          const result = await openClient({
+            url: interceptor.baseURL,
             signal: new AbortController().signal,
             send: (message) => {
               expectTypeOf(message).toEqualTypeOf<Message>();
@@ -179,15 +186,17 @@ describe('WebSocketInterceptor > Types', () => {
   });
 
   it('should not accept messages other than the messages of the schema in clients opened by protocols', () => {
-    function openClient(context: WebSocketInterceptorProtocolContext<Message>) {
-      void context.openClient({
+    async function openClient(context: WebSocketInterceptorProtocolContext<Message>) {
+      await context.openClient({
         url: context.interceptor.baseURL,
         signal: new AbortController().signal,
         send: () => undefined,
         close: () => undefined,
         onOpen: (client) => {
-          // @ts-expect-error The message is not declared in the schema.
-          client.receive({ type: 'unknown' });
+          client.receive(
+            // @ts-expect-error The message is not declared in the schema.
+            { type: 'unknown' },
+          );
         },
       });
     }

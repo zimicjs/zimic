@@ -86,10 +86,10 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
     options: { baseURL?: string; onUnhandledMessage?: UnhandledMessageStrategy } = {},
   ) {
     return new WebSocketInterceptorImplementation<ChatSchema, typeof RemoteWebSocketMessageHandler>({
+      type: 'remote',
       baseURL: new URL(options.baseURL ?? baseURL),
       onUnhandledMessage: options.onUnhandledMessage,
       protocol: undefined,
-      type: 'remote',
       MessageHandler: RemoteWebSocketMessageHandler,
       ConnectionHandler: RemoteWebSocketConnectionHandler,
       createWorker: () => worker,

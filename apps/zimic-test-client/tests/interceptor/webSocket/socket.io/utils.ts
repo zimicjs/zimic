@@ -1,4 +1,4 @@
-import { createSocketIOProtocol, type SocketIOPollingSchema } from '@zimic/interceptor/experimental/socket.io';
+import { createSocketIOProtocol, type SocketIOPollingSchema } from '@zimic/interceptor/experimental/ws/socket.io';
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
 import type { WebSocketMessageData, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';

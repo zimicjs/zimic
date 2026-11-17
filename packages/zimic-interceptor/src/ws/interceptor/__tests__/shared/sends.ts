@@ -261,9 +261,10 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
 
         const messagePromise = waitForWebSocketClientMessage(client);
 
-        send(interceptor, { type: 'server', text: 'object' });
+        const message: ChatMessage = { type: 'server', text: 'object' };
+        send(interceptor, message);
 
-        expect(await messagePromise).toBe('{"type":"server","text":"object"}');
+        expect(await messagePromise).toBe(JSON.stringify(message));
       });
     });
   });

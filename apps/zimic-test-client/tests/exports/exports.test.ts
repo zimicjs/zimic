@@ -75,20 +75,6 @@ import {
   InvalidJSONError as HttpInvalidJSONError,
 } from '@zimic/http';
 import {
-  createSocketIOProtocol,
-  type SocketIOSchema,
-  type SocketIOEventMessage,
-  type SocketIOAckMessage,
-  type SocketIOMessage,
-  type SocketIOParser,
-  type SocketIOPollingSchema,
-  type SocketIOProtocolOptions,
-  SharedSocketIOProtocolError,
-  DuplicateSocketIONamespaceError,
-  MismatchedSocketIOProtocolOptionsError,
-  InvalidSocketIOPollingInterceptorError,
-} from '@zimic/interceptor/experimental/socket.io';
-import {
   createWebSocketInterceptor,
   type WebSocketInterceptor,
   type LocalWebSocketInterceptor,
@@ -155,6 +141,20 @@ import {
   DisabledConnectionSavingError,
   WebSocketTimesCheckError,
 } from '@zimic/interceptor/experimental/ws';
+import {
+  createSocketIOProtocol,
+  type SocketIOSchema,
+  type SocketIOEventMessage,
+  type SocketIOAckMessage,
+  type SocketIOMessage,
+  type SocketIOParser,
+  type SocketIOPollingSchema,
+  type SocketIOProtocolOptions,
+  SharedSocketIOProtocolError,
+  DuplicateSocketIONamespaceError,
+  MismatchedSocketIOProtocolOptionsError,
+  InvalidSocketIOPollingInterceptorError,
+} from '@zimic/interceptor/experimental/ws/socket.io';
 import {
   createHttpInterceptor,
   type HttpInterceptor,
@@ -512,7 +512,7 @@ describe('Exports', () => {
       expect(typeof TimesCheckError).toBe('function');
     });
 
-    it('exports all expected resources from @zimic/interceptor/experimental/socket.io', () => {
+    it('exports all expected resources from @zimic/interceptor/experimental/ws/socket.io', () => {
       expectTypeOf(createSocketIOProtocol).not.toBeAny();
       expect(typeof createSocketIOProtocol).toBe('function');
 

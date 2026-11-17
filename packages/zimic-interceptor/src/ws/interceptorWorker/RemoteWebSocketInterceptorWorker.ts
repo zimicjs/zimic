@@ -241,7 +241,9 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       return registeredInterceptor && isHolding(registeredInterceptor) ? [registeredInterceptor] : [];
     });
 
-    if (this.claimConnection(connection.clientId, connection.url, holderCandidates)) {
+    const hasClaimedConnection = this.claimConnection(connection.clientId, connection.url, holderCandidates);
+
+    if (hasClaimedConnection) {
       return { action: 'claim' };
     }
 

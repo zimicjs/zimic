@@ -83,7 +83,7 @@ interface UserWebSocketConnection {
   holders: RegisteredWebSocketInterceptor[];
   // A connection claimed by a protocol of the worker closes only when the worker closes it or disconnects, because the
   // protocol may serve it with interceptors started after it connected.
-  isClaimed: boolean;
+  isClaimedByProtocol: boolean;
 }
 
 interface UserWebSocketConnectionClosure {
@@ -204,7 +204,7 @@ class WebSocketInterceptorServerRuntime {
   // A claimed connection leaves the pending ones in the same task as its claim reply, before a worker can disconnect.
   private closeClaimedConnections(workerSocket: Socket) {
     for (const [userSocket, userConnection] of this.activeUserWebSocketConnections) {
-      if (userConnection.isClaimed && userConnection.workerSocket === workerSocket) {
+      if (userConnection.isClaimedByProtocol && userConnection.workerSocket === workerSocket) {
         this.activeUserWebSocketConnections.delete(userSocket);
         userSocket.close(WEB_SOCKET_CLOSE_CODES.DEFAULT);
       }
@@ -218,7 +218,7 @@ class WebSocketInterceptorServerRuntime {
     options: { pendingClosure?: UserWebSocketConnectionClosure } = {},
   ) {
     for (const userConnection of this.pendingUserWebSocketConnections.values()) {
-      if (!userConnection.isClaimed && userConnection.holders.includes(interceptor)) {
+      if (!userConnection.isClaimedByProtocol && userConnection.holders.includes(interceptor)) {
         userConnection.holders = userConnection.holders.filter((holder) => holder !== interceptor);
 
         if (userConnection.holders.length === 0) {
@@ -234,7 +234,7 @@ class WebSocketInterceptorServerRuntime {
     }
 
     for (const [userSocket, userConnection] of this.activeUserWebSocketConnections) {
-      if (!userConnection.isClaimed && userConnection.holders.includes(interceptor)) {
+      if (!userConnection.isClaimedByProtocol && userConnection.holders.includes(interceptor)) {
         userConnection.holders = userConnection.holders.filter((holder) => holder !== interceptor);
 
         if (userConnection.holders.length === 0) {
@@ -259,7 +259,7 @@ class WebSocketInterceptorServerRuntime {
       clientId: crypto.randomUUID(),
       workerSocket: connectionTarget.worker.socket,
       holders: connectionTarget.holders,
-      isClaimed: false,
+      isClaimedByProtocol: false,
       queuedDeliveries: [],
       requestSocketCloseListener: () => {
         this.removePendingUserWebSocketConnection(request, connection);
@@ -301,7 +301,7 @@ class WebSocketInterceptorServerRuntime {
       }
 
       if (reply.action === 'claim') {
-        connection.isClaimed = true;
+        connection.isClaimedByProtocol = true;
       } else {
         // Holders that let the connection go while it was being set up were already dropped.
         const accepted = connection.holders.every((holder) => reply.acceptedInterceptorIds.includes(holder.id));

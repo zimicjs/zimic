@@ -30,11 +30,10 @@ function printInvalidMessage(message: unknown) {
 }
 
 class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInterceptorProtocol<Message> {
-  // Assigned on start, before the engine can open clients for this protocol.
   private context!: WebSocketInterceptorProtocolContext<Message>;
   private engine?: SocketIOEngine;
-  // Set from the start of `start` until `stop` completes, because the engine is assigned only after awaiting its lookup.
-  private isInUse = false;
+
+  private isRunning = false;
 
   constructor(private options: SocketIOEngineOptions & { namespace: string }) {}
 
@@ -51,15 +50,14 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInte
   }
 
   async start(context: WebSocketInterceptorProtocolContext<Message>) {
-    if (this.isInUse) {
+    if (this.isRunning) {
       throw new SharedSocketIOProtocolError();
     }
 
-    this.isInUse = true;
+    this.isRunning = true;
     this.context = context;
 
     try {
-      // An engine that rejects the namespace does not register it, so it has nothing to undo.
       const { engine, engineStart } = await startSocketIOEngine(context.interceptor, this);
       this.engine = engine;
 
@@ -75,7 +73,7 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInte
       await this.engine?.stop(this);
     } finally {
       this.engine = undefined;
-      this.isInUse = false;
+      this.isRunning = false;
     }
   }
 
@@ -129,8 +127,6 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInte
       );
     }
 
-    const { namespace } = this.options;
-
     const hasNoArguments = message.data === undefined && message.args === undefined;
     const socketArguments = hasNoArguments ? [] : [message.data, ...(message.args ?? [])];
 
@@ -143,10 +139,19 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInte
         );
       }
 
-      return { type: PacketType.EVENT, nsp: namespace, data: [message.type, ...socketArguments] };
+      return {
+        type: PacketType.EVENT,
+        nsp: this.options.namespace,
+        data: [message.type, ...socketArguments],
+      };
     }
 
-    return { type: PacketType.ACK, nsp: namespace, id: message.ackId, data: socketArguments };
+    return {
+      type: PacketType.ACK,
+      nsp: this.options.namespace,
+      id: message.ackId,
+      data: socketArguments,
+    };
   }
 }
 

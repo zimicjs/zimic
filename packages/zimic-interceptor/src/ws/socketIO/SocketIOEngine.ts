@@ -43,7 +43,6 @@ const { PacketType } = defaultParser;
 
 const SUPPORTED_ENGINE_IO_VERSION = String(engineIOProtocol);
 
-// The errors of Engine.IO servers, which clients receive in polling responses and close reasons.
 const ENGINE_IO_ERRORS = {
   UNKNOWN_SESSION_ID: { code: 1, message: 'Session ID unknown' },
   BAD_HANDSHAKE_METHOD: { code: 2, message: 'Bad handshake method' },
@@ -52,11 +51,6 @@ const ENGINE_IO_ERRORS = {
   UNSUPPORTED_PROTOCOL_VERSION: { code: 5 },
 } as const;
 
-const INVALID_NAMESPACE_MESSAGE = 'Invalid namespace';
-
-// Connection handlers reject without an error, so this message names the rejection in the client's `connect_error`.
-const REJECTED_NAMESPACE_CONNECTION_MESSAGE = 'Connection rejected';
-
 // Clients use this value only to split the polling batches they send. It matches the limit of Socket.IO servers.
 const MAX_PAYLOAD_BYTES = 1000000;
 
@@ -64,13 +58,9 @@ const MAX_PAYLOAD_BYTES = 1000000;
 const PING_INTERVAL = 25000;
 const PING_TIMEOUT = 20000;
 
-function ignoreConnectionEvent() {
-  return undefined;
-}
-
 const IGNORED_CONNECTION_CLAIM: WebSocketInterceptorProtocolConnectionClaim = {
-  onFrame: ignoreConnectionEvent,
-  onClose: ignoreConnectionEvent,
+  onFrame: () => undefined,
+  onClose: () => undefined,
 };
 
 // Aborting the controller of a namespace connection releases its client, whether pending or open.
@@ -149,17 +139,12 @@ function getSocketIOEngineKey(interceptor: SocketIOEngineInterceptor) {
   return `${interceptor.type}:${interceptor.baseURL}`;
 }
 
-/**
- * The Engine.IO server of a base URL, shared by the interceptors of its namespaces because Socket.IO multiplexes them
- * over one connection.
- */
 class SocketIOEngine {
   private protocols = new Map<string, AnySocketIOProtocol>();
   private sessions = new Map<string, SocketIOEngineSession>();
   private encoder: InstanceType<SocketIOParser['Encoder']>;
   private pollingStart: Promise<void>;
 
-  /** Set once the last namespace leaves, until the polling interceptor stops and the engine is removed. */
   pendingStop?: Promise<void>;
 
   constructor(
@@ -207,8 +192,10 @@ class SocketIOEngine {
     const unsupportedVersionMessage = warnOfUnsupportedEngineIOVersion(request.searchParams.get('EIO'));
 
     if (unsupportedVersionMessage !== undefined) {
-      const { code } = ENGINE_IO_ERRORS.UNSUPPORTED_PROTOCOL_VERSION;
-      return { status: 400, body: { code, message: unsupportedVersionMessage } } as const;
+      return {
+        status: 400,
+        body: { code: ENGINE_IO_ERRORS.UNSUPPORTED_PROTOCOL_VERSION.code, message: unsupportedVersionMessage },
+      } as const;
     }
 
     if (this.hasNoNamespaces) {
@@ -278,7 +265,7 @@ class SocketIOEngine {
         this.sendSocketPacket(session, {
           type: PacketType.CONNECT_ERROR,
           nsp: packet.nsp,
-          data: { message: INVALID_NAMESPACE_MESSAGE },
+          data: { message: 'Invalid namespace' },
         });
       }
       return;
@@ -472,7 +459,7 @@ class SocketIOEngine {
       this.sendSocketPacket(session, {
         type: PacketType.CONNECT_ERROR,
         nsp: protocol.namespace,
-        data: { message: REJECTED_NAMESPACE_CONNECTION_MESSAGE },
+        data: { message: 'Connection rejected' },
       });
     }
   }

@@ -441,7 +441,7 @@ abstract class WebSocketInterceptorWorker {
 
     // Sending and closing through the interceptor's list makes a client retained after its interceptor lets it go do
     // nothing, as with clients of WebSocket connections.
-    const client: InternalWebSocketInterceptorClient = createWebSocketInterceptorClient({
+    const client = createWebSocketInterceptorClient({
       url: options.url,
       protocols: [],
       send: (message) => {

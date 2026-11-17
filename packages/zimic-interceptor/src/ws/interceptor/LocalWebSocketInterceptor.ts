@@ -25,12 +25,12 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
     const baseURL = new URL(options.baseURL);
 
     this.implementation = new WebSocketInterceptorImplementation<Schema>({
+      type: 'local',
       baseURL,
       messageSaving: options.messageSaving,
       connectionSaving: options.connectionSaving,
       onUnhandledMessage: options.onUnhandledMessage,
       protocol: options.protocol,
-      type: 'local',
       MessageHandler: LocalWebSocketMessageHandler,
       ConnectionHandler: LocalWebSocketConnectionHandler,
       createWorker: () => this.store.getOrCreateLocalWorker({}),

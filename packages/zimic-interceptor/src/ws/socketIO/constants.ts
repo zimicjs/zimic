@@ -4,7 +4,7 @@ export const UNKNOWN_SESSION_CLOSE_CODE = 4001;
 export const UNSUPPORTED_LOCAL_TRANSPORT_CLOSE_CODE = 4002;
 
 export const UNSUPPORTED_LOCAL_TRANSPORT_CLOSE_REASON =
-  'Local Socket.IO interceptors support polling; use a remote interceptor for WebSocket transports';
+  'Local Socket.IO interceptors support polling. Use a remote interceptor for WebSocket transports';
 
 export const POLLING_PACKET_SEPARATOR = '\x1e';
 

@@ -39,15 +39,15 @@ type ChatClientOptions = WebSocketInterceptorProtocolClientOptions<ChatMessage>;
 
 // Keeps the context the interceptor starts the protocol with, so tests open clients through it.
 function createServingProtocol() {
-  const contextPromise = createPromiseWithResolvers<WebSocketInterceptorProtocolContext<ChatMessage>>();
+  const startPromise = createPromiseWithResolvers<WebSocketInterceptorProtocolContext<ChatMessage>>();
 
   const servingProtocol: WebSocketInterceptorProtocol<ChatMessage> = {
     ...protocol,
-    start: (context) => contextPromise.resolve(context),
+    start: (context) => startPromise.resolve(context),
   };
 
   async function openClient(clientOptions: Pick<ChatClientOptions, 'url'> & Partial<ChatClientOptions>) {
-    const context = await contextPromise;
+    const context = await startPromise;
 
     return context.openClient({
       signal: new AbortController().signal,

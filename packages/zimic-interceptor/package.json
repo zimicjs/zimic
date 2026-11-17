@@ -81,11 +81,11 @@
       "require": "./dist/experimental/ws.js",
       "default": "./dist/experimental/ws.js"
     },
-    "./experimental/socket.io": {
-      "types": "./experimental/socket.io.d.ts",
-      "import": "./dist/experimental/socket.io.mjs",
-      "require": "./dist/experimental/socket.io.js",
-      "default": "./dist/experimental/socket.io.js"
+    "./experimental/ws/socket.io": {
+      "types": "./experimental/ws/socket.io.d.ts",
+      "import": "./dist/experimental/ws/socket.io.mjs",
+      "require": "./dist/experimental/ws/socket.io.js",
+      "default": "./dist/experimental/ws/socket.io.js"
     },
     "./server": {
       "types": "./server.d.ts",
