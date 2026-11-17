@@ -23,7 +23,7 @@ import {
 import { waitForWebSocketClientClose } from '@tests/utils/webSocket';
 
 import type { WebSocketInterceptorClient } from '../../../interceptor/types/messages';
-import type { WebSocketInterceptorType } from '../../../interceptor/types/options';
+import type { WebSocketInterceptorOptions, WebSocketInterceptorType } from '../../../interceptor/types/options';
 import type {
   LocalWebSocketInterceptor,
   RemoteWebSocketInterceptor,
@@ -71,6 +71,12 @@ type AnySchema = SocketIOSchema;
 type AnySocketIOInterceptor = LocalWebSocketInterceptor<AnySchema> | RemoteWebSocketInterceptor<AnySchema>;
 
 type SocketIOTestInterceptor = Pick<WebSocketInterceptor<AnySchema>, 'clear' | 'stop'>;
+
+type SocketIOTestSavingOptions = Pick<WebSocketInterceptorOptions<AnySchema>, 'messageSaving' | 'connectionSaving'>;
+
+const MESSAGE_SAVING: SocketIOTestSavingOptions = { messageSaving: { enabled: true } };
+
+const CONNECTION_SAVING: SocketIOTestSavingOptions = { connectionSaving: { enabled: true } };
 
 type PlainSchema = WebSocketSchema<{ '/': { message: string } }>;
 
@@ -125,27 +131,31 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
 
   function getSocketIOInterceptorOptions<Message extends SocketIOMessage = SocketIOMessage>(
     protocolOptions: SocketIOProtocolOptions = {},
+    savingOptions: SocketIOTestSavingOptions = {},
   ) {
     return {
       type,
       baseURL,
-      messageSaving: { enabled: true },
-      connectionSaving: { enabled: true },
+      ...savingOptions,
       protocol: createSocketIOProtocol<Message>({ polling, ...protocolOptions }),
     };
   }
 
   async function usingNamespaceInterceptors(
+    savingOptions: SocketIOTestSavingOptions,
     callback: (rootInterceptor: AnySocketIOInterceptor, adminInterceptor: AnySocketIOInterceptor) => Promise<void>,
   ) {
-    await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (rootInterceptor) => {
-      await usingWebSocketInterceptor<AnySchema>(
-        getSocketIOInterceptorOptions({ namespace: '/admin' }),
-        async (adminInterceptor) => {
-          await callback(rootInterceptor, adminInterceptor);
-        },
-      );
-    });
+    await usingWebSocketInterceptor<AnySchema>(
+      getSocketIOInterceptorOptions({}, savingOptions),
+      async (rootInterceptor) => {
+        await usingWebSocketInterceptor<AnySchema>(
+          getSocketIOInterceptorOptions({ namespace: '/admin' }, savingOptions),
+          async (adminInterceptor) => {
+            await callback(rootInterceptor, adminInterceptor);
+          },
+        );
+      },
+    );
   }
 
   const transportCases: { transportName: string; transports: ManagerOptions['transports'] }[] = [
@@ -182,18 +192,21 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
         expectedMessage: { type: 'user:create', data: { name: 'Name' }, ackId: expect.any(Number) as number },
       },
     ])('should intercept events with $eventDescription as messages', async ({ emit, expectedMessage }) => {
-      await usingWebSocketInterceptor<ChatSchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
-        const handler = await interceptor.message().with({ type: expectedMessage.type }).times(1);
+      await usingWebSocketInterceptor<ChatSchema>(
+        getSocketIOInterceptorOptions({}, MESSAGE_SAVING),
+        async (interceptor) => {
+          const handler = await interceptor.message().with({ type: expectedMessage.type }).times(1);
 
-        await usingSocket(baseURL, { transports }, async (socket) => {
-          await waitForSocketConnection(socket);
+          await usingSocket(baseURL, { transports }, async (socket) => {
+            await waitForSocketConnection(socket);
 
-          emit(socket);
+            emit(socket);
 
-          await waitFor(() => expect(handler.messages).toHaveLength(1));
-          expect(handler.messages[0].data).toStrictEqual(expectedMessage);
-        });
-      });
+            await waitFor(() => expect(handler.messages).toHaveLength(1));
+            expect(handler.messages[0].data).toStrictEqual(expectedMessage);
+          });
+        },
+      );
     });
 
     it('should send event responses with their first argument and args', async () => {
@@ -265,21 +278,24 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     );
 
     it('should intercept binary attachments as array buffers', async () => {
-      await usingWebSocketInterceptor<BinarySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
-        const handler = await interceptor.message().with({ type: 'file' }).times(1);
+      await usingWebSocketInterceptor<BinarySchema>(
+        getSocketIOInterceptorOptions({}, MESSAGE_SAVING),
+        async (interceptor) => {
+          const handler = await interceptor.message().with({ type: 'file' }).times(1);
 
-        await usingSocket(baseURL, { transports }, async (socket) => {
-          await waitForSocketConnection(socket);
+          await usingSocket(baseURL, { transports }, async (socket) => {
+            await waitForSocketConnection(socket);
 
-          socket.emit('file', new Uint8Array([0x00, 0xff]).buffer);
+            socket.emit('file', new Uint8Array([0x00, 0xff]).buffer);
 
-          await waitFor(() => expect(handler.messages).toHaveLength(1));
+            await waitFor(() => expect(handler.messages).toHaveLength(1));
 
-          const { data } = handler.messages[0].data;
-          expect(data).toBeInstanceOf(ArrayBuffer);
-          expect(Array.from(new Uint8Array(data))).toEqual([0x00, 0xff]);
-        });
-      });
+            const { data } = handler.messages[0].data;
+            expect(data).toBeInstanceOf(ArrayBuffer);
+            expect(Array.from(new Uint8Array(data))).toEqual([0x00, 0xff]);
+          });
+        },
+      );
     });
 
     it('should send binary attachments', async () => {
@@ -329,7 +345,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     });
 
     it('should handle each namespace with its own interceptor', async () => {
-      await usingNamespaceInterceptors(async (rootInterceptor, adminInterceptor) => {
+      await usingNamespaceInterceptors(MESSAGE_SAVING, async (rootInterceptor, adminInterceptor) => {
         const rootHandler = await rootInterceptor
           .message()
           .with({ type: 'event' })
@@ -355,7 +371,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     });
 
     it('should list a client only in the interceptors of the namespaces it joined', async () => {
-      await usingNamespaceInterceptors(async (rootInterceptor, adminInterceptor) => {
+      await usingNamespaceInterceptors({}, async (rootInterceptor, adminInterceptor) => {
         await usingSocketManager(baseURL, { transports }, async (manager) => {
           await waitForSocketConnection(manager.socket('/'));
 
@@ -371,7 +387,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     });
 
     it('should run connection handlers only for the namespaces a client joined', async () => {
-      await usingNamespaceInterceptors(async (rootInterceptor, adminInterceptor) => {
+      await usingNamespaceInterceptors(CONNECTION_SAVING, async (rootInterceptor, adminInterceptor) => {
         const rootHandler = await rootInterceptor.connection().times(1);
         const adminHandler = await adminInterceptor.connection().times(1);
 
@@ -390,7 +406,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     });
 
     it('should open one Engine.IO connection for the namespaces of a manager', async () => {
-      await usingNamespaceInterceptors(async () => {
+      await usingNamespaceInterceptors({}, async () => {
         await usingSocketManager(baseURL, { transports }, async (manager) => {
           let numberOfOpenPackets = 0;
 
@@ -411,7 +427,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     });
 
     it('should remove only the client of the namespace a socket disconnects from', async () => {
-      await usingNamespaceInterceptors(async (rootInterceptor, adminInterceptor) => {
+      await usingNamespaceInterceptors(MESSAGE_SAVING, async (rootInterceptor, adminInterceptor) => {
         const rootHandler = await rootInterceptor.message().with({ type: 'event' }).times(1);
 
         await usingSocketManager(baseURL, { transports }, async (manager) => {
@@ -432,7 +448,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     });
 
     it('should keep other namespaces connected when the interceptor of one namespace is cleared', async () => {
-      await usingNamespaceInterceptors(async (rootInterceptor, adminInterceptor) => {
+      await usingNamespaceInterceptors(MESSAGE_SAVING, async (rootInterceptor, adminInterceptor) => {
         const rootHandler = await rootInterceptor.message().with({ type: 'event' }).times(1);
 
         await usingSocketManager(baseURL, { transports }, async (manager) => {
@@ -467,7 +483,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
 
             // Started after the connection opened, so the root interceptor was its only holder when it connected.
             await usingWebSocketInterceptor<AnySchema>(
-              getSocketIOInterceptorOptions({ namespace: '/admin' }),
+              getSocketIOInterceptorOptions({ namespace: '/admin' }, MESSAGE_SAVING),
               async (adminInterceptor) => {
                 const adminHandler = await adminInterceptor.message().with({ type: 'event' }).times(1);
 
@@ -526,7 +542,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     ])(
       'should ignore $method calls of a client retained after its interceptor is cleared',
       async ({ callRetainedClient }) => {
-        await usingNamespaceInterceptors(async (_rootInterceptor, adminInterceptor) => {
+        await usingNamespaceInterceptors({}, async (_rootInterceptor, adminInterceptor) => {
           // The root namespace keeps the connection open after the admin namespace is cleared.
           await usingSocketManager(baseURL, { transports }, async (manager) => {
             const rootSocket = manager.socket('/');
@@ -565,7 +581,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     );
 
     it('should fail with connect_error only the namespace whose connection handler rejects it', async () => {
-      await usingNamespaceInterceptors(async (_rootInterceptor, adminInterceptor) => {
+      await usingNamespaceInterceptors({}, async (_rootInterceptor, adminInterceptor) => {
         await adminInterceptor.connection().respond({ action: 'reject' }).times(1);
 
         await usingSocketManager(baseURL, { transports }, async (manager) => {
@@ -658,7 +674,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
       },
     );
 
-    it('should send pings without user handlers', async () => {
+    it('should ping clients every ping interval', async () => {
       vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
 
       try {
@@ -679,15 +695,6 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
       } finally {
         vi.useRealTimers();
       }
-    });
-
-    it('should list a connected socket as one client', async () => {
-      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
-        await usingSocket(baseURL, { transports }, async (socket) => {
-          await waitForSocketConnection(socket);
-          expect(interceptor.clients).toHaveLength(1);
-        });
-      });
     });
 
     it('should remove the client of a socket that disconnects', async () => {
@@ -772,26 +779,29 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
       it('should keep one client across the upgrade to WebSocket', async () => {
         const { transports, releaseUpgrade } = createDeferredUpgradeTransports();
 
-        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
-          const handler = await interceptor.message().with({ type: 'event' }).times(2);
+        await usingWebSocketInterceptor<AnySchema>(
+          getSocketIOInterceptorOptions({}, MESSAGE_SAVING),
+          async (interceptor) => {
+            const handler = await interceptor.message().with({ type: 'event' }).times(2);
 
-          await usingSocket(baseURL, { transports }, async (socket) => {
-            await waitForSocketConnection(socket);
-            expect(socket.io.engine.transport.name).toBe('polling');
+            await usingSocket(baseURL, { transports }, async (socket) => {
+              await waitForSocketConnection(socket);
+              expect(socket.io.engine.transport.name).toBe('polling');
 
-            socket.emit('event', 'before');
-            await waitFor(() => expect(handler.messages).toHaveLength(1));
+              socket.emit('event', 'before');
+              await waitFor(() => expect(handler.messages).toHaveLength(1));
 
-            releaseUpgrade();
-            await waitFor(() => expect(socket.io.engine.transport.name).toBe('websocket'));
+              releaseUpgrade();
+              await waitFor(() => expect(socket.io.engine.transport.name).toBe('websocket'));
 
-            socket.emit('event', 'after');
-            await waitFor(() => expect(handler.messages).toHaveLength(2));
+              socket.emit('event', 'after');
+              await waitFor(() => expect(handler.messages).toHaveLength(2));
 
-            expect(interceptor.clients).toHaveLength(1);
-            expect(handler.messages[1].sender).toBe(handler.messages[0].sender);
-          });
-        });
+              expect(interceptor.clients).toHaveLength(1);
+              expect(handler.messages[1].sender).toBe(handler.messages[0].sender);
+            });
+          },
+        );
       });
 
       it('should deliver messages sent while a client upgrades', async () => {
@@ -893,44 +903,47 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
       });
 
       it('should keep polling clients connected after their WebSocket upgrade closes', async () => {
-        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
-          const handler = await interceptor.message().with({ type: 'event' }).times(1);
+        await usingWebSocketInterceptor<AnySchema>(
+          getSocketIOInterceptorOptions({}, MESSAGE_SAVING),
+          async (interceptor) => {
+            const handler = await interceptor.message().with({ type: 'event' }).times(1);
 
-          await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
-            await waitForSocketConnection(socket);
+            await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
+              await waitForSocketConnection(socket);
 
-            const upgradingSocket = new WebSocket(`${baseURL}/?EIO=4&transport=websocket&sid=${socket.io.engine.id}`);
+              const upgradingSocket = new WebSocket(`${baseURL}/?EIO=4&transport=websocket&sid=${socket.io.engine.id}`);
 
-            try {
-              const probeReplyPromise = new Promise<unknown>((resolve) => {
-                upgradingSocket.addEventListener('message', (event) => resolve(event.data), { once: true });
-              });
+              try {
+                const probeReplyPromise = new Promise<unknown>((resolve) => {
+                  upgradingSocket.addEventListener('message', (event) => resolve(event.data), { once: true });
+                });
 
-              await new Promise<void>((resolve) => {
-                upgradingSocket.addEventListener('open', () => resolve(), { once: true });
-              });
+                await new Promise<void>((resolve) => {
+                  upgradingSocket.addEventListener('open', () => resolve(), { once: true });
+                });
 
-              // The probe reply shows that the connection is upgrading the session when it closes.
-              upgradingSocket.send('2probe');
-              expect(await probeReplyPromise).toBe('3probe');
+                // The probe reply shows that the connection is upgrading the session when it closes.
+                upgradingSocket.send('2probe');
+                expect(await probeReplyPromise).toBe('3probe');
 
-              const closePromise = new Promise<void>((resolve) => {
-                upgradingSocket.addEventListener('close', () => resolve(), { once: true });
-              });
-              upgradingSocket.close();
-              await closePromise;
-            } finally {
-              upgradingSocket.close();
-            }
+                const closePromise = new Promise<void>((resolve) => {
+                  upgradingSocket.addEventListener('close', () => resolve(), { once: true });
+                });
+                upgradingSocket.close();
+                await closePromise;
+              } finally {
+                upgradingSocket.close();
+              }
 
-            socket.emit('event', 'after upgrade closed');
-            await waitFor(() => expect(handler.messages).toHaveLength(1));
+              socket.emit('event', 'after upgrade closed');
+              await waitFor(() => expect(handler.messages).toHaveLength(1));
 
-            expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'after upgrade closed' });
-            expect(interceptor.clients).toHaveLength(1);
-            expect(socket.connected).toBe(true);
-          });
-        });
+              expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'after upgrade closed' });
+              expect(interceptor.clients).toHaveLength(1);
+              expect(socket.connected).toBe(true);
+            });
+          },
+        );
       });
 
       it('should close WebSocket connections opened while the last namespace stops', async () => {
@@ -1100,29 +1113,9 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     });
 
     it('should keep one client when a socket sends a second connect packet for its namespace', async () => {
-      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
-        const handler = await interceptor.message().with({ type: 'event' }).times(1);
-
-        await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
-          await waitForSocketConnection(socket);
-
-          await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling&sid=${socket.io.engine.id}`, {
-            method: 'POST',
-            body: '40',
-          });
-
-          socket.emit('event', 'after second connect');
-          await waitFor(() => expect(handler.messages).toHaveLength(1));
-
-          expect(interceptor.clients).toHaveLength(1);
-          expect(socket.connected).toBe(true);
-        });
-      });
-    });
-
-    it('should handle the packets after a malformed one in a polling payload', async () => {
-      await usingIgnoredConsole(['error'], async (console) => {
-        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+      await usingWebSocketInterceptor<AnySchema>(
+        getSocketIOInterceptorOptions({}, MESSAGE_SAVING),
+        async (interceptor) => {
           const handler = await interceptor.message().with({ type: 'event' }).times(1);
 
           await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
@@ -1130,14 +1123,55 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
 
             await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling&sid=${socket.io.engine.id}`, {
               method: 'POST',
-              body: ['42[malformed', '42["event","valid"]'].join(POLLING_PACKET_SEPARATOR),
+              body: '40',
             });
 
+            socket.emit('event', 'after second connect');
             await waitFor(() => expect(handler.messages).toHaveLength(1));
-            expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'valid' });
 
+            expect(interceptor.clients).toHaveLength(1);
+            expect(socket.connected).toBe(true);
+          });
+        },
+      );
+    });
+
+    it('should handle the packets after a malformed one in a polling payload', async () => {
+      await usingIgnoredConsole(['error'], async () => {
+        await usingWebSocketInterceptor<AnySchema>(
+          getSocketIOInterceptorOptions({}, MESSAGE_SAVING),
+          async (interceptor) => {
+            const handler = await interceptor.message().with({ type: 'event' }).times(1);
+
+            await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
+              await waitForSocketConnection(socket);
+
+              await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling&sid=${socket.io.engine.id}`, {
+                method: 'POST',
+                body: ['42[malformed', '42["event","valid"]'].join(POLLING_PACKET_SEPARATOR),
+              });
+
+              await waitFor(() => expect(handler.messages).toHaveLength(1));
+              expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'valid' });
+            });
+          },
+        );
+      });
+    });
+
+    it('should log malformed packets in a polling payload', async () => {
+      await usingIgnoredConsole(['error'], async (console) => {
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async () => {
+          await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
+            await waitForSocketConnection(socket);
+
+            await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling&sid=${socket.io.engine.id}`, {
+              method: 'POST',
+              body: '42[malformed',
+            });
+
+            await waitFor(() => expect(console.error).toHaveBeenCalledTimes(1));
             expect(console.error).toHaveBeenCalledWith(new Error('invalid payload'));
-            expect(console.error).toHaveBeenCalledTimes(1);
           });
         });
       });
@@ -1164,44 +1198,48 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     });
 
     it('should not intercept events whose name is not a string', async () => {
-      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
-        const handler = await interceptor.message();
+      await usingWebSocketInterceptor<AnySchema>(
+        getSocketIOInterceptorOptions({}, MESSAGE_SAVING),
+        async (interceptor) => {
+          const handler = await interceptor.message();
 
-        await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
-          await waitForSocketConnection(socket);
+          await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
+            await waitForSocketConnection(socket);
 
-          await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling&sid=${socket.io.engine.id}`, {
-            method: 'POST',
-            body: ['42[1,"numeric"]', '42["event","valid"]'].join(POLLING_PACKET_SEPARATOR),
+            await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling&sid=${socket.io.engine.id}`, {
+              method: 'POST',
+              body: ['42[1,"numeric"]', '42["event","valid"]'].join(POLLING_PACKET_SEPARATOR),
+            });
+
+            await waitFor(() => expect(handler.messages).toHaveLength(1));
+            expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'valid' });
           });
-
-          await waitFor(() => expect(handler.messages).toHaveLength(1));
-          expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'valid' });
-        });
-      });
+        },
+      );
     });
 
-    it('should not intercept events that the parser decodes without an array of arguments', async () => {
-      // Decodes `bare` events without arguments, which the default parser never does.
-      class BareEventDecoder {
-        private decoder = new defaultParser.Decoder();
+    // Decodes `bare` events without arguments, which the default parser never does.
+    class BareEventDecoder {
+      private decoder = new defaultParser.Decoder();
 
-        add(chunk: unknown) {
-          this.decoder.add(chunk);
-        }
-
-        on(event: 'decoded', listener: (packet: Packet) => void) {
-          return this.decoder.on(event, (packet) => {
-            const isBareEvent = Array.isArray(packet.data) && packet.data[0] === 'bare';
-            listener(isBareEvent ? { ...packet, data: null } : packet);
-          });
-        }
+      add(chunk: unknown) {
+        this.decoder.add(chunk);
       }
 
-      const parser: SocketIOParser = { Encoder: defaultParser.Encoder, Decoder: BareEventDecoder };
+      on(event: 'decoded', listener: (packet: Packet) => void) {
+        return this.decoder.on(event, (packet) => {
+          const isBareEvent = Array.isArray(packet.data) && packet.data[0] === 'bare';
+          listener(isBareEvent ? { ...packet, data: null } : packet);
+        });
+      }
+    }
 
-      await usingIgnoredConsole(['error'], async (console) => {
-        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions({ parser }), async (interceptor) => {
+    const bareEventParser: SocketIOParser = { Encoder: defaultParser.Encoder, Decoder: BareEventDecoder };
+
+    it('should not intercept events that the parser decodes without an array of arguments', async () => {
+      await usingWebSocketInterceptor<AnySchema>(
+        getSocketIOInterceptorOptions({ parser: bareEventParser }, MESSAGE_SAVING),
+        async (interceptor) => {
           const handler = await interceptor.message();
 
           await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
@@ -1212,52 +1250,78 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
 
             await waitFor(() => expect(handler.messages).toHaveLength(1));
             expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'valid' });
-
-            expect(console.error).not.toHaveBeenCalled();
           });
-        });
+        },
+      );
+    });
+
+    it('should not log events that the parser decodes without an array of arguments', async () => {
+      await usingIgnoredConsole(['error'], async (console) => {
+        await usingWebSocketInterceptor<AnySchema>(
+          getSocketIOInterceptorOptions({ parser: bareEventParser }, MESSAGE_SAVING),
+          async (interceptor) => {
+            const handler = await interceptor.message();
+
+            await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
+              await waitForSocketConnection(socket);
+
+              socket.emit('bare');
+              socket.emit('event', 'valid');
+
+              // Packets are handled in order, so the bare event was handled once the valid one is.
+              await waitFor(() => expect(handler.messages).toHaveLength(1));
+              expect(console.error).not.toHaveBeenCalled();
+            });
+          },
+        );
       });
     });
 
     it('should not intercept acks sent by clients', async () => {
-      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
-        const handler = await interceptor.message();
+      await usingWebSocketInterceptor<AnySchema>(
+        getSocketIOInterceptorOptions({}, MESSAGE_SAVING),
+        async (interceptor) => {
+          const handler = await interceptor.message();
 
-        await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
-          await waitForSocketConnection(socket);
+          await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
+            await waitForSocketConnection(socket);
 
-          await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling&sid=${socket.io.engine.id}`, {
-            method: 'POST',
-            body: ['431["ack"]', '42["event","valid"]'].join(POLLING_PACKET_SEPARATOR),
+            await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling&sid=${socket.io.engine.id}`, {
+              method: 'POST',
+              body: ['431["ack"]', '42["event","valid"]'].join(POLLING_PACKET_SEPARATOR),
+            });
+
+            await waitFor(() => expect(handler.messages).toHaveLength(1));
+            expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'valid' });
           });
-
-          await waitFor(() => expect(handler.messages).toHaveLength(1));
-          expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'valid' });
-        });
-      });
+        },
+      );
     });
 
     it('should not intercept events of sessions that did not connect to the namespace', async () => {
       const pollingURL = `${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling`;
 
-      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
-        const handler = await interceptor.message();
+      await usingWebSocketInterceptor<AnySchema>(
+        getSocketIOInterceptorOptions({}, MESSAGE_SAVING),
+        async (interceptor) => {
+          const handler = await interceptor.message();
 
-        const openPacket = await (await fetch(pollingURL)).text();
-        const { sid } = JSON.parse(openPacket.slice(1)) as { sid: string };
-        const sessionURL = `${pollingURL}&sid=${sid}`;
+          const openPacket = await (await fetch(pollingURL)).text();
+          const { sid } = JSON.parse(openPacket.slice(1)) as { sid: string };
+          const sessionURL = `${pollingURL}&sid=${sid}`;
 
-        await fetch(sessionURL, { method: 'POST', body: '42["event","before connect"]' });
-        await fetch(sessionURL, { method: 'POST', body: '40' });
+          await fetch(sessionURL, { method: 'POST', body: '42["event","before connect"]' });
+          await fetch(sessionURL, { method: 'POST', body: '40' });
 
-        const connectReply = await (await fetch(sessionURL)).text();
-        expect(connectReply).toMatch(/^40\{"sid":/);
+          const connectReply = await (await fetch(sessionURL)).text();
+          expect(connectReply).toMatch(/^40\{"sid":/);
 
-        await fetch(sessionURL, { method: 'POST', body: '42["event","after connect"]' });
+          await fetch(sessionURL, { method: 'POST', body: '42["event","after connect"]' });
 
-        await waitFor(() => expect(handler.messages).toHaveLength(1));
-        expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'after connect' });
-      });
+          await waitFor(() => expect(handler.messages).toHaveLength(1));
+          expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'after connect' });
+        },
+      );
     });
 
     it('should not open polling sessions while the last namespace stops', async () => {
@@ -1290,30 +1354,33 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     });
 
     it('should run connection effects with the polling client', async () => {
-      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
-        const handler = await interceptor
-          .connection()
-          .effect((client) => client.send({ type: 'welcome', data: 'hello' }))
-          .times(1);
+      await usingWebSocketInterceptor<AnySchema>(
+        getSocketIOInterceptorOptions({}, CONNECTION_SAVING),
+        async (interceptor) => {
+          const handler = await interceptor
+            .connection()
+            .effect((client) => client.send({ type: 'welcome', data: 'hello' }))
+            .times(1);
 
-        await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
-          const welcomePromise = new Promise<string>((resolve) => {
-            socket.once('welcome', resolve);
+          await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
+            const welcomePromise = new Promise<string>((resolve) => {
+              socket.once('welcome', resolve);
+            });
+
+            await waitForSocketConnection(socket);
+
+            expect(await welcomePromise).toBe('hello');
+            expect(handler.connections).toHaveLength(1);
           });
-
-          await waitForSocketConnection(socket);
-
-          expect(await welcomePromise).toBe('hello');
-          expect(handler.connections).toHaveLength(1);
-        });
-      });
+        },
+      );
     });
 
     // Local interceptors serve Socket.IO over polling only, so only remote clients connect over WebSocket.
     if (type === 'remote') {
       it('should connect WebSocket clients without a polling interceptor', async () => {
         await usingWebSocketInterceptor<AnySchema>(
-          { type, baseURL, connectionSaving: { enabled: true }, protocol: createSocketIOProtocol() },
+          { type, baseURL, protocol: createSocketIOProtocol() },
           async (interceptor) => {
             await usingSocket(baseURL, { transports: [WebSocketTransport] }, async (socket) => {
               await waitForSocketConnection(socket);
@@ -1332,7 +1399,6 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
         {
           type,
           baseURL: customBaseURL,
-          connectionSaving: { enabled: true },
           protocol: createSocketIOProtocol({ polling: customPolling }),
         },
         async (interceptor) => {
@@ -1347,7 +1413,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     });
 
     it('should answer polling requests with the supported protocol error for EIO=3', async () => {
-      await usingIgnoredConsole(['warn'], async (console) => {
+      await usingIgnoredConsole(['warn'], async () => {
         await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
           const response = await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=3&transport=polling`);
 
@@ -1357,6 +1423,14 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
             message: 'Engine.IO protocol version 3 is not supported. Use version 4.',
           });
           expect(interceptor.clients).toHaveLength(0);
+        });
+      });
+    });
+
+    it('should log unsupported Engine.IO versions of polling requests', async () => {
+      await usingIgnoredConsole(['warn'], async (console) => {
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async () => {
+          await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=3&transport=polling`);
 
           expect(console.warn).toHaveBeenCalledWith(
             color.cyan('[@zimic/interceptor]'),
@@ -1372,15 +1446,15 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
   // Socket.IO over polling only.
   if (type === 'remote') {
     describe('Unsupported versions', () => {
-      it.each([
+      const unsupportedVersionCases = [
         { versionDescription: 'EIO=3', query: 'EIO=3&transport=websocket', version: '3' },
         { versionDescription: 'no Engine.IO version', query: 'transport=websocket', version: 'unknown' },
-      ])(
+      ];
+
+      it.each(unsupportedVersionCases)(
         'should close WebSocket connections with an unsupported Engine.IO version ($versionDescription)',
         async ({ query, version }) => {
-          const unsupportedVersionMessage = `Engine.IO protocol version ${version} is not supported. Use version 4.`;
-
-          await usingIgnoredConsole(['warn'], async (console) => {
+          await usingIgnoredConsole(['warn'], async () => {
             await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async () => {
               const client = new WebSocketClient<PlainSchema>(`${baseURL}/?${query}`);
 
@@ -1390,12 +1464,36 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
 
                 const closeEvent = await closeEventPromise;
                 expect(closeEvent.code).toBe(4000);
-                expect(closeEvent.reason).toBe(unsupportedVersionMessage);
+                expect(closeEvent.reason).toBe(
+                  `Engine.IO protocol version ${version} is not supported. Use version 4.`,
+                );
+              } finally {
+                await client.close();
+              }
+            });
+          });
+        },
+      );
+
+      it.each(unsupportedVersionCases)(
+        'should log unsupported Engine.IO versions of WebSocket connections ($versionDescription)',
+        async ({ query, version }) => {
+          await usingIgnoredConsole(['warn'], async (console) => {
+            await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async () => {
+              const client = new WebSocketClient<PlainSchema>(`${baseURL}/?${query}`);
+
+              try {
+                const closeEventPromise = waitForWebSocketClientClose(client);
+                await client.open();
+                await closeEventPromise;
               } finally {
                 await client.close();
               }
 
-              expect(console.warn).toHaveBeenCalledWith(color.cyan('[@zimic/interceptor]'), unsupportedVersionMessage);
+              expect(console.warn).toHaveBeenCalledWith(
+                color.cyan('[@zimic/interceptor]'),
+                `Engine.IO protocol version ${version} is not supported. Use version 4.`,
+              );
               expect(console.warn).toHaveBeenCalledTimes(1);
             });
           });
@@ -1504,11 +1602,24 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
       const protocol = createSocketIOProtocol({ polling });
       const otherBaseURL = `${baseURL}/other`;
 
-      await usingWebSocketInterceptor<AnySchema>({ type, baseURL, protocol }, async (interceptor) => {
+      await usingWebSocketInterceptor<AnySchema>({ type, baseURL, protocol }, async () => {
         await usingIgnoredConsole(['error'], async () => {
           await expect(
             usingWebSocketInterceptor<AnySchema>({ type, baseURL: otherBaseURL, protocol }, vi.fn()),
           ).rejects.toThrow(new SharedSocketIOProtocolError());
+        });
+      });
+    });
+
+    it('should keep the running interceptor serving after rejecting a shared protocol instance', async () => {
+      const protocol = createSocketIOProtocol({ polling });
+      const otherBaseURL = `${baseURL}/other`;
+
+      await usingWebSocketInterceptor<AnySchema>({ type, baseURL, protocol }, async (interceptor) => {
+        await usingIgnoredConsole(['error'], async () => {
+          await expect(
+            usingWebSocketInterceptor<AnySchema>({ type, baseURL: otherBaseURL, protocol }, vi.fn()),
+          ).rejects.toThrow(SharedSocketIOProtocolError);
         });
 
         await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
@@ -1523,6 +1634,16 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
         await usingIgnoredConsole(['error'], async () => {
           await expect(usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), vi.fn())).rejects.toThrow(
             new DuplicateSocketIONamespaceError('/', interceptor.baseURL),
+          );
+        });
+      });
+    });
+
+    it('should keep the running interceptor serving after rejecting a duplicate namespace', async () => {
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        await usingIgnoredConsole(['error'], async () => {
+          await expect(usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), vi.fn())).rejects.toThrow(
+            DuplicateSocketIONamespaceError,
           );
         });
 
@@ -1677,7 +1798,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
     }
 
     it('should stop the polling interceptor with the last namespace of a base URL', async () => {
-      await usingNamespaceInterceptors(async (rootInterceptor, adminInterceptor) => {
+      await usingNamespaceInterceptors({}, async (rootInterceptor, adminInterceptor) => {
         expect(polling.isRunning).toBe(true);
 
         await adminInterceptor.stop();
@@ -1734,7 +1855,6 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
           {
             type,
             baseURL: nestedBaseURL,
-            connectionSaving: { enabled: true },
             protocol: createSocketIOProtocol({ polling: nestedPolling }),
           },
           async (nestedInterceptor) => {
@@ -1758,29 +1878,26 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
       const chatBaseURL = `${baseURL}/chat`;
 
       await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
-        await usingWebSocketInterceptor<PlainSchema>(
-          { type, baseURL: chatBaseURL, connectionSaving: { enabled: true } },
-          async (chatInterceptor) => {
-            const socket = new WebSocket(chatBaseURL);
+        await usingWebSocketInterceptor<PlainSchema>({ type, baseURL: chatBaseURL }, async (chatInterceptor) => {
+          const socket = new WebSocket(chatBaseURL);
 
-            try {
-              await new Promise<void>((resolve) => {
-                socket.addEventListener('open', () => resolve(), { once: true });
-              });
+          try {
+            await new Promise<void>((resolve) => {
+              socket.addEventListener('open', () => resolve(), { once: true });
+            });
 
-              expect(chatInterceptor.clients).toHaveLength(1);
-              expect(interceptor.clients).toHaveLength(0);
-            } finally {
-              socket.close();
-            }
-          },
-        );
+            expect(chatInterceptor.clients).toHaveLength(1);
+            expect(interceptor.clients).toHaveLength(0);
+          } finally {
+            socket.close();
+          }
+        });
       });
     });
   });
 
   describe('HTTP requests outside the Socket.IO path', () => {
-    it('should not decide requests to other paths under the base URL', async () => {
+    it('should leave HTTP requests to other paths under the base URL to other interceptors', async () => {
       const httpBaseURL = getServerBaseURL().replace(/^ws/, 'http');
 
       await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async () => {
