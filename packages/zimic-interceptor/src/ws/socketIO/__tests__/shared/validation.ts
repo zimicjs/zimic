@@ -110,14 +110,39 @@ export function declareValidationSocketIOProtocolTests(options: SharedSocketIOPr
     const circularMessage: { self?: unknown } = {};
     circularMessage.self = circularMessage;
 
-    it.each([
-      {
-        messageDescription: 'a string',
-        message: 'plain text',
-        expectedError: new ValidationError(
-          'Socket.IO messages must be objects with `type` or `ackId`, but received: plain text.',
-        ),
+    it.each(createInvalidTypeOfCases('object'))(
+      'should reject sending messages that are not objects ($label)',
+      async ({ value, actualType }) => {
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+          await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
+            await waitForSocketConnection(socket);
+
+            expect(() => {
+              // @ts-expect-error Forcing an invalid message type.
+              interceptor.clients[0].send(value);
+            }).toThrow(new ValidationError(`Expected message to be object, but got ${actualType}.`));
+          });
+        });
       },
+    );
+
+    it.each(createInvalidTypeOfCases('string'))(
+      'should reject sending messages with a type that is not a string ($label)',
+      async ({ value, actualType }) => {
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+          await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
+            await waitForSocketConnection(socket);
+
+            expect(() => {
+              // @ts-expect-error Forcing an invalid message type field.
+              interceptor.clients[0].send({ type: value });
+            }).toThrow(new ValidationError(`Expected message.type to be string, but got ${actualType}.`));
+          });
+        });
+      },
+    );
+
+    it.each([
       {
         messageDescription: 'an object without a type or ack ID',
         message: { data: 1 },
@@ -140,10 +165,24 @@ export function declareValidationSocketIOProtocolTests(options: SharedSocketIOPr
         ),
       },
       {
-        messageDescription: 'null',
-        message: null,
+        messageDescription: 'an object with an undefined ack ID',
+        message: { ackId: undefined },
         expectedError: new ValidationError(
-          'Socket.IO messages must be objects with `type` or `ackId`, but received: null.',
+          'Socket.IO messages must be objects with `type` or `ackId`, but received: {}.',
+        ),
+      },
+      {
+        messageDescription: 'an event with a reserved name',
+        message: { type: 'disconnect' },
+        expectedError: new ValidationError(
+          'Socket.IO messages must not have a reserved `type` or a non-integer `ackId`, but received: {"type":"disconnect"}.',
+        ),
+      },
+      {
+        messageDescription: 'an acknowledgement with a fractional ack ID',
+        message: { ackId: 1.5 },
+        expectedError: new ValidationError(
+          'Socket.IO messages must not have a reserved `type` or a non-integer `ackId`, but received: {"ackId":1.5}.',
         ),
       },
       {
@@ -166,9 +205,29 @@ export function declareValidationSocketIOProtocolTests(options: SharedSocketIOPr
           await waitForSocketConnection(socket);
 
           expect(() => {
-            // @ts-expect-error The strings, objects without `type` or `ackId`, and `null` of the rows are invalid messages.
+            // @ts-expect-error The objects without `type` or `ackId` of the rows are invalid messages.
             interceptor.clients[0].send(message);
           }).toThrow(expectedError);
+        });
+      });
+    });
+
+    it('should keep the connection open after rejecting a message', async () => {
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
+          await waitForSocketConnection(socket);
+
+          expect(() => {
+            interceptor.clients[0].send({ type: 'disconnect' });
+          }).toThrow(ValidationError);
+
+          const eventPromise = new Promise<unknown>((resolve) => {
+            socket.once('event', resolve);
+          });
+          interceptor.clients[0].send({ type: 'event', data: 'data' });
+
+          expect(await eventPromise).toBe('data');
+          expect(socket.connected).toBe(true);
         });
       });
     });

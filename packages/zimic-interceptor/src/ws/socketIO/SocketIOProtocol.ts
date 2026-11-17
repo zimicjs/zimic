@@ -1,4 +1,4 @@
-import { ValidationError } from '@zimic/utils/validation';
+import { assertTypeOf, ValidationError } from '@zimic/utils/validation';
 import * as defaultParser from 'socket.io-parser';
 import { isPacketValid, type Packet } from 'socket.io-parser';
 
@@ -15,18 +15,14 @@ import type { SocketIOMessage } from './types/messages';
 
 const { PacketType } = defaultParser;
 
-// `JSON.stringify` returns `undefined` for functions and throws for bigints and circular references, so it prints only
-// objects it can serialize.
-function printInvalidMessage(message: unknown) {
-  if (message !== null && typeof message === 'object') {
-    try {
-      return JSON.stringify(message);
-    } catch {
-      // Falls back to `String`, as other values do.
-    }
+function printInvalidMessage(message: object) {
+  try {
+    return JSON.stringify(message);
+  } catch {
+    // `JSON.stringify` throws for bigints and circular references.
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string -- The default format is the fallback.
+    return String(message);
   }
-
-  return String(message);
 }
 
 class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInterceptorProtocol<Message> {
@@ -114,42 +110,42 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInte
     // Messages come from user code that may bypass the schema types.
     const untypedMessage: unknown = message;
 
-    const isValidMessage =
-      typeof untypedMessage === 'object' &&
-      untypedMessage !== null &&
-      ('type' in untypedMessage || 'ackId' in untypedMessage);
+    assertTypeOf('message', untypedMessage, 'object');
 
-    if (!isValidMessage) {
+    const hasAckId = 'ackId' in untypedMessage && untypedMessage.ackId !== undefined;
+
+    if (!('type' in untypedMessage || hasAckId)) {
       throw new ValidationError(
         `Socket.IO messages must be objects with \`type\` or \`ackId\`, but received: ${printInvalidMessage(untypedMessage)}.`,
       );
     }
 
-    const hasNoArguments = message.data === undefined && message.args === undefined;
-    const socketArguments = hasNoArguments ? [] : [message.data, ...(message.args ?? [])];
-
     if ('type' in message) {
-      // Interceptors do not send events that expect acknowledgements, so an event packet would drop the `ackId`. Schema
-      // types accept it when a client event of the same name may carry an ack, as any event of the default map may.
+      assertTypeOf('message.type', message.type, 'string');
+
+      // Event packets have no ack ID, so they would drop it.
       if (message.ackId !== undefined) {
         throw new ValidationError(
           `Socket.IO events sent by interceptors must not have an \`ackId\`, but received: ${printInvalidMessage(message)}.`,
         );
       }
-
-      return {
-        type: PacketType.EVENT,
-        nsp: this.options.namespace,
-        data: [message.type, ...socketArguments],
-      };
     }
 
-    return {
-      type: PacketType.ACK,
-      nsp: this.options.namespace,
-      id: message.ackId,
-      data: socketArguments,
-    };
+    const hasNoArguments = message.data === undefined && message.args === undefined;
+    const socketArguments = hasNoArguments ? [] : [message.data, ...(message.args ?? [])];
+
+    const packet: Packet =
+      'type' in message
+        ? { type: PacketType.EVENT, nsp: this.options.namespace, data: [message.type, ...socketArguments] }
+        : { type: PacketType.ACK, nsp: this.options.namespace, id: message.ackId, data: socketArguments };
+
+    if (!isPacketValid(packet)) {
+      throw new ValidationError(
+        `Socket.IO messages must not have a reserved \`type\` or a non-integer \`ackId\`, but received: ${printInvalidMessage(message)}.`,
+      );
+    }
+
+    return packet;
   }
 }
 
