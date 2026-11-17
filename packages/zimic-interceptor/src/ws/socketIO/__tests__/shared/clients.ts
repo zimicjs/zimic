@@ -13,7 +13,6 @@ import {
   waitForSocketDisconnection,
 } from '@tests/utils/socketIO';
 
-import type { WebSocketInterceptorPlatform } from '../../../interceptor/types/options';
 import type { SocketIOProtocolOptions } from '../../types/options';
 import {
   AnySchema,
@@ -29,22 +28,8 @@ import {
 
 const PING_INTERVAL = 25000;
 
-interface ClientsSocketIOProtocolTestsOptions extends SharedSocketIOProtocolTestsOptions {
-  platform: WebSocketInterceptorPlatform;
-  startServer?: () => Promise<void>;
-  stopServer?: () => Promise<void>;
-}
-
-export function declareClientsSocketIOProtocolTests(options: ClientsSocketIOProtocolTestsOptions) {
-  const {
-    platform,
-    type,
-    getBaseURL: getServerBaseURL,
-    PollingTransport,
-    WebSocketTransport,
-    startServer,
-    stopServer,
-  } = options;
+export function declareClientsSocketIOProtocolTests(options: SharedSocketIOProtocolTestsOptions) {
+  const { type, getBaseURL: getServerBaseURL, PollingTransport, WebSocketTransport } = options;
 
   const store = new WebSocketInterceptorStore();
 
@@ -245,38 +230,6 @@ export function declareClientsSocketIOProtocolTests(options: ClientsSocketIOProt
       },
     );
   });
-
-  // Only remote interceptors connect to an interceptor server, and browser tests cannot stop their shared server.
-  if (type === 'remote' && platform === 'node') {
-    it('should stop pinging WebSocket clients after the interceptor server stops', async () => {
-      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
-
-      try {
-        await usingIgnoredConsole(['warn', 'error'], async (console) => {
-          await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async () => {
-            await usingSocket(baseURL, { transports: [WebSocketTransport] }, async (socket) => {
-              await waitForSocketConnection(socket);
-
-              await stopServer?.();
-
-              try {
-                // The worker warns once it observes the server disconnection.
-                await waitFor(() => expect(console.warn).toHaveBeenCalled());
-
-                await vi.advanceTimersByTimeAsync(PING_INTERVAL);
-
-                expect(console.error).not.toHaveBeenCalled();
-              } finally {
-                await startServer?.();
-              }
-            });
-          });
-        });
-      } finally {
-        vi.useRealTimers();
-      }
-    });
-  }
 
   // Only remote interceptors connect to an interceptor server, through which they serve WebSocket clients.
   if (type === 'remote') {

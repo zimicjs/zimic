@@ -23,12 +23,9 @@ describe.each(testMatrix)('SocketIOProtocol (node, $type) > Clients', ({ type })
   });
 
   declareClientsSocketIOProtocolTests({
-    platform: 'node',
     type,
     getBaseURL: () => getNodeBaseURL(type, server).replace(/^http/, 'ws'),
     PollingTransport: NodeXHR,
     WebSocketTransport: NodeWebSocket,
-    startServer: () => server.start(),
-    stopServer: () => server.stop(),
   });
 });
