@@ -46,6 +46,7 @@ const SUPPORTED_ENGINE_IO_VERSION = String(engineIOProtocol);
 // The errors of Engine.IO servers, which clients receive in polling responses and close reasons.
 const ENGINE_IO_ERRORS = {
   UNKNOWN_SESSION_ID: { code: 1, message: 'Session ID unknown' },
+  BAD_HANDSHAKE_METHOD: { code: 2, message: 'Bad handshake method' },
   BAD_REQUEST: { code: 3, message: 'Bad request' },
   FORBIDDEN: { code: 4, message: 'Forbidden' },
   UNSUPPORTED_PROTOCOL_VERSION: { code: 5 },
@@ -225,8 +226,9 @@ class SocketIOEngine {
   private receivePollingPayload(request: SocketIOPollingRequest): SocketIOPollingResponse<'POST'> {
     const sessionId = request.searchParams.get('sid');
 
+    // Sessions open only with a GET request.
     if (sessionId === null) {
-      return { status: 200, body: 'ok' } as const;
+      return { status: 400, body: ENGINE_IO_ERRORS.BAD_HANDSHAKE_METHOD } as const;
     }
 
     const session = this.sessions.get(sessionId);

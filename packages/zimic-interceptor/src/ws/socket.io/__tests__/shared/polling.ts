@@ -347,14 +347,15 @@ export function declarePollingSocketIOProtocolTests(options: PollingSocketIOProt
       });
     }
 
-    it('should ignore polling packets without a session ID', async () => {
+    it('should answer polling packets without a session ID with a bad handshake method error', async () => {
       await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
         const response = await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling`, {
           method: 'POST',
           body: '40',
         });
 
-        expect(response.status).toBe(200);
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({ code: 2, message: 'Bad handshake method' });
         expect(interceptor.clients).toHaveLength(0);
       });
     });
