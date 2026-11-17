@@ -181,7 +181,9 @@ export function declareClientsSocketIOProtocolTests(options: ClientsSocketIOProt
     it('should remove the client of a connection closed without disconnecting its socket', async () => {
       await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
         await usingSocketManager(baseURL, { transports }, async (manager) => {
-          await waitForSocketConnection(manager.socket('/'));
+          const socket = manager.socket('/');
+          await waitForSocketConnection(socket);
+          await waitForSocketTransportUpgrade(socket, transports);
           expect(interceptor.clients).toHaveLength(1);
 
           manager.engine.close();
