@@ -892,6 +892,94 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
         });
       });
 
+      it('should not connect WebSocket connections with the session ID of an upgraded session', async () => {
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+          await usingSocket(baseURL, { transports: [PollingTransport, WebSocketTransport] }, async (socket) => {
+            await waitForSocketConnection(socket);
+            await waitFor(() => expect(socket.io.engine.transport.name).toBe('websocket'));
+
+            const upgradingSocket = new WebSocket(`${baseURL}/?EIO=4&transport=websocket&sid=${socket.io.engine.id}`);
+
+            const closeEvent = await new Promise<CloseEvent>((resolve) => {
+              upgradingSocket.addEventListener('close', resolve, { once: true });
+            });
+
+            expect(closeEvent.code).toBe(4001);
+            expect(closeEvent.reason).toBe('Session ID unknown');
+            expect(interceptor.clients).toHaveLength(1);
+            expect(socket.connected).toBe(true);
+          });
+        });
+      });
+
+      it('should close upgrading WebSocket connections whose session closed', async () => {
+        const pollingURL = `${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling`;
+
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async () => {
+          const openPacket = await (await fetch(pollingURL)).text();
+          const { sid } = JSON.parse(openPacket.slice(1)) as { sid: string };
+
+          const upgradingSocket = new WebSocket(`${baseURL}/?EIO=4&transport=websocket&sid=${sid}`);
+
+          const messageListener = vi.fn();
+          upgradingSocket.addEventListener('message', messageListener);
+
+          await new Promise<void>((resolve) => {
+            upgradingSocket.addEventListener('open', () => resolve(), { once: true });
+          });
+
+          const closeResponse = await fetch(`${pollingURL}&sid=${sid}`, { method: 'POST', body: '1' });
+          expect(closeResponse.status).toBe(200);
+
+          const closeEventPromise = new Promise<CloseEvent>((resolve) => {
+            upgradingSocket.addEventListener('close', resolve, { once: true });
+          });
+
+          upgradingSocket.send('2probe');
+
+          const closeEvent = await closeEventPromise;
+          expect(closeEvent.code).toBe(1005);
+          expect(messageListener).not.toHaveBeenCalled();
+        });
+      });
+
+      it('should keep polling clients connected after their WebSocket upgrade closes', async () => {
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+          const handler = await interceptor.message().with({ type: 'event' }).times(1);
+
+          await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
+            await waitForSocketConnection(socket);
+
+            const upgradingSocket = new WebSocket(`${baseURL}/?EIO=4&transport=websocket&sid=${socket.io.engine.id}`);
+
+            const probeReplyPromise = new Promise<unknown>((resolve) => {
+              upgradingSocket.addEventListener('message', (event) => resolve(event.data), { once: true });
+            });
+
+            await new Promise<void>((resolve) => {
+              upgradingSocket.addEventListener('open', () => resolve(), { once: true });
+            });
+
+            // The probe reply shows that the connection is upgrading the session when it closes.
+            upgradingSocket.send('2probe');
+            expect(await probeReplyPromise).toBe('3probe');
+
+            const closePromise = new Promise<void>((resolve) => {
+              upgradingSocket.addEventListener('close', () => resolve(), { once: true });
+            });
+            upgradingSocket.close();
+            await closePromise;
+
+            socket.emit('event', 'after upgrade closed');
+            await waitFor(() => expect(handler.messages).toHaveLength(1));
+
+            expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'after upgrade closed' });
+            expect(interceptor.clients).toHaveLength(1);
+            expect(socket.connected).toBe(true);
+          });
+        });
+      });
+
       it('should close WebSocket connections opened while the last namespace stops', async () => {
         const pollingStopStartedPromise = createPromiseWithResolvers<void>();
         const pollingStopReleasedPromise = createPromiseWithResolvers<void>();
@@ -1015,6 +1103,15 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
           expect(interceptor.clients).toHaveLength(1);
           expect(socket.connected).toBe(true);
         });
+      });
+    });
+
+    it('should answer polls of unknown sessions with a close packet', async () => {
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async () => {
+        const response = await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling&sid=unknown`);
+
+        expect(response.status).toBe(200);
+        expect(await response.text()).toBe('1');
       });
     });
 
