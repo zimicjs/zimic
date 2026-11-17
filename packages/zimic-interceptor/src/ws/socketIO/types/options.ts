@@ -6,8 +6,6 @@ import type { SocketIOPollingInterceptor } from './polling';
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * A parser with the same shape as the `parser` option of `socket.io-client`, such as `socket.io-msgpack-parser`.
- *
- * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#custom-parsers Custom parsers}
  */
 export interface SocketIOParser {
   /** Encodes a Socket.IO packet into an array of string or binary chunks. */
@@ -24,8 +22,6 @@ export interface SocketIOParser {
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * The options of {@link createSocketIOProtocol}.
- *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#createsocketioprotocol `createSocketIOProtocol` API reference}
  */
 export interface SocketIOProtocolOptions {
   /** The namespace handled by the interceptor. Frames of other namespaces are ignored. Defaults to `'/'`. */

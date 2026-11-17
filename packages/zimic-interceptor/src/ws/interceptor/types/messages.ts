@@ -195,7 +195,6 @@ export interface WebSocketInterceptorClient<
    * @throws {DOMException} An `InvalidAccessError` if `code`, after clamping and rounding, is not 1000 or between 3000
    *   and 4999.
    * @throws {DOMException} A `SyntaxError` if `reason` is longer than 123 bytes when encoded as UTF-8.
-   * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#clients Socket.IO clients}
    */
   close: (code?: number, reason?: string) => void;
 }

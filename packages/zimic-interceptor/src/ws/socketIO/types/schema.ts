@@ -63,8 +63,6 @@ type SocketIOAckMessages<Events extends object> = {
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * The WebSocket schema of a Socket.IO server, with events declared as in `socket.io-client`.
- *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#socketioschema `SocketIOSchema` API reference}
  */
 export type SocketIOSchema<
   ServerToClientEvents extends object = SocketIOEventsMap,
