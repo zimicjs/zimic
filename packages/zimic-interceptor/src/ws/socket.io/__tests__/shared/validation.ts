@@ -1,0 +1,293 @@
+import { waitFor } from '@zimic/utils/time';
+import { ValidationError } from '@zimic/utils/validation';
+import { WebSocketClient, type WebSocketSchema } from '@zimic/ws';
+import color from 'picocolors';
+import * as defaultParser from 'socket.io-parser';
+import type { Packet } from 'socket.io-parser';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { usingIgnoredConsole } from '@tests/utils/console';
+import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { usingSocket, waitForSocketConnection } from '@tests/utils/socketIO';
+import { waitForWebSocketClientClose } from '@tests/utils/webSocket';
+
+import DuplicateSocketIONamespaceError from '../../errors/DuplicateSocketIONamespaceError';
+import MismatchedSocketIOProtocolOptionsError from '../../errors/MismatchedSocketIOProtocolOptionsError';
+import SharedSocketIOProtocolError from '../../errors/SharedSocketIOProtocolError';
+import { createSocketIOProtocol } from '../../factory';
+import type { SocketIOParser, SocketIOProtocolOptions } from '../../types/options';
+import {
+  AnySchema,
+  createSocketIOInterceptorOptions,
+  createSocketIOPollingInterceptor,
+  getSocketIOBaseURL,
+  SharedSocketIOProtocolTestsOptions,
+  SocketIOPollingInterceptor,
+  SocketIOTestSavingOptions,
+} from './utils';
+
+type PlainSchema = WebSocketSchema<{ '/': { message: string } }>;
+
+export function declareValidationSocketIOProtocolTests(options: SharedSocketIOProtocolTestsOptions) {
+  const { type, getBaseURL: getServerBaseURL, PollingTransport } = options;
+
+  let baseURL: string;
+  let polling: SocketIOPollingInterceptor;
+
+  beforeEach(() => {
+    baseURL = getSocketIOBaseURL(getServerBaseURL());
+    polling = createSocketIOPollingInterceptor(type, baseURL);
+  });
+
+  function getSocketIOInterceptorOptions(
+    protocolOptions?: SocketIOProtocolOptions,
+    savingOptions?: SocketIOTestSavingOptions,
+  ) {
+    return createSocketIOInterceptorOptions({ type, baseURL, polling }, protocolOptions, savingOptions);
+  }
+
+  // Local interceptors close every WebSocket connection before reading its Engine.IO version, because they serve
+  // Socket.IO over polling only.
+  if (type === 'remote') {
+    describe('Unsupported versions', () => {
+      const unsupportedVersionCases = [
+        { versionDescription: 'EIO=3', query: 'EIO=3&transport=websocket', version: '3' },
+        { versionDescription: 'no Engine.IO version', query: 'transport=websocket', version: 'unknown' },
+      ];
+
+      it.each(unsupportedVersionCases)(
+        'should close WebSocket connections with an unsupported Engine.IO version ($versionDescription)',
+        async ({ query, version }) => {
+          await usingIgnoredConsole(['warn'], async () => {
+            await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async () => {
+              const client = new WebSocketClient<PlainSchema>(`${baseURL}/?${query}`);
+
+              try {
+                const closeEventPromise = waitForWebSocketClientClose(client);
+                await client.open();
+
+                const closeEvent = await closeEventPromise;
+                expect(closeEvent.code).toBe(4000);
+                expect(closeEvent.reason).toBe(
+                  `Engine.IO protocol version ${version} is not supported. Use version 4.`,
+                );
+              } finally {
+                await client.close();
+              }
+            });
+          });
+        },
+      );
+
+      it.each(unsupportedVersionCases)(
+        'should log unsupported Engine.IO versions of WebSocket connections ($versionDescription)',
+        async ({ query, version }) => {
+          await usingIgnoredConsole(['warn'], async (console) => {
+            await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async () => {
+              const client = new WebSocketClient<PlainSchema>(`${baseURL}/?${query}`);
+
+              try {
+                const closeEventPromise = waitForWebSocketClientClose(client);
+                await client.open();
+                await closeEventPromise;
+              } finally {
+                await client.close();
+              }
+
+              expect(console.warn).toHaveBeenCalledWith(
+                color.cyan('[@zimic/interceptor]'),
+                `Engine.IO protocol version ${version} is not supported. Use version 4.`,
+              );
+              expect(console.warn).toHaveBeenCalledTimes(1);
+            });
+          });
+        },
+      );
+    });
+  }
+
+  describe('Outgoing messages', () => {
+    it.each([
+      {
+        messageDescription: 'a string',
+        message: 'plain text',
+        expectedError: new ValidationError(
+          'Socket.IO messages must be objects with `type` or `ackId`, but received: plain text.',
+        ),
+      },
+      {
+        messageDescription: 'an object without a type or ack ID',
+        message: { data: 1 },
+        expectedError: new ValidationError(
+          'Socket.IO messages must be objects with `type` or `ackId`, but received: {"data":1}.',
+        ),
+      },
+      {
+        messageDescription: 'null',
+        message: null,
+        expectedError: new ValidationError(
+          'Socket.IO messages must be objects with `type` or `ackId`, but received: null.',
+        ),
+      },
+      {
+        messageDescription: 'a binary attachment as a blob',
+        message: { type: 'file', data: new Blob(['data']) },
+        expectedError: new ValidationError(
+          'Socket.IO binary attachments sent by interceptors must be ArrayBuffers or views.',
+        ),
+      },
+    ])('should reject sending $messageDescription', async ({ message, expectedError }) => {
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
+          await waitForSocketConnection(socket);
+
+          expect(() => {
+            // @ts-expect-error The strings, objects without `type` or `ackId`, and `null` of the rows are invalid messages.
+            interceptor.clients[0].send(message);
+          }).toThrow(expectedError);
+        });
+      });
+    });
+
+    it('should reject messages that the parser does not encode into arrays of chunks', async () => {
+      // Encodes events into a bare chunk, as parsers declaring `encode(): ArrayBuffer` describe their output.
+      class BareChunkEventEncoder {
+        private encoder = new defaultParser.Encoder();
+
+        encode(packet: Packet): unknown {
+          const chunks: unknown[] = this.encoder.encode(packet);
+          return packet.type === defaultParser.PacketType.EVENT ? chunks[0] : chunks;
+        }
+      }
+
+      const parser: SocketIOParser = { Encoder: BareChunkEventEncoder, Decoder: defaultParser.Decoder };
+
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions({ parser }), async (interceptor) => {
+        await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
+          await waitForSocketConnection(socket);
+
+          expect(() => {
+            interceptor.clients[0].send({ type: 'event', data: 'data' });
+          }).toThrow(new ValidationError('Socket.IO parsers must encode packets into arrays of chunks.'));
+        });
+      });
+    });
+
+    it('should log the error of parsers that do not encode namespace connection replies into arrays of chunks', async () => {
+      // Encodes connection replies into a bare chunk, as parsers declaring `encode(): ArrayBuffer` describe their output.
+      class BareChunkConnectEncoder {
+        private encoder = new defaultParser.Encoder();
+
+        encode(packet: Packet): unknown {
+          const chunks: unknown[] = this.encoder.encode(packet);
+          return packet.type === defaultParser.PacketType.CONNECT ? chunks[0] : chunks;
+        }
+      }
+
+      const parser: SocketIOParser = { Encoder: BareChunkConnectEncoder, Decoder: defaultParser.Decoder };
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions({ parser }), async () => {
+          await usingSocket(baseURL, { transports: [PollingTransport] }, async () => {
+            await waitFor(() => {
+              expect(console.error).toHaveBeenCalledWith(
+                new ValidationError('Socket.IO parsers must encode packets into arrays of chunks.'),
+              );
+            });
+            expect(console.error).toHaveBeenCalledTimes(1);
+          });
+        });
+      });
+    });
+  });
+
+  describe('Protocol instances', () => {
+    it('should not allow one protocol instance to be used by two running interceptors', async () => {
+      const protocol = createSocketIOProtocol({ polling });
+      const otherBaseURL = `${baseURL}/other`;
+
+      await usingWebSocketInterceptor<AnySchema>({ type, baseURL, protocol }, async () => {
+        await usingIgnoredConsole(['error'], async () => {
+          await expect(
+            usingWebSocketInterceptor<AnySchema>({ type, baseURL: otherBaseURL, protocol }, vi.fn()),
+          ).rejects.toThrow(new SharedSocketIOProtocolError());
+        });
+      });
+    });
+
+    it('should keep the running interceptor serving after rejecting a shared protocol instance', async () => {
+      const protocol = createSocketIOProtocol({ polling });
+      const otherBaseURL = `${baseURL}/other`;
+
+      await usingWebSocketInterceptor<AnySchema>({ type, baseURL, protocol }, async (interceptor) => {
+        await usingIgnoredConsole(['error'], async () => {
+          await expect(
+            usingWebSocketInterceptor<AnySchema>({ type, baseURL: otherBaseURL, protocol }, vi.fn()),
+          ).rejects.toThrow(SharedSocketIOProtocolError);
+        });
+
+        await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
+          await waitForSocketConnection(socket);
+          expect(interceptor.clients).toHaveLength(1);
+        });
+      });
+    });
+
+    it('should not allow two running interceptors on the same namespace of a base URL', async () => {
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        await usingIgnoredConsole(['error'], async () => {
+          await expect(usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), vi.fn())).rejects.toThrow(
+            new DuplicateSocketIONamespaceError('/', interceptor.baseURL),
+          );
+        });
+      });
+    });
+
+    it('should keep the running interceptor serving after rejecting a duplicate namespace', async () => {
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        await usingIgnoredConsole(['error'], async () => {
+          await expect(usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), vi.fn())).rejects.toThrow(
+            DuplicateSocketIONamespaceError,
+          );
+        });
+
+        await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
+          await waitForSocketConnection(socket);
+          expect(interceptor.clients).toHaveLength(1);
+        });
+      });
+    });
+
+    it('should not allow the namespaces of a base URL to use different parsers', async () => {
+      const otherParser: SocketIOParser = { Encoder: defaultParser.Encoder, Decoder: defaultParser.Decoder };
+
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        await usingIgnoredConsole(['error'], async () => {
+          await expect(
+            usingWebSocketInterceptor<AnySchema>(
+              getSocketIOInterceptorOptions({ namespace: '/admin', parser: otherParser }),
+              vi.fn(),
+            ),
+          ).rejects.toThrow(new MismatchedSocketIOProtocolOptionsError('parser', interceptor.baseURL));
+        });
+      });
+    });
+
+    it('should not allow the namespaces of a base URL to use different polling interceptors', async () => {
+      const otherPolling = createSocketIOPollingInterceptor(type, baseURL);
+
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        await usingIgnoredConsole(['error'], async () => {
+          await expect(
+            usingWebSocketInterceptor<AnySchema>(
+              getSocketIOInterceptorOptions({ namespace: '/admin', polling: otherPolling }),
+              vi.fn(),
+            ),
+          ).rejects.toThrow(new MismatchedSocketIOProtocolOptionsError('polling', interceptor.baseURL));
+        });
+
+        expect(otherPolling.isRunning).toBe(false);
+      });
+    });
+  });
+}

@@ -4,12 +4,12 @@ import { describe, inject } from 'vitest';
 import { getBrowserBaseURL } from '@tests/utils/interceptors';
 
 import testMatrix from '../../interceptor/__tests__/shared/matrix';
-import { declareSocketIOProtocolTests } from './shared/default';
+import { declarePollingSocketIOProtocolTests } from './shared/polling';
 
-describe.each(testMatrix)('SocketIOProtocol (browser, $type)', ({ type }) => {
+describe.each(testMatrix)('SocketIOProtocol (browser, $type) > Polling', ({ type }) => {
   const authenticatedServer = inject('authenticatedInterceptorServer');
 
-  declareSocketIOProtocolTests({
+  declarePollingSocketIOProtocolTests({
     type,
     getBaseURL: () => getBrowserBaseURL(type).replace(/^http/, 'ws'),
     getAuthenticatedBaseURL: () => authenticatedServer.url.replace(/^http/, 'ws'),
