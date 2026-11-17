@@ -206,11 +206,9 @@ export function declareNamespacesSocketIOProtocolTests(options: SharedSocketIOPr
           const rootSocket = manager.socket('/');
           await waitForSocketConnection(rootSocket);
 
-          const adminPacketTypes: PacketType[] = [];
+          const receivedPackets: { nsp: string; type: PacketType }[] = [];
           manager.on('packet', (packet) => {
-            if (packet.nsp === '/admin') {
-              adminPacketTypes.push(packet.type);
-            }
+            receivedPackets.push({ nsp: packet.nsp, type: packet.type });
           });
 
           manager.socket('/admin');
@@ -227,7 +225,7 @@ export function declareNamespacesSocketIOProtocolTests(options: SharedSocketIOPr
           await markerPromise;
 
           // Packets arrive in order, so receiving the marker first proves the admin namespace received nothing.
-          expect(adminPacketTypes).toEqual([]);
+          expect(receivedPackets.filter((packet) => packet.nsp === '/admin')).toEqual([]);
           expect(rootSocket.connected).toBe(true);
         });
       });
