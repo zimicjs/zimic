@@ -1,5 +1,5 @@
 import { waitFor } from '@zimic/utils/time';
-import { ValidationError } from '@zimic/utils/validation';
+import { createInvalidTypeOfCases, ValidationError } from '@zimic/utils/validation';
 import { WebSocketClient, type WebSocketSchema } from '@zimic/ws';
 import color from 'picocolors';
 import * as defaultParser from 'socket.io-parser';
@@ -313,5 +313,55 @@ export function declareValidationSocketIOProtocolTests(options: SharedSocketIOPr
         expect(otherPolling.isRunning).toBe(false);
       });
     });
+
+    it.each(createInvalidTypeOfCases('string', { optional: true }))(
+      'should throw an error if provided a namespace that is not a string ($label)',
+      ({ value, actualType }) => {
+        expect(() => {
+          // @ts-expect-error Forcing an invalid namespace type.
+          createSocketIOProtocol({ namespace: value });
+        }).toThrow(new ValidationError(`Expected options.namespace to be string, but got ${actualType}.`));
+      },
+    );
+
+    it.each(createInvalidTypeOfCases('object', { optional: true }))(
+      'should throw an error if provided a polling interceptor that is not an object ($label)',
+      ({ value, actualType }) => {
+        expect(() => {
+          // @ts-expect-error Forcing an invalid polling interceptor type.
+          createSocketIOProtocol({ polling: value });
+        }).toThrow(new ValidationError(`Expected options.polling to be object, but got ${actualType}.`));
+      },
+    );
+
+    it.each(createInvalidTypeOfCases('object', { optional: true }))(
+      'should throw an error if provided a parser that is not an object ($label)',
+      ({ value, actualType }) => {
+        expect(() => {
+          // @ts-expect-error Forcing an invalid parser type.
+          createSocketIOProtocol({ parser: value });
+        }).toThrow(new ValidationError(`Expected options.parser to be object, but got ${actualType}.`));
+      },
+    );
+
+    it.each(createInvalidTypeOfCases('function'))(
+      'should throw an error if provided a parser encoder that is not a function ($label)',
+      ({ value, actualType }) => {
+        expect(() => {
+          // @ts-expect-error Forcing an invalid parser encoder type.
+          createSocketIOProtocol({ parser: { Encoder: value, Decoder: defaultParser.Decoder } });
+        }).toThrow(new ValidationError(`Expected options.parser.Encoder to be function, but got ${actualType}.`));
+      },
+    );
+
+    it.each(createInvalidTypeOfCases('function'))(
+      'should throw an error if provided a parser decoder that is not a function ($label)',
+      ({ value, actualType }) => {
+        expect(() => {
+          // @ts-expect-error Forcing an invalid parser decoder type.
+          createSocketIOProtocol({ parser: { Encoder: defaultParser.Encoder, Decoder: value } });
+        }).toThrow(new ValidationError(`Expected options.parser.Decoder to be function, but got ${actualType}.`));
+      },
+    );
   });
 }

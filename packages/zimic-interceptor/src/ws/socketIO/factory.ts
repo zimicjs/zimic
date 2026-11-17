@@ -1,3 +1,4 @@
+import { assertTypeOf } from '@zimic/utils/validation';
 import * as defaultParser from 'socket.io-parser';
 
 import type { WebSocketInterceptorProtocol } from '../interceptor/types/protocol';
@@ -18,6 +19,15 @@ const DEFAULT_NAMESPACE = '/';
 export function createSocketIOProtocol<Message extends SocketIOMessage = SocketIOMessage>(
   options: SocketIOProtocolOptions = {},
 ): WebSocketInterceptorProtocol<Message> {
+  assertTypeOf('options.namespace', options.namespace, 'string', { optional: true });
+  assertTypeOf('options.polling', options.polling, 'object', { optional: true });
+  assertTypeOf('options.parser', options.parser, 'object', { optional: true });
+
+  if (options.parser) {
+    assertTypeOf('options.parser.Encoder', options.parser.Encoder, 'function');
+    assertTypeOf('options.parser.Decoder', options.parser.Decoder, 'function');
+  }
+
   return new SocketIOProtocol<Message>({
     namespace: options.namespace ?? DEFAULT_NAMESPACE,
     polling: options.polling,
