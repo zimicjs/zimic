@@ -4,27 +4,24 @@ import { waitFor } from '@zimic/utils/time';
 import { ValidationError } from '@zimic/utils/validation';
 import { WebSocketClient, type WebSocketSchema, type WebSocketSchemaMessage } from '@zimic/ws';
 import color from 'picocolors';
-import {
-  Manager,
-  type ManagerOptions,
-  type NodeXHR,
-  type Socket,
-  type WebSocket as SocketIOWebSocketTransport,
-  type XHR,
-} from 'socket.io-client';
+import type { ManagerOptions, NodeXHR, Socket, WebSocket as SocketIOWebSocketTransport, XHR } from 'socket.io-client';
 import msgpackParser from 'socket.io-msgpack-parser';
 import * as defaultParser from 'socket.io-parser';
 import type { Packet } from 'socket.io-parser';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createHttpInterceptor } from '@/http';
-import { removeTrailingSlash } from '@/utils/urls';
 import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import {
+  usingSocket,
+  usingSocketManager,
+  waitForSocketConnection,
+  waitForSocketDisconnection,
+} from '@tests/utils/socketIO';
 import { waitForWebSocketClientClose } from '@tests/utils/webSocket';
 
-import { createWebSocketInterceptor } from '../../../interceptor/factory';
 import type { WebSocketInterceptorClient } from '../../../interceptor/types/messages';
 import type { WebSocketInterceptorType } from '../../../interceptor/types/options';
 import type {
@@ -93,66 +90,6 @@ interface SharedSocketIOTestsOptions {
 const PING_INTERVAL = 25000;
 
 const POLLING_PACKET_SEPARATOR = '\x1e';
-
-async function usingSocketManager(
-  baseURL: string,
-  options: Partial<ManagerOptions>,
-  callback: (manager: Manager) => Promise<void>,
-) {
-  const { origin, pathname } = new URL(baseURL);
-
-  const manager = new Manager(origin.replace(/^ws/, 'http'), {
-    path: `${removeTrailingSlash(pathname)}/`,
-    reconnection: false,
-    ...options,
-  });
-
-  try {
-    await callback(manager);
-  } finally {
-    const { engine } = manager;
-
-    if (engine.readyState !== 'closed') {
-      const closePromise = new Promise<void>((resolve) => {
-        engine.once('close', () => resolve());
-      });
-
-      engine.close();
-      await closePromise;
-    }
-  }
-}
-
-async function usingSocket(
-  baseURL: string,
-  options: Partial<ManagerOptions> & { nsp?: string },
-  callback: (socket: Socket) => Promise<void>,
-) {
-  const { nsp = '/', ...managerOptions } = options;
-
-  await usingSocketManager(baseURL, managerOptions, async (manager) => {
-    const socket = manager.socket(nsp);
-
-    try {
-      await callback(socket);
-    } finally {
-      socket.disconnect();
-    }
-  });
-}
-
-async function waitForSocketConnection(socket: Socket) {
-  await new Promise<void>((resolve, reject) => {
-    socket.once('connect', resolve);
-    socket.once('connect_error', reject);
-  });
-}
-
-async function waitForSocketDisconnection(socket: Socket) {
-  await new Promise<void>((resolve) => {
-    socket.once('disconnect', () => resolve());
-  });
-}
 
 export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions) {
   const {
@@ -883,12 +820,16 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
         await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
           const socket = new WebSocket(`${baseURL}/?EIO=4&transport=websocket&sid=unknown`);
 
-          const closeEvent = await new Promise<CloseEvent>((resolve) => {
-            socket.addEventListener('close', resolve, { once: true });
-          });
+          try {
+            const closeEvent = await new Promise<CloseEvent>((resolve) => {
+              socket.addEventListener('close', resolve, { once: true });
+            });
 
-          expect(closeEvent.reason).toBe('Session ID unknown');
-          expect(interceptor.clients).toHaveLength(0);
+            expect(closeEvent.reason).toBe('Session ID unknown');
+            expect(interceptor.clients).toHaveLength(0);
+          } finally {
+            socket.close();
+          }
         });
       });
 
@@ -900,14 +841,18 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
 
             const upgradingSocket = new WebSocket(`${baseURL}/?EIO=4&transport=websocket&sid=${socket.io.engine.id}`);
 
-            const closeEvent = await new Promise<CloseEvent>((resolve) => {
-              upgradingSocket.addEventListener('close', resolve, { once: true });
-            });
+            try {
+              const closeEvent = await new Promise<CloseEvent>((resolve) => {
+                upgradingSocket.addEventListener('close', resolve, { once: true });
+              });
 
-            expect(closeEvent.code).toBe(4001);
-            expect(closeEvent.reason).toBe('Session ID unknown');
-            expect(interceptor.clients).toHaveLength(1);
-            expect(socket.connected).toBe(true);
+              expect(closeEvent.code).toBe(4001);
+              expect(closeEvent.reason).toBe('Session ID unknown');
+              expect(interceptor.clients).toHaveLength(1);
+              expect(socket.connected).toBe(true);
+            } finally {
+              upgradingSocket.close();
+            }
           });
         });
       });
@@ -921,25 +866,29 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
 
           const upgradingSocket = new WebSocket(`${baseURL}/?EIO=4&transport=websocket&sid=${sid}`);
 
-          const messageListener = vi.fn();
-          upgradingSocket.addEventListener('message', messageListener);
+          try {
+            const messageListener = vi.fn();
+            upgradingSocket.addEventListener('message', messageListener);
 
-          await new Promise<void>((resolve) => {
-            upgradingSocket.addEventListener('open', () => resolve(), { once: true });
-          });
+            await new Promise<void>((resolve) => {
+              upgradingSocket.addEventListener('open', () => resolve(), { once: true });
+            });
 
-          const closeResponse = await fetch(`${pollingURL}&sid=${sid}`, { method: 'POST', body: '1' });
-          expect(closeResponse.status).toBe(200);
+            const closeResponse = await fetch(`${pollingURL}&sid=${sid}`, { method: 'POST', body: '1' });
+            expect(closeResponse.status).toBe(200);
 
-          const closeEventPromise = new Promise<CloseEvent>((resolve) => {
-            upgradingSocket.addEventListener('close', resolve, { once: true });
-          });
+            const closeEventPromise = new Promise<CloseEvent>((resolve) => {
+              upgradingSocket.addEventListener('close', resolve, { once: true });
+            });
 
-          upgradingSocket.send('2probe');
+            upgradingSocket.send('2probe');
 
-          const closeEvent = await closeEventPromise;
-          expect(closeEvent.code).toBe(1005);
-          expect(messageListener).not.toHaveBeenCalled();
+            const closeEvent = await closeEventPromise;
+            expect(closeEvent.code).toBe(1005);
+            expect(messageListener).not.toHaveBeenCalled();
+          } finally {
+            upgradingSocket.close();
+          }
         });
       });
 
@@ -952,23 +901,27 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
 
             const upgradingSocket = new WebSocket(`${baseURL}/?EIO=4&transport=websocket&sid=${socket.io.engine.id}`);
 
-            const probeReplyPromise = new Promise<unknown>((resolve) => {
-              upgradingSocket.addEventListener('message', (event) => resolve(event.data), { once: true });
-            });
+            try {
+              const probeReplyPromise = new Promise<unknown>((resolve) => {
+                upgradingSocket.addEventListener('message', (event) => resolve(event.data), { once: true });
+              });
 
-            await new Promise<void>((resolve) => {
-              upgradingSocket.addEventListener('open', () => resolve(), { once: true });
-            });
+              await new Promise<void>((resolve) => {
+                upgradingSocket.addEventListener('open', () => resolve(), { once: true });
+              });
 
-            // The probe reply shows that the connection is upgrading the session when it closes.
-            upgradingSocket.send('2probe');
-            expect(await probeReplyPromise).toBe('3probe');
+              // The probe reply shows that the connection is upgrading the session when it closes.
+              upgradingSocket.send('2probe');
+              expect(await probeReplyPromise).toBe('3probe');
 
-            const closePromise = new Promise<void>((resolve) => {
-              upgradingSocket.addEventListener('close', () => resolve(), { once: true });
-            });
-            upgradingSocket.close();
-            await closePromise;
+              const closePromise = new Promise<void>((resolve) => {
+                upgradingSocket.addEventListener('close', () => resolve(), { once: true });
+              });
+              upgradingSocket.close();
+              await closePromise;
+            } finally {
+              upgradingSocket.close();
+            }
 
             socket.emit('event', 'after upgrade closed');
             await waitFor(() => expect(handler.messages).toHaveLength(1));
@@ -1000,16 +953,20 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
 
             const socket = new WebSocket(`${baseURL}/?EIO=4&transport=websocket`);
 
-            const messageListener = vi.fn();
-            socket.addEventListener('message', messageListener);
+            try {
+              const messageListener = vi.fn();
+              socket.addEventListener('message', messageListener);
 
-            const closeEvent = await new Promise<CloseEvent>((resolve) => {
-              socket.addEventListener('close', resolve, { once: true });
-            });
+              const closeEvent = await new Promise<CloseEvent>((resolve) => {
+                socket.addEventListener('close', resolve, { once: true });
+              });
 
-            expect(closeEvent.code).toBe(1005);
-            expect(messageListener).not.toHaveBeenCalled();
-            expect(interceptor.clients).toHaveLength(0);
+              expect(closeEvent.code).toBe(1005);
+              expect(messageListener).not.toHaveBeenCalled();
+              expect(interceptor.clients).toHaveLength(0);
+            } finally {
+              socket.close();
+            }
           } finally {
             pollingStopReleasedPromise.resolve();
             await stopPromise;
@@ -1024,26 +981,30 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
         await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
           const socket = new WebSocket(`${baseURL}/?EIO=4&transport=websocket`);
 
-          const socketEvents: string[] = [];
-          socket.addEventListener('open', () => socketEvents.push('open'), { once: true });
+          try {
+            const socketEvents: string[] = [];
+            socket.addEventListener('open', () => socketEvents.push('open'), { once: true });
 
-          const closeEvent = await new Promise<CloseEvent>((resolve) => {
-            socket.addEventListener(
-              'close',
-              (event) => {
-                socketEvents.push('close');
-                resolve(event);
-              },
-              { once: true },
+            const closeEvent = await new Promise<CloseEvent>((resolve) => {
+              socket.addEventListener(
+                'close',
+                (event) => {
+                  socketEvents.push('close');
+                  resolve(event);
+                },
+                { once: true },
+              );
+            });
+
+            expect(socketEvents).toEqual(['open', 'close']);
+            expect(closeEvent.code).toBe(4002);
+            expect(closeEvent.reason).toBe(
+              'Local Socket.IO interceptors support polling; use a remote interceptor for WebSocket transports',
             );
-          });
-
-          expect(socketEvents).toEqual(['open', 'close']);
-          expect(closeEvent.code).toBe(4002);
-          expect(closeEvent.reason).toBe(
-            'Local Socket.IO interceptors support polling; use a remote interceptor for WebSocket transports',
-          );
-          expect(interceptor.clients).toHaveLength(0);
+            expect(interceptor.clients).toHaveLength(0);
+          } finally {
+            socket.close();
+          }
         });
       });
 
@@ -1689,29 +1650,29 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
           requestSaving: { enabled: false },
         });
 
-        const interceptor = createWebSocketInterceptor<AnySchema>({
-          type,
-          baseURL: authenticatedBaseURL,
-          auth: { token: getValidToken() },
-          protocol: createSocketIOProtocol({ polling: authenticatedServerPolling }),
-        });
+        await usingWebSocketInterceptor<AnySchema>(
+          {
+            type,
+            baseURL: authenticatedBaseURL,
+            auth: { token: getValidToken() },
+            protocol: createSocketIOProtocol({ polling: authenticatedServerPolling }),
+          },
+          { start: false },
+          async (interceptor) => {
+            await usingIgnoredConsole(['error'], async () => {
+              await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
+            });
 
-        await usingIgnoredConsole(['error'], async () => {
-          await expect(interceptor.start()).rejects.toThrow(UnauthorizedWebSocketConnectionError);
-        });
+            expect(interceptor.isRunning).toBe(false);
 
-        expect(interceptor.isRunning).toBe(false);
+            authenticatedServerPolling.auth = { token: getValidToken() };
 
-        authenticatedServerPolling.auth = { token: getValidToken() };
+            await interceptor.start();
 
-        try {
-          await interceptor.start();
-
-          expect(interceptor.isRunning).toBe(true);
-          expect(authenticatedServerPolling.isRunning).toBe(true);
-        } finally {
-          await interceptor.stop();
-        }
+            expect(interceptor.isRunning).toBe(true);
+            expect(authenticatedServerPolling.isRunning).toBe(true);
+          },
+        );
       });
     }
 
@@ -1739,27 +1700,26 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
         await stopPolling();
       });
 
-      const stoppingInterceptor = createWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions());
-      await stoppingInterceptor.start();
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (stoppingInterceptor) => {
+        const stopPromise = stoppingInterceptor.stop();
+        await pollingStopStartedPromise;
 
-      const stopPromise = stoppingInterceptor.stop();
-      await pollingStopStartedPromise;
+        const nextInterceptorPromise = usingWebSocketInterceptor<AnySchema>(
+          getSocketIOInterceptorOptions(),
+          async (nextInterceptor) => {
+            expect(polling.isRunning).toBe(true);
 
-      const nextInterceptorPromise = usingWebSocketInterceptor<AnySchema>(
-        getSocketIOInterceptorOptions(),
-        async (nextInterceptor) => {
-          expect(polling.isRunning).toBe(true);
+            await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
+              await waitForSocketConnection(socket);
+              expect(nextInterceptor.clients).toHaveLength(1);
+            });
+          },
+        );
 
-          await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
-            await waitForSocketConnection(socket);
-            expect(nextInterceptor.clients).toHaveLength(1);
-          });
-        },
-      );
+        pollingStopReleasedPromise.resolve();
 
-      pollingStopReleasedPromise.resolve();
-
-      await Promise.all([stopPromise, nextInterceptorPromise]);
+        await Promise.all([stopPromise, nextInterceptorPromise]);
+      });
     });
   });
 
