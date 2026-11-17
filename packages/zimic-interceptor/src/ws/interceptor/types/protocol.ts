@@ -69,24 +69,24 @@ export interface WebSocketInterceptorProtocolContext<Message> {
 export interface WebSocketInterceptorProtocol<Message> {
   // Called when the interceptor starts, before connections reach it. On an error, the protocol undoes the work it
   // started, because the interceptor does not call `stop` after it, and `interceptor.start()` rejects with the error.
-  start?: (context: WebSocketInterceptorProtocolContext<Message>) => PossiblePromise<void>;
+  start: (context: WebSocketInterceptorProtocolContext<Message>) => PossiblePromise<void>;
 
   // Called when the interceptor stops, and when a later step of `interceptor.start()` fails after `start` resolved. The
   // interceptor does not close the connections the protocol claimed, so the protocol closes them here and aborts the
   // signals of the clients it opened. Errors reject the `interceptor.stop()` or `interceptor.start()` call that stopped
   // the protocol.
-  stop?: () => PossiblePromise<void>;
+  stop: () => PossiblePromise<void>;
 
-  // Called when the interceptor is cleared or stopped. The protocol aborts the signals of the clients it opened. Errors
-  // are logged.
-  clear?: () => void;
+  // Called when the interceptor is cleared or stopped. The protocol aborts the signals of the clients it opened and logs
+  // its own errors, because clearing and stopping do not fail on them.
+  clear: () => void;
 
   // Called for each WebSocket connection to the interceptor. The newest interceptor whose protocol returns a claim holds
   // the connection, receiving its frames and close through the claim instead of the connection handlers. An interceptor
   // with a protocol does not hold the connections its protocol does not claim, which go to the interceptors without a
   // protocol. In remote mode, such a connection without another holder closes as if no interceptor were registered,
-  // because the interceptor server is its endpoint. The protocol closes the connections it claims, including when it stops, because the interceptor never
-  // closes them. Errors are logged.
+  // because the interceptor server is its endpoint. The protocol closes the connections it claims, including when it
+  // stops, because the interceptor never closes them. Errors are logged.
   claimConnection: (
     connection: WebSocketInterceptorProtocolConnection,
   ) => WebSocketInterceptorProtocolConnectionClaim | undefined;

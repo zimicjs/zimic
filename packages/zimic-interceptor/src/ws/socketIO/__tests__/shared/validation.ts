@@ -281,6 +281,64 @@ export function declareValidationSocketIOProtocolTests(options: SharedSocketIOPr
         });
       });
     });
+
+    it('should log the error of parsers that do not encode namespace disconnections into arrays of chunks', async () => {
+      // Encodes disconnections into a bare chunk, as parsers declaring `encode(): ArrayBuffer` describe their output.
+      class BareChunkDisconnectEncoder {
+        private encoder = new defaultParser.Encoder();
+
+        encode(packet: Packet): unknown {
+          const chunks: unknown[] = this.encoder.encode(packet);
+          return packet.type === defaultParser.PacketType.DISCONNECT ? chunks[0] : chunks;
+        }
+      }
+
+      const parser: SocketIOParser = { Encoder: BareChunkDisconnectEncoder, Decoder: defaultParser.Decoder };
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions({ parser }), async (interceptor) => {
+          await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
+            await waitForSocketConnection(socket);
+
+            await interceptor.clear();
+
+            expect(console.error).toHaveBeenCalledWith(
+              new ValidationError('Socket.IO parsers must encode packets into arrays of chunks.'),
+            );
+            expect(console.error).toHaveBeenCalledTimes(1);
+          });
+        });
+      });
+    });
+
+    it('should release all clients on clear when the parser does not encode namespace disconnections into arrays of chunks', async () => {
+      // Encodes disconnections into a bare chunk, as parsers declaring `encode(): ArrayBuffer` describe their output.
+      class BareChunkDisconnectEncoder {
+        private encoder = new defaultParser.Encoder();
+
+        encode(packet: Packet): unknown {
+          const chunks: unknown[] = this.encoder.encode(packet);
+          return packet.type === defaultParser.PacketType.DISCONNECT ? chunks[0] : chunks;
+        }
+      }
+
+      const parser: SocketIOParser = { Encoder: BareChunkDisconnectEncoder, Decoder: defaultParser.Decoder };
+
+      await usingIgnoredConsole(['error'], async () => {
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions({ parser }), async (interceptor) => {
+          await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
+            await usingSocket(baseURL, { transports: [PollingTransport] }, async (otherSocket) => {
+              await Promise.all([waitForSocketConnection(socket), waitForSocketConnection(otherSocket)]);
+              expect(interceptor.clients).toHaveLength(2);
+
+              await interceptor.clear();
+
+              expect(interceptor.clients).toHaveLength(0);
+            });
+          });
+        });
+      });
+    });
   });
 
   describe('Protocol instances', () => {

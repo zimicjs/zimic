@@ -414,7 +414,12 @@ class SocketIOEngine {
         continue;
       }
 
-      this.disconnectNamespace(protocol, session);
+      // Custom encoders may throw, which must not keep the clients of other sessions open.
+      try {
+        this.disconnectNamespace(protocol, session);
+      } catch (error) {
+        console.error(error);
+      }
 
       if (session.connections.size === 0) {
         this.closeSession(session);
@@ -424,11 +429,14 @@ class SocketIOEngine {
 
   // As `socket.disconnect()` in a Socket.IO server, which leaves the connection open for other namespaces.
   private disconnectNamespace(protocol: AnySocketIOProtocol, session: SocketIOEngineSession) {
-    if (session.connections.get(protocol.namespace)?.state === 'open') {
+    const isOpen = session.connections.get(protocol.namespace)?.state === 'open';
+
+    // Released first, so an encoder error does not keep the client listed.
+    this.releaseNamespace(protocol, session);
+
+    if (isOpen) {
       this.sendSocketPacket(session, { type: PacketType.DISCONNECT, nsp: protocol.namespace });
     }
-
-    this.releaseNamespace(protocol, session);
   }
 
   private releaseNamespace(protocol: AnySocketIOProtocol, session: SocketIOEngineSession) {

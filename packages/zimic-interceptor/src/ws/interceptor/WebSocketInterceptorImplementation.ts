@@ -220,12 +220,12 @@ class WebSocketInterceptorImplementation<
 
       // Starts before the worker routes connections here, so the protocol claims all of them. A rejected start cleans up
       // after itself.
-      await this.protocol?.start?.(this.createProtocolContext());
+      await this.protocol?.start(this.createProtocolContext());
 
       try {
         await this.worker.use(this);
       } catch (error) {
-        await this.protocol?.stop?.();
+        await this.protocol?.stop();
         throw error;
       }
 
@@ -261,7 +261,7 @@ class WebSocketInterceptorImplementation<
     }
 
     try {
-      await this.protocol?.stop?.();
+      await this.protocol?.stop();
     } finally {
       // Clearing and unregistering in one worker call sends a single reset to a remote server, so no connection opened
       // during the stop reaches an interceptor that is cleared but still registered.
@@ -487,12 +487,7 @@ class WebSocketInterceptorImplementation<
 
     const clearResult = worker.clearHandlers({ interceptor: this, ...options });
 
-    // Protocol clear errors do not fail clearing or stopping.
-    try {
-      this.protocol?.clear?.();
-    } catch (error) {
-      console.error(error);
-    }
+    this.protocol?.clear();
 
     for (const handler of this.handlers) {
       handler.clear();
