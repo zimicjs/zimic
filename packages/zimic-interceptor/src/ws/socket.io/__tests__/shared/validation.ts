@@ -147,6 +147,13 @@ export function declareValidationSocketIOProtocolTests(options: SharedSocketIOPr
         ),
       },
       {
+        messageDescription: 'an event with an ack ID',
+        message: { type: 'event', data: 1, ackId: 1 },
+        expectedError: new ValidationError(
+          'Socket.IO events sent by interceptors must not have an `ackId`, but received: {"type":"event","data":1,"ackId":1}.',
+        ),
+      },
+      {
         messageDescription: 'a binary attachment as a blob',
         message: { type: 'file', data: new Blob(['data']) },
         expectedError: new ValidationError(

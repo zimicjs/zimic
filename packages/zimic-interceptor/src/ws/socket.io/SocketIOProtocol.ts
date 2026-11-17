@@ -135,6 +135,14 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInte
     const socketArguments = hasNoArguments ? [] : [message.data, ...(message.args ?? [])];
 
     if ('type' in message) {
+      // Interceptors do not send events that expect acknowledgements, so an event packet would drop the `ackId`. Schema
+      // types accept it when a client event of the same name may carry an ack, as any event of the default map may.
+      if (message.ackId !== undefined) {
+        throw new ValidationError(
+          `Socket.IO events sent by interceptors must not have an \`ackId\`, but received: ${printInvalidMessage(message)}.`,
+        );
+      }
+
       return { type: PacketType.EVENT, nsp: namespace, data: [message.type, ...socketArguments] };
     }
 

@@ -34,7 +34,8 @@ type SocketIOEventAckId<EventParameters extends unknown[]> = number extends Even
       : unknown;
 
 // Interceptors do not send events that expect acknowledgements. `never` rejects an `ackId`, which TypeScript would
-// otherwise accept in object literals because other messages of the union declare it.
+// otherwise accept in object literals because other messages of the union declare it. Messages of both directions share
+// one union, so a client event of the same name that may carry an ack still accepts it, and the protocol rejects it.
 type SocketIOServerEventMessages<Events extends object> = {
   [Type in keyof Events & string]: { type: Type; ackId?: never } & SocketIOArguments<
     SocketIOEventArguments<SocketIOEventParameters<Events[Type]>>
