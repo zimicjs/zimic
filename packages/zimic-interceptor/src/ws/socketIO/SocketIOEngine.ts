@@ -1,5 +1,10 @@
 import { ValidationError } from '@zimic/utils/validation';
-import { decodePacket, protocol as engineIOProtocol } from 'engine.io-parser';
+import {
+  decodePacket,
+  decodePayload,
+  type Packet as EngineIOPacket,
+  protocol as engineIOProtocol,
+} from 'engine.io-parser';
 import * as defaultParser from 'socket.io-parser';
 import type { Packet } from 'socket.io-parser';
 
@@ -21,7 +26,6 @@ import {
   NOOP_PACKET,
   OPEN_PACKET_PREFIX,
   PING_PACKET,
-  POLLING_PACKET_SEPARATOR,
   UNKNOWN_SESSION_CLOSE_CODE,
   UNSUPPORTED_LOCAL_TRANSPORT_CLOSE_CODE,
   UNSUPPORTED_LOCAL_TRANSPORT_CLOSE_REASON,
@@ -224,29 +228,39 @@ class SocketIOEngine {
       return { status: 400, body: ENGINE_IO_ERRORS.UNKNOWN_SESSION_ID } as const;
     }
 
-    const packets = typeof request.body === 'string' ? request.body.split(POLLING_PACKET_SEPARATOR) : [];
+    const packets = typeof request.body === 'string' ? decodePayload(request.body, 'arraybuffer') : [];
 
     for (const packet of packets) {
-      if (packet === CLOSE_PACKET) {
+      if (packet.type === 'close') {
         this.closeSession(session);
-        break;
+      } else {
+        this.receivePacket(session, packet);
       }
 
-      this.receiveFrame(session, packet);
+      if (!this.sessions.has(session.id)) {
+        break;
+      }
     }
 
     return { status: 200, body: 'ok' } as const;
   }
 
-  private receiveFrame(session: SocketIOEngineSession, frame: WebSocketInterceptorProtocolFrame) {
-    try {
-      const packet = decodePacket(frame, 'arraybuffer');
+  // As a Socket.IO server, the engine closes sessions that send packets it cannot decode.
+  private receivePacket(session: SocketIOEngineSession, packet: EngineIOPacket) {
+    if (packet.type === 'error') {
+      this.closeSession(session);
+      return;
+    }
 
-      if (packet.type === 'message') {
-        session.decoder.add(this.convertChunkForParser(packet.data));
-      }
+    if (packet.type !== 'message') {
+      return;
+    }
+
+    try {
+      session.decoder.add(this.convertChunkForParser(packet.data));
     } catch (error) {
       console.error(error);
+      this.closeSession(session);
     }
   }
 
@@ -533,7 +547,7 @@ class SocketIOEngine {
           session.transport = connection;
           pollingTransport.drainFrames().forEach((queuedFrame) => connection.send(queuedFrame));
         } else {
-          this.receiveFrame(session, frame);
+          this.receivePacket(session, decodePacket(frame, 'arraybuffer'));
         }
       },
 
@@ -556,7 +570,7 @@ class SocketIOEngine {
     connection.send(this.createOpenPacket(session.id, []));
 
     return {
-      onFrame: (frame) => this.receiveFrame(session, frame),
+      onFrame: (frame) => this.receivePacket(session, decodePacket(frame, 'arraybuffer')),
       onClose: () => this.closeSession(session),
     } satisfies WebSocketInterceptorProtocolConnectionClaim;
   }

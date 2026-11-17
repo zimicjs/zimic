@@ -7,7 +7,7 @@ import { beforeEach, expect, it } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
-import { usingSocket, waitForSocketConnection } from '@tests/utils/socketIO';
+import { usingSocket, waitForSocketConnection, waitForSocketDisconnection } from '@tests/utils/socketIO';
 import { usingWebSocketClient } from '@tests/utils/webSocket';
 
 import type { SocketIOParser, SocketIOProtocolOptions } from '../../types/options';
@@ -70,26 +70,27 @@ export function declareIncomingPacketsSocketIOProtocolTests(options: SharedSocke
     );
   });
 
-  it('should handle the packets after a malformed one in a polling payload', async () => {
+  it.each([
+    { protocolName: 'Socket.IO', malformedPacket: '42[malformed' },
+    { protocolName: 'Engine.IO', malformedPacket: 'x' },
+  ])('should disconnect sockets that send a malformed $protocolName packet', async ({ malformedPacket }) => {
     await usingIgnoredConsole(['error'], async () => {
-      await usingWebSocketInterceptor<AnySchema>(
-        getSocketIOInterceptorOptions({}, MESSAGE_SAVING),
-        async (interceptor) => {
-          const handler = await interceptor.message().with({ type: 'event' }).times(1);
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
+          await waitForSocketConnection(socket);
+          expect(interceptor.clients).toHaveLength(1);
 
-          await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
-            await waitForSocketConnection(socket);
+          const disconnectionPromise = waitForSocketDisconnection(socket);
 
-            await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling&sid=${socket.io.engine.id}`, {
-              method: 'POST',
-              body: ['42[malformed', '42["event","valid"]'].join(POLLING_PACKET_SEPARATOR),
-            });
-
-            await waitFor(() => expect(handler.messages).toHaveLength(1));
-            expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'valid' });
+          await fetch(`${baseURL.replace(/^ws/, 'http')}/?EIO=4&transport=polling&sid=${socket.io.engine.id}`, {
+            method: 'POST',
+            body: malformedPacket,
           });
-        },
-      );
+
+          await disconnectionPromise;
+          await waitFor(() => expect(interceptor.clients).toHaveLength(0));
+        });
+      });
     });
   });
 
@@ -171,25 +172,6 @@ export function declareIncomingPacketsSocketIOProtocolTests(options: SharedSocke
   const bareEventParser: SocketIOParser = { Encoder: defaultParser.Encoder, Decoder: BareEventDecoder };
 
   it('should not intercept events that the parser decodes without an array of arguments', async () => {
-    await usingWebSocketInterceptor<AnySchema>(
-      getSocketIOInterceptorOptions({ parser: bareEventParser }, MESSAGE_SAVING),
-      async (interceptor) => {
-        const handler = await interceptor.message();
-
-        await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
-          await waitForSocketConnection(socket);
-
-          socket.emit('bare');
-          socket.emit('event', 'valid');
-
-          await waitFor(() => expect(handler.messages).toHaveLength(1));
-          expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'valid' });
-        });
-      },
-    );
-  });
-
-  it('should not log events that the parser decodes without an array of arguments', async () => {
     await usingIgnoredConsole(['error'], async (console) => {
       await usingWebSocketInterceptor<AnySchema>(
         getSocketIOInterceptorOptions({ parser: bareEventParser }, MESSAGE_SAVING),
@@ -204,11 +186,50 @@ export function declareIncomingPacketsSocketIOProtocolTests(options: SharedSocke
 
             // Packets are handled in order, so the bare event was handled once the valid one is.
             await waitFor(() => expect(handler.messages).toHaveLength(1));
+            expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'valid' });
             expect(console.error).not.toHaveBeenCalled();
           });
         },
       );
     });
+  });
+
+  // Decodes `stringAck` events with a string ack ID, which the default parser never does.
+  class StringAckIdDecoder {
+    private decoder = new defaultParser.Decoder();
+
+    add(chunk: unknown) {
+      this.decoder.add(chunk);
+    }
+
+    on(event: 'decoded', listener: (packet: Packet) => void) {
+      return this.decoder.on(event, (packet) => {
+        const isStringAckEvent = Array.isArray(packet.data) && packet.data[0] === 'stringAck';
+        // @ts-expect-error Custom parsers may emit ack IDs that are not numbers.
+        listener(isStringAckEvent ? { ...packet, id: '1' } : packet);
+      });
+    }
+  }
+
+  const stringAckIdParser: SocketIOParser = { Encoder: defaultParser.Encoder, Decoder: StringAckIdDecoder };
+
+  it('should not intercept events whose ack ID is not an integer', async () => {
+    await usingWebSocketInterceptor<AnySchema>(
+      getSocketIOInterceptorOptions({ parser: stringAckIdParser }, MESSAGE_SAVING),
+      async (interceptor) => {
+        const handler = await interceptor.message();
+
+        await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
+          await waitForSocketConnection(socket);
+
+          socket.emit('stringAck', 'invalid');
+          socket.emit('event', 'valid');
+
+          await waitFor(() => expect(handler.messages).toHaveLength(1));
+          expect(handler.messages[0].data).toStrictEqual({ type: 'event', data: 'valid' });
+        });
+      },
+    );
   });
 
   it('should not intercept acks sent by clients', async () => {

@@ -1,6 +1,6 @@
 import { ValidationError } from '@zimic/utils/validation';
 import * as defaultParser from 'socket.io-parser';
-import type { Packet } from 'socket.io-parser';
+import { isPacketValid, type Packet } from 'socket.io-parser';
 
 import type {
   WebSocketInterceptorProtocol,
@@ -89,16 +89,14 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInte
     return this.context.openClient(options);
   }
 
-  // Parsers are user-provided and `socket.io-parser` accepts event names that are not strings, so the arguments are
-  // validated before reaching handlers.
+  // Parsers are user code, and socket.io-parser accepts non-string event names.
   receiveEventPacket(client: WebSocketInterceptorProtocolOpenedClient<SocketIOMessage>, packet: Packet) {
-    const socketArguments: unknown = packet.data;
-
-    if (!Array.isArray(socketArguments)) {
+    if (!isPacketValid(packet)) {
       return;
     }
 
-    const [type, data, ...args]: unknown[] = socketArguments;
+    // Valid event packets carry arrays of arguments.
+    const [type, data, ...args] = packet.data as unknown[];
 
     if (typeof type !== 'string') {
       return;
