@@ -9,7 +9,6 @@ import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
 import type { WebSocketClientConnectionReply } from '@/server/types/schema';
 import RemoteWebSocketConnectionHandler from '@/ws/connectionHandler/RemoteWebSocketConnectionHandler';
-import { createWebSocketInterceptorClient } from '@/ws/interceptor/WebSocketInterceptorHandle';
 import WebSocketInterceptorImplementation from '@/ws/interceptor/WebSocketInterceptorImplementation';
 import LocalWebSocketInterceptorWorker from '@/ws/interceptorWorker/LocalWebSocketInterceptorWorker';
 import RemoteWebSocketInterceptorWorker from '@/ws/interceptorWorker/RemoteWebSocketInterceptorWorker';
@@ -633,23 +632,6 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
             ]);
           });
         });
-      });
-    });
-
-    it('should ignore sends without a registered remote client', async () => {
-      await usingWebSocketInterceptorWorker(remoteWorkerOptions, async (worker) => {
-        const send = vi.fn();
-        const client = createWebSocketInterceptorClient({
-          url: baseURL,
-          protocols: [],
-          send,
-          close: vi.fn(),
-        });
-
-        await expect(
-          worker.sendToClient(client, JSON.stringify({ type: 'server', text: 'ignored client' })),
-        ).resolves.toBeUndefined();
-        expect(send).not.toHaveBeenCalled();
       });
     });
 

@@ -41,7 +41,7 @@ export function isUserCloseCode(code: number) {
 type WebSocketInterceptorClientCloser = (code?: number, reason?: string) => void;
 
 type SendWebSocketInterceptorClientMessage = (
-  // Messages are given as sent, because WebSocket connections serialize them and protocols encode them.
+  // Unserialized: connections serialize and protocols encode them.
   data: WebSocketMessageSchema | WebSocketMessageData<WebSocketMessageSchema>,
 ) => void;
 

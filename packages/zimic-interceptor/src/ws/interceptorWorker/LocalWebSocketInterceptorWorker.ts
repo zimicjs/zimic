@@ -253,7 +253,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     mswWorker.use(mswHandler);
   }
 
-  sendToClient<Schema extends WebSocketSchema>(
+  private sendToClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
     data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   ) {
@@ -276,7 +276,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   }
 
   // The close listener of the connection removes the client from every interceptor holding it.
-  closeClient<Schema extends WebSocketSchema>(
+  private closeClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
     code?: number,
     reason?: string,
@@ -460,7 +460,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       client,
     }));
 
-    void this.handleFrameWithHandlers(data, holders);
+    void this.handleRawMessageWithHandlers(data, holders);
   }
 
   private removeConnectionFromHolders(registration: WebSocketClientRegistration) {

@@ -143,7 +143,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
   }
 
-  async sendToClient<Schema extends WebSocketSchema>(
+  private async sendToClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
     data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   ) {
@@ -154,7 +154,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
   }
 
-  async closeClient<Schema extends WebSocketSchema>(
+  private async closeClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
     code?: number,
     reason?: string,
@@ -298,7 +298,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       const client = createWebSocketInterceptorClient({
         url: connection.url,
         protocols: connection.protocols,
-        // Serialized before sending, so serialization errors throw from the send call, as in local mode.
+        // Serialize now so errors throw from send, as in local mode.
         send: (data) => this.sendToClient(client, serializeWebSocketMessageDataForSocket<WebSocketMessageSchema>(data)),
         close: async (code, reason) => {
           await this.closeClient(client, code, reason);
@@ -359,7 +359,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     });
 
     const deserializedMessageData = deserializeWebSocketMessageDataFromTransport(message.data);
-    await this.handleFrameWithHandlers(deserializedMessageData, holders);
+    await this.handleRawMessageWithHandlers(deserializedMessageData, holders);
   };
 
   private findClientId<Schema extends WebSocketSchema>(client: InternalWebSocketInterceptorClient<Schema>) {
