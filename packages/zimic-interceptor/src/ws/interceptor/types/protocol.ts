@@ -138,15 +138,17 @@ export interface WebSocketInterceptorProtocolContext<Message> {
  */
 export interface WebSocketInterceptorProtocol<Message> {
   /**
-   * Called when the interceptor starts, before connections reach it. On an error, the interceptor calls
-   * {@link WebSocketInterceptorProtocol.stop `stop`} and then rejects `interceptor.start()` with the error.
+   * Called when the interceptor starts, before connections reach it. On an error, it must undo the work it started,
+   * because the interceptor does not call {@link WebSocketInterceptorProtocol.stop `stop`} after it, and
+   * `interceptor.start()` rejects with the error.
    */
   start?: (context: WebSocketInterceptorProtocolContext<Message>) => PossiblePromise<void>;
 
   /**
-   * Called when the interceptor stops, and after a failed {@link WebSocketInterceptorProtocol.start `start`}, so it must
-   * handle a partial start. The interceptor does not close the connections the protocol claimed, so the protocol closes
-   * them here. Errors reject `interceptor.stop()`, except after a failed start, when they are logged.
+   * Called when the interceptor stops, and when a later step of `interceptor.start()` fails after
+   * {@link WebSocketInterceptorProtocol.start `start`} resolved. The interceptor does not close the connections the
+   * protocol claimed, so the protocol closes them here. Errors reject the `interceptor.stop()` or `interceptor.start()`
+   * call that stopped the protocol.
    */
   stop?: () => PossiblePromise<void>;
 

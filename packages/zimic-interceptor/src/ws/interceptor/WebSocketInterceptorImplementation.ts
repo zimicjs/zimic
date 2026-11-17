@@ -207,35 +207,27 @@ class WebSocketInterceptorImplementation<
       return;
     }
 
-    let hasCalledProtocolStart = false;
-
     try {
       this.worker = this.createWorker();
       this.worker.registerRunningInterceptor(this);
 
       await this.worker.start();
 
-      // The protocol starts before the worker routes connections to the interceptor, so it claims all of them.
-      hasCalledProtocolStart = true;
+      // The protocol starts before the worker routes connections to the interceptor, so it claims all of them. A
+      // protocol whose start rejects undoes its own work, so it is stopped only if a later step fails.
       await this.protocol?.start?.(this.createProtocolContext());
 
-      await this.worker.use(this);
-
-      this.isRunning = true;
-    } catch (startError) {
       try {
-        // A protocol may fail after starting part of its work, so it is stopped even if its start failed.
-        if (hasCalledProtocolStart) {
-          await this.protocol?.stop?.();
-        }
-      } catch (stopError) {
-        // The start error explains why the interceptor is not running, so a failure undoing the start is only logged.
-        console.error(stopError);
-      } finally {
-        await this.stopWorker();
+        await this.worker.use(this);
+      } catch (error) {
+        await this.protocol?.stop?.();
+        throw error;
       }
 
-      throw startError;
+      this.isRunning = true;
+    } catch (error) {
+      await this.stopWorker();
+      throw error;
     }
   }
 

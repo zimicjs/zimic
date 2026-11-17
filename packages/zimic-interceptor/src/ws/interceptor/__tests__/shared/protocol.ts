@@ -107,7 +107,7 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
     );
   });
 
-  it('should stop the protocol after it fails to start', async () => {
+  it('should not stop the protocol if it fails to start', async () => {
     const baseURL = getBaseURL();
     const stop = vi.fn<() => void>();
 
@@ -124,36 +124,9 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
       { start: false },
       async (interceptor) => {
         await expect(interceptor.start()).rejects.toThrow('Start failed');
-        expect(stop).toHaveBeenCalledTimes(1);
+        expect(stop).not.toHaveBeenCalled();
       },
     );
-  });
-
-  it('should reject starting the interceptor with the start error if the protocol also fails to stop', async () => {
-    const baseURL = getBaseURL();
-    const startError = new Error('Start failed');
-    const stopError = new Error('Stop failed');
-
-    const failingProtocol: WebSocketInterceptorProtocol<ChatMessage> = {
-      ...protocol,
-      start: () => {
-        throw startError;
-      },
-      stop: () => {
-        throw stopError;
-      },
-    };
-
-    await usingIgnoredConsole(['error'], async (console) => {
-      await usingWebSocketInterceptor<ChatSchema>(
-        { type, baseURL, protocol: failingProtocol },
-        { start: false },
-        async (interceptor) => {
-          await expect(interceptor.start()).rejects.toBe(startError);
-          expect(console.error).toHaveBeenCalledWith(stopError);
-        },
-      );
-    });
   });
 
   it('should stop the protocol when the interceptor stops', async () => {

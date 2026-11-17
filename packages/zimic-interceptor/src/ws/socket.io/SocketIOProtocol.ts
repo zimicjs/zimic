@@ -31,10 +31,6 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInte
   private context!: WebSocketInterceptorProtocolContext<Message>;
   private engine?: SocketIOEngine;
 
-  // The interceptor stops its protocol after a failed start, so the stops following the starts rejected because another
-  // interceptor uses this instance leave that interceptor running.
-  private numberOfRejectedSharedStarts = 0;
-
   constructor(
     private options: { namespace: string; polling: SocketIOPollingInterceptor | undefined; parser: SocketIOParser },
   ) {}
@@ -53,26 +49,25 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInte
 
   async start(context: WebSocketInterceptorProtocolContext<Message>) {
     if (this.engine) {
-      this.numberOfRejectedSharedStarts++;
       throw new SharedSocketIOProtocolError();
     }
 
     const engine = getOrCreateSocketIOEngine(context.interceptor, this.options);
     this.context = context;
 
-    // An engine that rejects the namespace synchronously does not register it, so it is not stopped with this protocol.
+    // An engine that rejects the namespace synchronously does not register it, so it has nothing to undo.
     const engineStart = engine.start(this);
     this.engine = engine;
 
-    await engineStart;
+    try {
+      await engineStart;
+    } catch (error) {
+      await this.stop();
+      throw error;
+    }
   }
 
   async stop() {
-    if (this.numberOfRejectedSharedStarts > 0) {
-      this.numberOfRejectedSharedStarts--;
-      return;
-    }
-
     const engineStop = this.engine?.stop(this);
 
     if (this.engine?.isStopping) {
