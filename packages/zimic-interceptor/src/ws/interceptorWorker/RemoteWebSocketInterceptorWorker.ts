@@ -196,7 +196,6 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     return this.sendQueue;
   }
 
-  // The protocol closes a claimed connection, so the server keeps it open after its holders let it go.
   private claimConnection(clientId: string, url: string, holders: RegisteredWebSocketInterceptor[]) {
     const claim = this.claimConnectionWithProtocols(
       {

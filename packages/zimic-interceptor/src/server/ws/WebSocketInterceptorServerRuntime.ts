@@ -81,8 +81,7 @@ interface UserWebSocketConnection {
   workerSocket: Socket;
   // Kept in the order of the worker's interceptors, so the last holder is the newest.
   holders: RegisteredWebSocketInterceptor[];
-  // A connection claimed by a protocol of the worker closes only when the worker closes it or disconnects, because the
-  // protocol may serve it with interceptors started after it connected.
+  // Closes only when the worker closes it or disconnects, not when its holders let it go.
   isClaimedByProtocol: boolean;
 }
 

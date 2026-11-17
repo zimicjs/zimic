@@ -355,7 +355,8 @@ abstract class WebSocketInterceptorWorker {
 
   // A claimed connection has a single holder, the newest holder whose protocol claims it, as the newest handler takes
   // precedence. Other holders do not receive it, and the connection handlers do not decide it. Holders are ordered from
-  // oldest to newest. Claims run protocol code that no caller awaits, so their errors are logged.
+  // oldest to newest. The protocol closes a claimed connection, so it stays open after its holders let it go. Claims run
+  // protocol code that no caller awaits, so their errors are logged.
   protected claimConnectionWithProtocols(
     connection: WebSocketInterceptorProtocolConnection,
     holders: { interceptor: AnyWebSocketInterceptorImplementation }[],

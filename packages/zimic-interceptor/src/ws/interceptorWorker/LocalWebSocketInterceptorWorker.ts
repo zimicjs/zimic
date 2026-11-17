@@ -112,10 +112,8 @@ function getMSWBaseURL(baseURL: string) {
   return baseURL;
 }
 
-// MSW tests links against connection URLs without their search params, trailing slash, and leading socket.io path, so
-// a link accepts the URLs under its base URL in that form. It therefore also receives URLs no interceptor holds by raw
-// prefix, such as the base URL without its trailing slash or a socket.io base URL without its socket.io path, which must
-// pass through.
+// MSW matches links against URLs without search params, trailing slash, or leading socket.io path, so this link also
+// receives URLs no interceptor holds, which must pass through.
 function createConnectionURLRegex(baseURL: string) {
   const mswBaseURL = getMSWBaseURL(baseURL);
 
@@ -353,7 +351,6 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     await this.decideConnection(pendingConnection);
   }
 
-  // The protocol closes a claimed connection, so it stays open after its holders let it go.
   private claimConnection(connection: LocalWebSocketClientConnection, holders: RegisteredWebSocketInterceptor[]) {
     const queues: LocalWebSocketConnectionQueues = { connection, deliveries: Promise.resolve() };
 
@@ -366,34 +363,8 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       holders,
     );
 
-    if (!claim) {
-      return false;
-    }
-
-    // Reading a `Blob` frame takes longer than reading a later text frame, and protocols may keep decoding state between
-    // frames, so frames are read in order before they reach the claim.
-    let frameReadings = Promise.resolve();
-
-    connection.addEventListener('message', (event) => {
-      event.preventDefault();
-
-      const data = event.data as WebSocketMessageData<WebSocketMessageSchema>;
-
-      frameReadings = frameReadings.then(async () => {
-        claim.onFrame(await convertWebSocketMessageDataToBinaryType(data, 'arraybuffer'));
-      });
-    });
-
-    // Frames are read asynchronously, so the close waits for the frames received before it.
-    connection.addEventListener(
-      'close',
-      () => {
-        frameReadings = frameReadings.then(() => claim.onClose());
-      },
-      { once: true },
-    );
-
-    return true;
+    // Local Socket.IO interceptors close the WebSockets they claim, so their frames and close are not read.
+    return claim !== undefined;
   }
 
   private async decideConnection(pendingConnection: PendingLocalWebSocketConnection) {
