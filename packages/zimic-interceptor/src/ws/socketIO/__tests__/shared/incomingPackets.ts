@@ -1,4 +1,5 @@
 import { waitFor } from '@zimic/utils/time';
+import type { WebSocketSchema } from '@zimic/ws';
 import type { ManagerOptions } from 'socket.io-client';
 import * as defaultParser from 'socket.io-parser';
 import type { Packet } from 'socket.io-parser';
@@ -7,6 +8,7 @@ import { beforeEach, expect, it } from 'vitest';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { usingSocket, waitForSocketConnection } from '@tests/utils/socketIO';
+import { usingWebSocketClient } from '@tests/utils/webSocket';
 
 import type { SocketIOParser, SocketIOProtocolOptions } from '../../types/options';
 import {
@@ -21,6 +23,8 @@ import {
 } from './utils';
 
 const POLLING_PACKET_SEPARATOR = '\x1e';
+
+type PlainSchema = WebSocketSchema<{ '/': { message: string } }>;
 
 export function declareIncomingPacketsSocketIOProtocolTests(options: SharedSocketIOProtocolTestsOptions) {
   const { type, getBaseURL: getServerBaseURL, PollingTransport } = options;
@@ -253,4 +257,56 @@ export function declareIncomingPacketsSocketIOProtocolTests(options: SharedSocke
       },
     );
   });
+
+  // Local interceptors close every WebSocket connection before creating its decoder, because they serve Socket.IO over
+  // polling only.
+  if (type === 'remote') {
+    it('should leave WebSocket connections to other interceptors if the parser fails to create their decoder', async () => {
+      const parser: SocketIOParser = {
+        Encoder: defaultParser.Encoder,
+        Decoder: class extends defaultParser.Decoder {
+          constructor() {
+            super();
+            throw new Error('Decoder failed');
+          }
+        },
+      };
+
+      await usingIgnoredConsole(['error'], async () => {
+        await usingWebSocketInterceptor<PlainSchema>({ type, baseURL }, async (plainInterceptor) => {
+          await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions({ parser }), async () => {
+            await usingWebSocketClient<PlainSchema>(`${baseURL}/?EIO=4&transport=websocket`, async () => {
+              await waitFor(() => expect(plainInterceptor.clients).toHaveLength(1));
+            });
+          });
+        });
+      });
+    });
+
+    it('should log the error of parsers that fail to create the decoder of WebSocket connections', async () => {
+      const decoderError = new Error('Decoder failed');
+
+      const parser: SocketIOParser = {
+        Encoder: defaultParser.Encoder,
+        Decoder: class extends defaultParser.Decoder {
+          constructor() {
+            super();
+            throw decoderError;
+          }
+        },
+      };
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        // Holds the connection the Socket.IO protocol does not claim.
+        await usingWebSocketInterceptor<PlainSchema>({ type, baseURL }, async () => {
+          await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions({ parser }), async () => {
+            await usingWebSocketClient<PlainSchema>(`${baseURL}/?EIO=4&transport=websocket`, async () => {
+              await waitFor(() => expect(console.error).toHaveBeenCalledTimes(1));
+              expect(console.error).toHaveBeenCalledWith(decoderError);
+            });
+          });
+        });
+      });
+    });
+  }
 }

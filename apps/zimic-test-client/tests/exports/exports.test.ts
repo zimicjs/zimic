@@ -93,13 +93,6 @@ import {
   type WebSocketInterceptorServer,
   type WebSocketInterceptorServerSendOptions,
   type WebSocketInterceptorProtocol,
-  type WebSocketInterceptorProtocolClientOptions,
-  type WebSocketInterceptorProtocolConnection,
-  type WebSocketInterceptorProtocolConnectionClaim,
-  type WebSocketInterceptorProtocolContext,
-  type WebSocketInterceptorProtocolFrame,
-  type WebSocketInterceptorProtocolOpenClientResult,
-  type WebSocketInterceptorProtocolOpenedClient,
   type WebSocketMessageHandler,
   type LocalWebSocketMessageHandler,
   type RemoteWebSocketMessageHandler,
@@ -561,13 +554,6 @@ describe('Exports', () => {
       expectTypeOf<WebSocketInterceptorServer<never>>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorServerSendOptions<never>>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorProtocol<never>>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorProtocolClientOptions<never>>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorProtocolConnection>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorProtocolConnectionClaim>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorProtocolContext<never>>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorProtocolFrame>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorProtocolOpenClientResult>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorProtocolOpenedClient<never>>().not.toBeAny();
 
       expectTypeOf<WebSocketMessageHandler<never>>().not.toBeAny();
       expectTypeOf<LocalWebSocketMessageHandler<never>>().not.toBeAny();

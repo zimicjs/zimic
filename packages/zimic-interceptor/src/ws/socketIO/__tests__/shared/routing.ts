@@ -67,6 +67,21 @@ export function declareRoutingSocketIOProtocolTests(options: SharedSocketIOProto
           },
         );
       });
+
+      it('should connect WebSocket clients through the interceptor of their Socket.IO path instead of newer interceptors without a protocol', async () => {
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+          // Started last, so it would hold the connection as its newest holder if the Socket.IO claim did not take
+          // precedence.
+          await usingWebSocketInterceptor<PlainSchema>({ type, baseURL }, async (plainInterceptor) => {
+            await usingSocket(baseURL, { transports: [WebSocketTransport] }, async (socket) => {
+              await waitForSocketConnection(socket);
+
+              expect(interceptor.clients).toHaveLength(1);
+              expect(plainInterceptor.clients).toHaveLength(0);
+            });
+          });
+        });
+      });
     });
   }
 

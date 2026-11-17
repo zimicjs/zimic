@@ -65,10 +65,8 @@ interface SharedWebSocketInterceptorOptions<Schema extends WebSocketSchema> {
   connectionSaving?: Partial<WebSocketInterceptorConnectionSaving>;
 
   /**
-   * Serves a framed protocol, such as Socket.IO, on its own transports, opening the clients whose messages handlers
-   * receive. With a protocol, the interceptor holds only the WebSocket connections its protocol claims.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#protocol-option `protocol` option}
+   * Serves a protocol, such as Socket.IO, on its own transports, opening the clients whose messages handlers receive.
+   * With a protocol, the interceptor holds only the WebSocket connections its protocol claims.
    */
   protocol?: WebSocketInterceptorProtocol<WebSocketSchemaMessage<Schema>>;
 

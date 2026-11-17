@@ -432,11 +432,11 @@ abstract class WebSocketInterceptorWorker {
     const handling = await this.handleConnectionWithHandlers({ url: options.url, protocols: [] }, isHolding);
 
     if (!isHolding(interceptor)) {
-      return { status: 'aborted' };
+      return 'aborted';
     }
 
     if (handling.action === 'reject') {
-      return { status: 'rejected' };
+      return 'rejected';
     }
 
     // Sending and closing through the interceptor's list makes a client retained after its interceptor lets it go do
@@ -476,7 +476,7 @@ abstract class WebSocketInterceptorWorker {
 
     await this.applyConnectionEffect(handling, [{ registeredInterceptor: { interceptor }, client }]);
 
-    return { status: 'accepted' };
+    return 'accepted';
   }
 
   // The handlers of all interceptors holding the connection are tried together, from the last created to the first, so

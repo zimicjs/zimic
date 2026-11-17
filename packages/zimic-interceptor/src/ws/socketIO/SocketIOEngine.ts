@@ -445,7 +445,7 @@ class SocketIOEngine {
     session: SocketIOEngineSession,
     abortController: AbortController,
   ) {
-    const result = await protocol.openClient({
+    const openClientResult = await protocol.openClient({
       url: session.url,
       signal: abortController.signal,
       send: (message: SocketIOMessage) => this.sendSocketPacket(session, protocol.createMessagePacket(message)),
@@ -455,7 +455,7 @@ class SocketIOEngine {
       },
     });
 
-    if (result.status === 'rejected') {
+    if (openClientResult === 'rejected') {
       this.sendSocketPacket(session, {
         type: PacketType.CONNECT_ERROR,
         nsp: protocol.namespace,

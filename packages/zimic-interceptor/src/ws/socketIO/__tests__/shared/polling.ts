@@ -5,7 +5,9 @@ import type { ManagerOptions } from 'socket.io-client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createHttpInterceptor } from '@/http';
+import type { InterceptorServerWebSocketSchema } from '@/server/types/schema';
 import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
+import InterceptorWebSocketClient from '@/utils/webSocket/WebSocketClient';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { usingSocket, waitForSocketConnection } from '@tests/utils/socketIO';
@@ -639,6 +641,42 @@ export function declarePollingSocketIOProtocolTests(options: PollingSocketIOProt
         expect(polling.isRunning).toBe(false);
       });
     });
+
+    // Only remote interceptors register with the interceptor server after their protocol starts, and that registration
+    // can fail. Local registrations cannot fail once the worker is running.
+    if (type === 'remote') {
+      it('should stop the polling interceptor if the interceptor fails to register', async () => {
+        await usingWebSocketInterceptor<AnySchema>(
+          getSocketIOInterceptorOptions(),
+          { start: false },
+          async (interceptor) => {
+            const registrationError = new Error('Registration failed');
+            const request = InterceptorWebSocketClient.prototype.request;
+
+            // No public path makes the server reject a registration, so only the registration of the WebSocket
+            // interceptor fails. The polling interceptor registers through the same client class.
+            const requestSpy = vi.spyOn(InterceptorWebSocketClient.prototype, 'request').mockImplementation(function (
+              this: InterceptorWebSocketClient<InterceptorServerWebSocketSchema>,
+              channel,
+              ...rest
+            ) {
+              if (channel === 'interceptors/ws/workers/reset') {
+                return Promise.reject(registrationError);
+              }
+              return request.call(this, channel, ...rest);
+            });
+
+            try {
+              await expect(interceptor.start()).rejects.toBe(registrationError);
+            } finally {
+              requestSpy.mockRestore();
+            }
+
+            expect(polling.isRunning).toBe(false);
+          },
+        );
+      });
+    }
 
     it('should start after the polling interceptor of the last namespace of a base URL stops', async () => {
       const pollingStopStartedPromise = createPromiseWithResolvers<void>();
