@@ -14,7 +14,14 @@ import type {
 import type { LocalWebSocketMessageHandler, RemoteWebSocketMessageHandler } from '@/ws/messageHandler/types/public';
 
 import { createWebSocketInterceptor } from '../factory';
-import { UnhandledMessageStrategy, WebSocketInterceptorOptions, WebSocketInterceptorType } from '../types/options';
+import {
+  LocalWebSocketInterceptorOptions,
+  RemoteWebSocketInterceptorOptions,
+  SharedWebSocketInterceptorOptions,
+  UnhandledMessageStrategy,
+  WebSocketInterceptorOptions,
+  WebSocketInterceptorType,
+} from '../types/options';
 import { LocalWebSocketInterceptor, RemoteWebSocketInterceptor, WebSocketInterceptor } from '../types/public';
 import { InferWebSocketInterceptorSchema } from '../types/schema';
 import { declareWebSocketInterceptorTypes } from './shared/utils';
@@ -126,6 +133,17 @@ describe('WebSocketInterceptor > Types', () => {
     }
 
     expectTypeOf(createInterceptor).toBeFunction();
+  });
+
+  it('should type options with the generic schema if no type argument is declared', () => {
+    expectTypeOf<WebSocketInterceptorOptions>().toEqualTypeOf<WebSocketInterceptorOptions<WebSocketSchema>>();
+    expectTypeOf<LocalWebSocketInterceptorOptions>().toEqualTypeOf<LocalWebSocketInterceptorOptions<WebSocketSchema>>();
+    expectTypeOf<RemoteWebSocketInterceptorOptions>().toEqualTypeOf<
+      RemoteWebSocketInterceptorOptions<WebSocketSchema>
+    >();
+    expectTypeOf<SharedWebSocketInterceptorOptions>().toEqualTypeOf<
+      SharedWebSocketInterceptorOptions<WebSocketSchema>
+    >();
   });
 
   it('should not accept undeclared paths in message handlers', () => {

@@ -48,7 +48,7 @@ export type UnhandledMessageStrategy =
   UnhandledMessageStrategy.Declaration | UnhandledMessageStrategy.DeclarationFactory;
 
 /** The options shared by local and remote WebSocket interceptors. */
-interface SharedWebSocketInterceptorOptions<Schema extends WebSocketSchema> {
+export interface SharedWebSocketInterceptorOptions<Schema extends WebSocketSchema = WebSocketSchema> {
   /** The type of the interceptor, either `local` or `remote`. Defaults to `local`. */
   type?: WebSocketInterceptorType;
 
@@ -83,7 +83,7 @@ interface SharedWebSocketInterceptorOptions<Schema extends WebSocketSchema> {
  * The options to create a local WebSocket interceptor.
  */
 export interface LocalWebSocketInterceptorOptions<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketSchema = WebSocketSchema,
 > extends SharedWebSocketInterceptorOptions<Schema> {
   type?: 'local';
 }
@@ -105,7 +105,7 @@ export interface WebSocketInterceptorAuthOptions {
  * The options to create a remote WebSocket interceptor.
  */
 export interface RemoteWebSocketInterceptorOptions<
-  Schema extends WebSocketSchema,
+  Schema extends WebSocketSchema = WebSocketSchema,
 > extends SharedWebSocketInterceptorOptions<Schema> {
   type: 'remote';
 
@@ -121,5 +121,5 @@ export interface RemoteWebSocketInterceptorOptions<
  *
  * The options to create a WebSocket interceptor.
  */
-export type WebSocketInterceptorOptions<Schema extends WebSocketSchema> =
+export type WebSocketInterceptorOptions<Schema extends WebSocketSchema = WebSocketSchema> =
   LocalWebSocketInterceptorOptions<Schema> | RemoteWebSocketInterceptorOptions<Schema>;
