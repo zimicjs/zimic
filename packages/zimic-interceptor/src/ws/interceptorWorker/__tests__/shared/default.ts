@@ -644,7 +644,6 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
           protocols: [],
           send,
           close: vi.fn(),
-          protocol: undefined,
         });
 
         await expect(

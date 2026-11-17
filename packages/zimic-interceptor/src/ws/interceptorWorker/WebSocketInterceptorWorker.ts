@@ -22,7 +22,6 @@ import type {
   WebSocketInterceptorProtocolClientOptions,
   WebSocketInterceptorProtocolConnection,
   WebSocketInterceptorProtocolConnectionClaim,
-  WebSocketInterceptorProtocolFrame,
   WebSocketInterceptorProtocolOpenClientResult,
 } from '../interceptor/types/protocol';
 import {
@@ -84,12 +83,6 @@ export interface WebSocketConnectionHandling {
 }
 
 const UNHANDLED_CONNECTION_HANDLING: WebSocketConnectionHandling = Object.freeze({ action: 'accept' });
-
-// Clients opened by a protocol send the frames its `encode` returns. Without `encode`, a binary message is passed on as
-// given, which may be a `Blob` or a view instead of an `ArrayBuffer`.
-function asEncodedFrame(data: WebSocketMessageData<WebSocketMessageSchema>) {
-  return data as WebSocketInterceptorProtocolFrame;
-}
 
 abstract class WebSocketInterceptorWorker {
   platform: WebSocketInterceptorPlatform | null = null;
@@ -369,7 +362,7 @@ abstract class WebSocketInterceptorWorker {
   ): WebSocketInterceptorProtocolConnectionClaim | undefined {
     for (const { interceptor } of holders.toReversed()) {
       try {
-        const claim = interceptor.protocol?.claimConnection?.(connection);
+        const claim = interceptor.protocol?.claimConnection(connection);
 
         if (claim) {
           return {
@@ -397,11 +390,11 @@ abstract class WebSocketInterceptorWorker {
     return undefined;
   }
 
-  // A protocol that claims connections serves the ones it claims, so its interceptor holds no other connection.
-  protected filterHoldersWithoutClaimingProtocols<
-    Holder extends { interceptor: AnyWebSocketInterceptorImplementation },
-  >(holders: Holder[]) {
-    return holders.filter(({ interceptor }) => interceptor.protocol?.claimConnection === undefined);
+  // A protocol serves only the connections it claims, so its interceptor holds no other connection.
+  protected filterHoldersWithoutProtocols<Holder extends { interceptor: AnyWebSocketInterceptorImplementation }>(
+    holders: Holder[],
+  ) {
+    return holders.filter(({ interceptor }) => interceptor.protocol === undefined);
   }
 
   protected async handleFrameWithHandlers(
@@ -428,9 +421,9 @@ abstract class WebSocketInterceptorWorker {
 
   // Runs the connection handlers of one interceptor for a client opened by its protocol. As with a pending WebSocket
   // connection, an interceptor that lets the client go while it is decided does not list it.
-  async openProtocolClient(
+  async openProtocolClient<Message>(
     interceptor: AnyWebSocketInterceptorImplementation,
-    options: WebSocketInterceptorProtocolClientOptions<unknown>,
+    options: WebSocketInterceptorProtocolClientOptions<Message>,
   ): Promise<WebSocketInterceptorProtocolOpenClientResult> {
     function isHolding(candidate: AnyWebSocketInterceptorImplementation) {
       return candidate === interceptor && !options.signal.aborted;
@@ -451,9 +444,11 @@ abstract class WebSocketInterceptorWorker {
     const client: InternalWebSocketInterceptorClient = createWebSocketInterceptorClient({
       url: options.url,
       protocols: [],
-      send: (frame) => {
+      send: (message) => {
         if (interceptor.clients.includes(client)) {
-          options.sendFrame(asEncodedFrame(frame));
+          // Clients are schema-erased, but their public types accept the messages of the interceptor schema, which are
+          // the messages of its protocol. User code may bypass those types, so protocols validate what they send.
+          options.send(message as Message);
         }
       },
       close: (code, reason) => {
@@ -461,7 +456,6 @@ abstract class WebSocketInterceptorWorker {
           options.close(code, reason);
         }
       },
-      protocol: interceptor.protocol,
     });
 
     interceptor.addClient(client);

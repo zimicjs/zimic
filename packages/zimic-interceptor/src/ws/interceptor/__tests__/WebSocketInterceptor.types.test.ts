@@ -128,8 +128,8 @@ describe('WebSocketInterceptor > Types', () => {
           const result = await context.openClient({
             url: context.interceptor.baseURL,
             signal: new AbortController().signal,
-            sendFrame: (frame) => {
-              expectTypeOf(frame).toEqualTypeOf<string | ArrayBuffer>();
+            send: (message) => {
+              expectTypeOf(message).toEqualTypeOf<Message>();
             },
             close: () => undefined,
             onOpen: (client) => {
@@ -153,12 +153,23 @@ describe('WebSocketInterceptor > Types', () => {
     expectTypeOf(createInterceptor).toBeFunction();
   });
 
+  it('should not accept protocols without a connection claim', () => {
+    function createInterceptor() {
+      // @ts-expect-error The protocol does not declare `claimConnection`.
+      const protocol: WebSocketInterceptorProtocol<Message> = { start: () => undefined };
+
+      createWebSocketInterceptor<MessageSchema>({ baseURL: 'ws://localhost:3000', protocol });
+    }
+
+    expectTypeOf(createInterceptor).toBeFunction();
+  });
+
   it('should not accept messages other than the messages of the schema in clients opened by protocols', () => {
     function openClient(context: WebSocketInterceptorProtocolContext<Message>) {
       void context.openClient({
         url: context.interceptor.baseURL,
         signal: new AbortController().signal,
-        sendFrame: () => undefined,
+        send: () => undefined,
         close: () => undefined,
         onOpen: (client) => {
           // @ts-expect-error The message is not declared in the schema.

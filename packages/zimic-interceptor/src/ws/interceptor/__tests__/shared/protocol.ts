@@ -28,14 +28,8 @@ type ChatSchema = WebSocketSchema<{ '/': { message: ChatMessage } }>;
 type ChatFrameSchema = WebSocketSchema<{ '/': { message: string } }>;
 type BinaryFrameSchema = WebSocketSchema<{ '/': { message: Blob | ArrayBuffer } }>;
 
-const FRAME_PREFIX = 'chat:';
-
-function encodeFrame(message: ChatMessage) {
-  return `${FRAME_PREFIX}${JSON.stringify(message)}`;
-}
-
 const protocol: WebSocketInterceptorProtocol<ChatMessage> = {
-  encode: (message) => [encodeFrame(message)],
+  claimConnection: () => undefined,
 };
 
 interface SharedWebSocketInterceptorProtocolTestsOptions {
@@ -274,7 +268,7 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
         const result = await context.openClient({
           url: baseURL,
           signal: new AbortController().signal,
-          sendFrame: vi.fn(),
+          send: vi.fn(),
           close: vi.fn(),
           onOpen: vi.fn(),
         });
@@ -302,7 +296,7 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
       const result = await context.openClient({
         url: baseURL,
         signal: new AbortController().signal,
-        sendFrame: vi.fn(),
+        send: vi.fn(),
         close: vi.fn(),
         onOpen: vi.fn(),
       });
@@ -337,7 +331,7 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
       const resultPromise = context.openClient({
         url: baseURL,
         signal: abortController.signal,
-        sendFrame: vi.fn(),
+        send: vi.fn(),
         close: vi.fn(),
         onOpen,
       });
@@ -372,7 +366,7 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
       await context.openClient({
         url: baseURL,
         signal: new AbortController().signal,
-        sendFrame: vi.fn(),
+        send: vi.fn(),
         close: vi.fn(),
         onOpen: () => {
           events.push('open hook');
@@ -407,7 +401,7 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
       const resultPromise = context.openClient({
         url: baseURL,
         signal: new AbortController().signal,
-        sendFrame: vi.fn(),
+        send: vi.fn(),
         close: vi.fn(),
         onOpen: vi.fn(),
       });
@@ -441,7 +435,7 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
         await context.openClient({
           url: baseURL,
           signal: new AbortController().signal,
-          sendFrame: vi.fn(),
+          send: vi.fn(),
           close: vi.fn(),
           onOpen: (client) => openedClientPromise.resolve(client),
         });
@@ -457,10 +451,10 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
     );
   });
 
-  it('should send encoded frames to opened clients', async () => {
+  it('should send messages to opened clients through the protocol', async () => {
     const baseURL = getBaseURL();
     const contextPromise = createPromiseWithResolvers<WebSocketInterceptorProtocolContext<ChatMessage>>();
-    const sendFrame = vi.fn<(frame: WebSocketInterceptorProtocolFrame) => void>();
+    const send = vi.fn<(message: ChatMessage) => void>();
 
     const servingProtocol: WebSocketInterceptorProtocol<ChatMessage> = {
       ...protocol,
@@ -473,14 +467,14 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
       await context.openClient({
         url: baseURL,
         signal: new AbortController().signal,
-        sendFrame,
+        send,
         close: vi.fn(),
         onOpen: vi.fn(),
       });
 
       interceptor.clients[0].send({ text: 'hello' });
 
-      expect(sendFrame).toHaveBeenCalledExactlyOnceWith(encodeFrame({ text: 'hello' }));
+      expect(send).toHaveBeenCalledExactlyOnceWith({ text: 'hello' });
     });
   });
 
@@ -500,7 +494,7 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
       await context.openClient({
         url: baseURL,
         signal: new AbortController().signal,
-        sendFrame: vi.fn(),
+        send: vi.fn(),
         close,
         onOpen: vi.fn(),
       });
@@ -527,7 +521,7 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
       await context.openClient({
         url: baseURL,
         signal: abortController.signal,
-        sendFrame: vi.fn(),
+        send: vi.fn(),
         close: vi.fn(),
         onOpen: vi.fn(),
       });
@@ -757,7 +751,7 @@ export function declareProtocolWebSocketInterceptorTests(options: SharedWebSocke
     });
   });
 
-  it('should not give claimed connections to interceptors without a claiming protocol', async () => {
+  it('should not give claimed connections to interceptors without a protocol', async () => {
     const baseURL = getBaseURL();
     const onFrame = vi.fn<(frame: WebSocketInterceptorProtocolFrame) => void>();
 

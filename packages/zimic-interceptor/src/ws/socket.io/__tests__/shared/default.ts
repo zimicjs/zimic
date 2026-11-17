@@ -1359,7 +1359,7 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
         messageDescription: 'an object without a type or ack ID',
         message: { data: 1 },
         expectedError: new ValidationError(
-          'Socket.IO messages must be objects with `type` or `ackId`, but received: [object Object].',
+          'Socket.IO messages must be objects with `type` or `ackId`, but received: {"data":1}.',
         ),
       },
       {

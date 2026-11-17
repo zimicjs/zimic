@@ -28,6 +28,7 @@ import {
 import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
 import {
   deserializeWebSocketMessageDataFromTransport,
+  serializeWebSocketMessageDataForSocket,
   serializeWebSocketMessageDataForTransport,
 } from '../utils/messageData';
 import { RemoteWebSocketInterceptorWorkerOptions } from './types/options';
@@ -244,7 +245,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       return { action: 'claim' };
     }
 
-    const holderInterceptors = this.filterHoldersWithoutClaimingProtocols(holderCandidates);
+    const holderInterceptors = this.filterHoldersWithoutProtocols(holderCandidates);
 
     this.decidingClientIds.add(connection.clientId);
 
@@ -277,13 +278,11 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       const client = createWebSocketInterceptorClient({
         url: connection.url,
         protocols: connection.protocols,
-        send: async (data) => {
-          await this.sendToClient(client, data);
-        },
+        // Serialized before sending, so serialization errors throw from the send call, as in local mode.
+        send: (data) => this.sendToClient(client, serializeWebSocketMessageDataForSocket<WebSocketMessageSchema>(data)),
         close: async (code, reason) => {
           await this.closeClient(client, code, reason);
         },
-        protocol: registeredInterceptor.interceptor.protocol,
       });
 
       // The registry is intentionally schema-erased because one remote worker registers interceptors for any schema.

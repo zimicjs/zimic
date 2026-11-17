@@ -7,27 +7,29 @@ import type {
   WebSocketInterceptorProtocolClientOptions,
   WebSocketInterceptorProtocolConnection,
   WebSocketInterceptorProtocolContext,
-  WebSocketInterceptorProtocolFrame,
   WebSocketInterceptorProtocolOpenedClient,
 } from '../interceptor/types/protocol';
 import SharedSocketIOProtocolError from './errors/SharedSocketIOProtocolError';
-import {
-  deleteSocketIOEngine,
-  encodeSocketIOPacket,
-  getOrCreateSocketIOEngine,
-  SocketIOEngine,
-} from './SocketIOEngine';
+import { deleteSocketIOEngine, getOrCreateSocketIOEngine, SocketIOEngine } from './SocketIOEngine';
 import type { SocketIOMessage } from './types/messages';
 import type { SocketIOParser } from './types/options';
 import type { SocketIOPollingInterceptor } from './types/polling';
 
 const { PacketType } = defaultParser;
 
+// `JSON.stringify` prints only objects, because it throws for bigints and returns `undefined` for functions.
+function printInvalidMessage(message: unknown) {
+  if (message === null || typeof message !== 'object') {
+    return String(message);
+  }
+
+  return JSON.stringify(message);
+}
+
 class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInterceptorProtocol<Message> {
   // Assigned on start, before the engine can open clients for this protocol.
   private context!: WebSocketInterceptorProtocolContext<Message>;
   private engine?: SocketIOEngine;
-  private encoder: InstanceType<SocketIOParser['Encoder']>;
 
   // The interceptor stops its protocol after a failed start, so the stops following the starts rejected because another
   // interceptor uses this instance leave that interceptor running.
@@ -35,9 +37,7 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInte
 
   constructor(
     private options: { namespace: string; polling: SocketIOPollingInterceptor | undefined; parser: SocketIOParser },
-  ) {
-    this.encoder = new options.parser.Encoder();
-  }
+  ) {}
 
   get namespace() {
     return this.options.namespace;
@@ -118,18 +118,21 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInte
     } satisfies SocketIOMessage);
   }
 
-  // Messages come from user code that may bypass the schema types.
-  encode(message: Message | null): WebSocketInterceptorProtocolFrame[] {
-    if (typeof message !== 'object' || message === null || (!('type' in message) && !('ackId' in message))) {
+  createMessagePacket(message: Message): Packet {
+    // Messages come from user code that may bypass the schema types.
+    const untypedMessage: unknown = message;
+
+    const isValidMessage =
+      typeof untypedMessage === 'object' &&
+      untypedMessage !== null &&
+      ('type' in untypedMessage || 'ackId' in untypedMessage);
+
+    if (!isValidMessage) {
       throw new ValidationError(
-        `Socket.IO messages must be objects with \`type\` or \`ackId\`, but received: ${String(message)}.`,
+        `Socket.IO messages must be objects with \`type\` or \`ackId\`, but received: ${printInvalidMessage(untypedMessage)}.`,
       );
     }
 
-    return encodeSocketIOPacket(this.encoder, this.createSocketPacket(message));
-  }
-
-  private createSocketPacket(message: SocketIOMessage): Packet {
     const { namespace } = this.options;
 
     const hasNoArguments = message.data === undefined && message.args === undefined;

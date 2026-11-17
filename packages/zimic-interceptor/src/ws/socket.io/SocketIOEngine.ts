@@ -109,7 +109,7 @@ export interface SocketIOEngineOptions {
 type AnySocketIOProtocol = SocketIOProtocol<any>;
 
 // Parsers come from user code, and some declare other return types, such as `socket.io-msgpack-parser`.
-export function encodeSocketIOPacket(
+function encodeSocketIOPacket(
   encoder: InstanceType<SocketIOParser['Encoder']>,
   packet: Packet,
 ): WebSocketInterceptorProtocolFrame[] {
@@ -426,7 +426,7 @@ class SocketIOEngine {
     const result = await protocol.openClient({
       url: session.url,
       signal: abortController.signal,
-      sendFrame: (frame) => session.transport.send(frame),
+      send: (message: SocketIOMessage) => this.sendSocketPacket(session, protocol.createMessagePacket(message)),
       close: () => this.disconnectNamespace(protocol, session),
       onOpen: (client: WebSocketInterceptorProtocolOpenedClient<SocketIOMessage>) => {
         this.joinNamespace(protocol, session, { state: 'open', abortController, client });

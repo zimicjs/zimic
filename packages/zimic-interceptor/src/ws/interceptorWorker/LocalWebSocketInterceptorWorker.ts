@@ -7,7 +7,10 @@ import { SharedOptions as MSWWorkerSharedOptions, ws } from 'msw';
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
 import { removeArrayElement } from '@/utils/arrays';
 import { isURLUnderBaseURL, removeTrailingSlash } from '@/utils/urls';
-import { convertWebSocketMessageDataToBinaryType } from '@/ws/utils/messageData';
+import {
+  convertWebSocketMessageDataToBinaryType,
+  serializeWebSocketMessageDataForSocket,
+} from '@/ws/utils/messageData';
 
 import NotRunningWebSocketInterceptorError from '../interceptor/errors/NotRunningWebSocketInterceptorError';
 import UnknownWebSocketInterceptorPlatformError from '../interceptor/errors/UnknownWebSocketInterceptorPlatformError';
@@ -332,7 +335,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       return;
     }
 
-    const holderInterceptors = this.filterHoldersWithoutClaimingProtocols(holderCandidates);
+    const holderInterceptors = this.filterHoldersWithoutProtocols(holderCandidates);
 
     if (holderInterceptors.length === 0) {
       server.connect();
@@ -440,12 +443,11 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
           url: connection.url.href,
           protocols,
           send: (data) => {
-            this.sendToClient(client, data);
+            this.sendToClient(client, serializeWebSocketMessageDataForSocket<WebSocketMessageSchema>(data));
           },
           close: (code, reason) => {
             this.closeClient(client, code, reason);
           },
-          protocol: registeredInterceptor.interceptor.protocol,
         });
         return { registeredInterceptor, client };
       }),

@@ -69,8 +69,11 @@ export interface WebSocketInterceptorProtocolClientOptions<Message> {
   /** Aborting it releases the client, at any time, removing it from `interceptor.clients`. */
   signal: AbortSignal;
 
-  /** Sends a raw frame to the client, called for each frame encoded from the messages sent to it. */
-  sendFrame: (frame: WebSocketInterceptorProtocolFrame) => void;
+  /**
+   * Sends a message to the client, called with each message sent to it by a handler, `client.send`, or `server.send`,
+   * as given.
+   */
+  send: (message: Message) => void;
 
   /**
    * Closes the client, called by `client.close()`. It does not remove the client from `interceptor.clients`; aborting
@@ -135,12 +138,6 @@ export interface WebSocketInterceptorProtocolContext<Message> {
  */
 export interface WebSocketInterceptorProtocol<Message> {
   /**
-   * Encodes a message sent by a handler, `client.send`, or `server.send` into the frames to send to the client. Without
-   * it, messages are sent as without a protocol.
-   */
-  encode?: (message: Message) => WebSocketInterceptorProtocolFrame[];
-
-  /**
    * Called when the interceptor starts, before connections reach it. On an error, the interceptor calls
    * {@link WebSocketInterceptorProtocol.stop `stop`} and then rejects `interceptor.start()` with the error.
    */
@@ -159,11 +156,11 @@ export interface WebSocketInterceptorProtocol<Message> {
   /**
    * Called for each WebSocket connection to the interceptor. The newest interceptor whose protocol returns a claim
    * holds the connection, receiving its frames and close through the claim instead of the connection handlers. An
-   * interceptor whose protocol defines it does not hold the connections its protocol does not claim. The protocol
-   * closes the connections it claims, including when it stops, because the interceptor never closes them. Errors are
-   * logged.
+   * interceptor with a protocol does not hold the connections its protocol does not claim, which go to the interceptors
+   * without a protocol. The protocol closes the connections it claims, including when it stops, because the interceptor
+   * never closes them. Errors are logged.
    */
-  claimConnection?: (
+  claimConnection: (
     connection: WebSocketInterceptorProtocolConnection,
   ) => WebSocketInterceptorProtocolConnectionClaim | undefined;
 }
