@@ -132,7 +132,8 @@ export interface WebSocketInterceptorProtocolContext<Message> {
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * Translates between the raw frames of a framed protocol and the messages seen by interceptor handlers.
+ * Serves a framed protocol, such as Socket.IO, on its own transports. It claims the WebSocket connections of its
+ * transports and opens a client for each peer it serves, whose messages reach the interceptor handlers.
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#protocol-option `protocol` option}
  */
