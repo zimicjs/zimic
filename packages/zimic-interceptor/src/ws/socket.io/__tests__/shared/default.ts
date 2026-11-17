@@ -1629,6 +1629,41 @@ export function declareSocketIOProtocolTests(options: SharedSocketIOTestsOptions
         expect(polling.isRunning).toBe(false);
       });
     });
+
+    it('should start after the polling interceptor of the last namespace of a base URL stops', async () => {
+      const pollingStopStartedPromise = createPromiseWithResolvers<void>();
+      const pollingStopReleasedPromise = createPromiseWithResolvers<void>();
+      const stopPolling = polling.stop.bind(polling);
+
+      // No public call pauses a stop, so the polling interceptor holds it to start another interceptor while it runs.
+      vi.spyOn(polling, 'stop').mockImplementation(async () => {
+        pollingStopStartedPromise.resolve();
+        await pollingStopReleasedPromise;
+        await stopPolling();
+      });
+
+      const stoppingInterceptor = createWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions());
+      await stoppingInterceptor.start();
+
+      const stopPromise = stoppingInterceptor.stop();
+      await pollingStopStartedPromise;
+
+      const nextInterceptorPromise = usingWebSocketInterceptor<AnySchema>(
+        getSocketIOInterceptorOptions(),
+        async (nextInterceptor) => {
+          expect(polling.isRunning).toBe(true);
+
+          await usingSocket(baseURL, { transports: [PollingTransport] }, async (socket) => {
+            await waitForSocketConnection(socket);
+            expect(nextInterceptor.clients).toHaveLength(1);
+          });
+        },
+      );
+
+      pollingStopReleasedPromise.resolve();
+
+      await Promise.all([stopPromise, nextInterceptorPromise]);
+    });
   });
 
   // Local interceptors serve Socket.IO over polling only, so only remote WebSocket clients connect.

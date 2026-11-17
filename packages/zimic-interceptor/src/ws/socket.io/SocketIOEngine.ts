@@ -142,6 +142,12 @@ function warnOfUnsupportedEngineIOVersion(version: string | null) {
   return message;
 }
 
+const engines = new Map<string, SocketIOEngine>();
+
+function getSocketIOEngineKey(interceptor: SocketIOEngineInterceptor) {
+  return `${interceptor.type}:${interceptor.baseURL}`;
+}
+
 /**
  * The Engine.IO server of a base URL, shared by the interceptors of its namespaces because Socket.IO multiplexes them
  * over one connection.
@@ -151,6 +157,9 @@ class SocketIOEngine {
   private sessions = new Map<string, SocketIOEngineSession>();
   private encoder: InstanceType<SocketIOParser['Encoder']>;
   private pollingStart: Promise<void>;
+
+  /** Set once the last namespace leaves, until the polling interceptor stops and the engine is removed. */
+  pendingStop?: Promise<void>;
 
   constructor(
     private interceptor: SocketIOEngineInterceptor,
@@ -201,7 +210,7 @@ class SocketIOEngine {
       return { status: 400, body: { code, message: unsupportedVersionMessage } } as const;
     }
 
-    if (this.isStopping) {
+    if (this.hasNoNamespaces) {
       return { status: 403, body: ENGINE_IO_ERRORS.FORBIDDEN } as const;
     }
 
@@ -329,7 +338,7 @@ class SocketIOEngine {
   }
 
   // Sessions opened while the engine stops would outlive it, because nothing closes them.
-  get isStopping() {
+  private get hasNoNamespaces() {
     return this.protocols.size === 0;
   }
 
@@ -354,7 +363,7 @@ class SocketIOEngine {
     this.clear(protocol);
     this.protocols.delete(protocol.namespace);
 
-    if (!this.isStopping) {
+    if (!this.hasNoNamespaces) {
       return;
     }
 
@@ -363,8 +372,17 @@ class SocketIOEngine {
       this.closeSession(session);
     }
 
-    await Promise.allSettled([this.pollingStart]);
-    await this.options.polling?.stop();
+    this.pendingStop = this.stopPollingAndRemove();
+    await this.pendingStop;
+  }
+
+  private async stopPollingAndRemove() {
+    try {
+      await Promise.allSettled([this.pollingStart]);
+      await this.options.polling?.stop();
+    } finally {
+      engines.delete(getSocketIOEngineKey(this.interceptor));
+    }
   }
 
   // A session stays open until the last namespace using it lets it go.
@@ -525,7 +543,7 @@ class SocketIOEngine {
   }
 
   private openWebSocketSession(url: string, connection: WebSocketInterceptorProtocolConnection) {
-    if (this.isStopping) {
+    if (this.hasNoNamespaces) {
       connection.close();
       return IGNORED_CONNECTION_CLAIM;
     }
@@ -538,12 +556,6 @@ class SocketIOEngine {
       onClose: () => this.closeSession(session),
     } satisfies WebSocketInterceptorProtocolConnectionClaim;
   }
-}
-
-const engines = new Map<string, SocketIOEngine>();
-
-function getSocketIOEngineKey(interceptor: SocketIOEngineInterceptor) {
-  return `${interceptor.type}:${interceptor.baseURL}`;
 }
 
 function validatePollingInterceptor(
@@ -580,7 +592,7 @@ function validatePollingInterceptor(
   }
 }
 
-export function getOrCreateSocketIOEngine(interceptor: SocketIOEngineInterceptor, options: SocketIOEngineOptions) {
+function getOrCreateSocketIOEngine(interceptor: SocketIOEngineInterceptor, options: SocketIOEngineOptions) {
   const key = getSocketIOEngineKey(interceptor);
 
   let engine = engines.get(key);
@@ -594,8 +606,20 @@ export function getOrCreateSocketIOEngine(interceptor: SocketIOEngineInterceptor
   return engine;
 }
 
-export function deleteSocketIOEngine(interceptor: SocketIOEngineInterceptor) {
-  engines.delete(getSocketIOEngineKey(interceptor));
+export async function startSocketIOEngine(interceptor: SocketIOEngineInterceptor, protocol: AnySocketIOProtocol) {
+  const key = getSocketIOEngineKey(interceptor);
+
+  // A stopping engine still owns its polling interceptor, so a new engine is created only after it stops.
+  let stoppingEngine = engines.get(key);
+
+  while (stoppingEngine?.pendingStop) {
+    await Promise.allSettled([stoppingEngine.pendingStop]);
+    stoppingEngine = engines.get(key);
+  }
+
+  // The engine registers the namespace in the same step it is found, so no other namespace can stop it in between.
+  const engine = getOrCreateSocketIOEngine(interceptor, { polling: protocol.polling, parser: protocol.parser });
+  return { engine, engineStart: engine.start(protocol) };
 }
 
 export type { SocketIOEngine };

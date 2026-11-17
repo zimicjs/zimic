@@ -10,7 +10,7 @@ import type {
   WebSocketInterceptorProtocolOpenedClient,
 } from '../interceptor/types/protocol';
 import SharedSocketIOProtocolError from './errors/SharedSocketIOProtocolError';
-import { deleteSocketIOEngine, getOrCreateSocketIOEngine, SocketIOEngine } from './SocketIOEngine';
+import { SocketIOEngine, startSocketIOEngine } from './SocketIOEngine';
 import type { SocketIOMessage } from './types/messages';
 import type { SocketIOParser } from './types/options';
 import type { SocketIOPollingInterceptor } from './types/polling';
@@ -30,6 +30,8 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInte
   // Assigned on start, before the engine can open clients for this protocol.
   private context!: WebSocketInterceptorProtocolContext<Message>;
   private engine?: SocketIOEngine;
+  // Set from the start of `start` until `stop` completes, because the engine is assigned only after awaiting its lookup.
+  private isInUse = false;
 
   constructor(
     private options: { namespace: string; polling: SocketIOPollingInterceptor | undefined; parser: SocketIOParser },
@@ -48,18 +50,18 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInte
   }
 
   async start(context: WebSocketInterceptorProtocolContext<Message>) {
-    if (this.engine) {
+    if (this.isInUse) {
       throw new SharedSocketIOProtocolError();
     }
 
-    const engine = getOrCreateSocketIOEngine(context.interceptor, this.options);
+    this.isInUse = true;
     this.context = context;
 
-    // An engine that rejects the namespace synchronously does not register it, so it has nothing to undo.
-    const engineStart = engine.start(this);
-    this.engine = engine;
-
     try {
+      // An engine that rejects the namespace does not register it, so it has nothing to undo.
+      const { engine, engineStart } = await startSocketIOEngine(context.interceptor, this);
+      this.engine = engine;
+
       await engineStart;
     } catch (error) {
       await this.stop();
@@ -68,14 +70,12 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInte
   }
 
   async stop() {
-    const engineStop = this.engine?.stop(this);
-
-    if (this.engine?.isStopping) {
-      deleteSocketIOEngine(this.context.interceptor);
+    try {
+      await this.engine?.stop(this);
+    } finally {
+      this.engine = undefined;
+      this.isInUse = false;
     }
-
-    await engineStop;
-    this.engine = undefined;
   }
 
   clear() {
