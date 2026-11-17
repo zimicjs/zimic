@@ -107,6 +107,9 @@ export function declareValidationSocketIOProtocolTests(options: SharedSocketIOPr
   }
 
   describe('Outgoing messages', () => {
+    const circularMessage: { self?: unknown } = {};
+    circularMessage.self = circularMessage;
+
     it.each([
       {
         messageDescription: 'a string',
@@ -120,6 +123,20 @@ export function declareValidationSocketIOProtocolTests(options: SharedSocketIOPr
         message: { data: 1 },
         expectedError: new ValidationError(
           'Socket.IO messages must be objects with `type` or `ackId`, but received: {"data":1}.',
+        ),
+      },
+      {
+        messageDescription: 'an object with a nested bigint',
+        message: { data: 1n },
+        expectedError: new ValidationError(
+          'Socket.IO messages must be objects with `type` or `ackId`, but received: [object Object].',
+        ),
+      },
+      {
+        messageDescription: 'a circular object',
+        message: circularMessage,
+        expectedError: new ValidationError(
+          'Socket.IO messages must be objects with `type` or `ackId`, but received: [object Object].',
         ),
       },
       {

@@ -15,13 +15,18 @@ import type { SocketIOMessage } from './types/messages';
 
 const { PacketType } = defaultParser;
 
-// `JSON.stringify` prints only objects, because it throws for bigints and returns `undefined` for functions.
+// `JSON.stringify` returns `undefined` for functions and throws for bigints and circular references, so it prints only
+// objects it can serialize.
 function printInvalidMessage(message: unknown) {
-  if (message === null || typeof message !== 'object') {
-    return String(message);
+  if (message !== null && typeof message === 'object') {
+    try {
+      return JSON.stringify(message);
+    } catch {
+      // Falls back to `String`, as other values do.
+    }
   }
 
-  return JSON.stringify(message);
+  return String(message);
 }
 
 class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInterceptorProtocol<Message> {
