@@ -283,7 +283,7 @@ class SocketIOEngine {
     }
 
     if (packet.type === PacketType.CONNECT) {
-      this.connectNamespace(protocol, session);
+      this.receiveNamespaceConnect(protocol, session);
       return;
     }
 
@@ -293,10 +293,10 @@ class SocketIOEngine {
       return;
     }
 
-    // Parsers emit binary events as event packets once their attachments arrive.
     if (packet.type === PacketType.DISCONNECT) {
       this.releaseNamespace(protocol, session);
     } else if (packet.type === PacketType.EVENT) {
+      // Parsers emit binary events as event packets once their attachments arrive.
       protocol.receiveEventPacket(connection.client, packet);
     }
   }
@@ -344,8 +344,11 @@ class SocketIOEngine {
     clearInterval(session.pingTimer);
     session.transport.close();
 
-    for (const protocol of this.protocols.values()) {
-      this.releaseNamespace(protocol, session);
+    const connections = Array.from(session.connections.values());
+    session.connections.clear();
+
+    for (const connection of connections) {
+      connection.abortController.abort();
     }
   }
 
@@ -428,7 +431,7 @@ class SocketIOEngine {
     connection?.abortController.abort();
   }
 
-  private connectNamespace(protocol: AnySocketIOProtocol, session: SocketIOEngineSession) {
+  private receiveNamespaceConnect(protocol: AnySocketIOProtocol, session: SocketIOEngineSession) {
     if (session.connections.has(protocol.namespace)) {
       return;
     }
@@ -459,7 +462,7 @@ class SocketIOEngine {
       send: (message: SocketIOMessage) => this.sendSocketPacket(session, protocol.createMessagePacket(message)),
       close: () => this.disconnectNamespace(protocol, session),
       onOpen: (client: WebSocketInterceptorProtocolOpenedClient<SocketIOMessage>) => {
-        this.joinNamespace(protocol, session, { state: 'open', abortController, client });
+        this.acceptNamespaceConnection(protocol, session, { state: 'open', abortController, client });
       },
     });
 
@@ -473,10 +476,10 @@ class SocketIOEngine {
   }
 
   // An accepted client joins the session when its interceptor lists it, before connection effects run.
-  private joinNamespace(
+  private acceptNamespaceConnection(
     protocol: AnySocketIOProtocol,
     session: SocketIOEngineSession,
-    connection: SocketIONamespaceConnection,
+    connection: Extract<SocketIONamespaceConnection, { state: 'open' }>,
   ) {
     session.connections.set(protocol.namespace, connection);
     this.sendSocketPacket(session, {

@@ -10,10 +10,8 @@ import type {
   WebSocketInterceptorProtocolOpenedClient,
 } from '../interceptor/types/protocol';
 import SharedSocketIOProtocolError from './errors/SharedSocketIOProtocolError';
-import { SocketIOEngine, startSocketIOEngine } from './SocketIOEngine';
+import { SocketIOEngine, type SocketIOEngineOptions, startSocketIOEngine } from './SocketIOEngine';
 import type { SocketIOMessage } from './types/messages';
-import type { SocketIOParser } from './types/options';
-import type { SocketIOPollingInterceptor } from './types/polling';
 
 const { PacketType } = defaultParser;
 
@@ -33,9 +31,7 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInte
   // Set from the start of `start` until `stop` completes, because the engine is assigned only after awaiting its lookup.
   private isInUse = false;
 
-  constructor(
-    private options: { namespace: string; polling: SocketIOPollingInterceptor | undefined; parser: SocketIOParser },
-  ) {}
+  constructor(private options: SocketIOEngineOptions & { namespace: string }) {}
 
   get namespace() {
     return this.options.namespace;

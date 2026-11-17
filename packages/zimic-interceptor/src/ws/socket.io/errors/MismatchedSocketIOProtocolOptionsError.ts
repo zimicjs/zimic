@@ -1,4 +1,4 @@
-import type { SocketIOProtocolOptions } from '../types/options';
+import type { SocketIOEngineOptions } from '../SocketIOEngine';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -7,7 +7,7 @@ import type { SocketIOProtocolOptions } from '../types/options';
  * they share.
  */
 class MismatchedSocketIOProtocolOptionsError extends Error {
-  constructor(optionName: keyof SocketIOProtocolOptions, baseURL: string) {
+  constructor(optionName: keyof SocketIOEngineOptions, baseURL: string) {
     super(`The Socket.IO protocols of the namespaces of ${baseURL} must use the same \`${optionName}\` option.`);
     this.name = 'MismatchedSocketIOProtocolOptionsError';
   }
