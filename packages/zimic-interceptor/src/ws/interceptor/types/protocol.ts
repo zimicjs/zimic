@@ -1,7 +1,5 @@
 import type { PossiblePromise } from '@zimic/utils/types';
-import type { WebSocketSchema } from '@zimic/ws';
 
-import type { WebSocketInterceptorClient } from './messages';
 import type { WebSocketInterceptorType } from './options';
 
 /**
@@ -10,21 +8,6 @@ import type { WebSocketInterceptorType } from './options';
  * A raw WebSocket frame handled by a {@link WebSocketInterceptorProtocol}.
  */
 export type WebSocketInterceptorProtocolFrame = string | ArrayBuffer;
-
-/**
- * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
- *
- * A client connected to an interceptor, as seen by its {@link WebSocketInterceptorProtocol}.
- *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#protocol-option `protocol` option}
- */
-export interface WebSocketInterceptorProtocolClient<
-  Schema extends WebSocketSchema = WebSocketSchema,
-  Path extends string = string,
-> extends WebSocketInterceptorClient<Schema, Path> {
-  /** Sends a raw frame to this client, without encoding it with the protocol. */
-  sendFrame: (frame: WebSocketInterceptorProtocolFrame) => void;
-}
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -151,21 +134,11 @@ export interface WebSocketInterceptorProtocolContext<Message> {
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-protocols#protocol-option `protocol` option}
  */
 export interface WebSocketInterceptorProtocol<Message> {
-  /** Called when a client connects, before connection effects run. */
-  onConnection?: (client: WebSocketInterceptorProtocolClient) => void;
-
-  /**
-   * Decodes a received frame into messages, which handlers match, save, and count. A frame decoded to an empty array is
-   * a control frame consumed by the protocol, which is never reported as unhandled. Without it, handlers receive frames
-   * as messages, as without a protocol.
-   */
-  decode?: (frame: WebSocketInterceptorProtocolFrame, client: WebSocketInterceptorProtocolClient) => Message[];
-
   /**
    * Encodes a message sent by a handler, `client.send`, or `server.send` into the frames to send to the client. Without
    * it, messages are sent as without a protocol.
    */
-  encode?: (message: Message, client: WebSocketInterceptorProtocolClient) => WebSocketInterceptorProtocolFrame[];
+  encode?: (message: Message) => WebSocketInterceptorProtocolFrame[];
 
   /**
    * Called when the interceptor starts, before connections reach it. On an error, the interceptor calls

@@ -50,11 +50,6 @@ interface WebSocketConnectionHolder {
   client: InternalWebSocketInterceptorClient;
 }
 
-interface WebSocketFrameDecoder {
-  holder: WebSocketConnectionHolder;
-  decode: (frame: WebSocketInterceptorProtocolFrame) => unknown[];
-}
-
 interface RegisteredWebSocketConnectionHolder {
   registeredInterceptor: { interceptor: AnyWebSocketInterceptorImplementation };
   client: WebSocketInterceptorClient;
@@ -365,20 +360,6 @@ abstract class WebSocketInterceptorWorker {
     }
   }
 
-  // The protocol of an interceptor sees each client once the interceptor lists it, before connection effects run.
-  protected addClientToInterceptor(
-    interceptor: AnyWebSocketInterceptorImplementation,
-    client: InternalWebSocketInterceptorClient,
-  ) {
-    interceptor.addClient(client);
-
-    try {
-      interceptor.protocol?.onConnection?.(client);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
   // A claimed connection has a single holder, the newest holder whose protocol claims it, as the newest handler takes
   // precedence. Other holders do not receive it, and the connection handlers do not decide it. Holders are ordered from
   // oldest to newest. Claims run protocol code that no caller awaits, so their errors are logged.
@@ -423,37 +404,7 @@ abstract class WebSocketInterceptorWorker {
     return holders.filter(({ interceptor }) => interceptor.protocol?.claimConnection === undefined);
   }
 
-  // A protocol decides what each frame means to its interceptor, as interceptors may decode different messages from one
-  // frame. So, unlike holders without a decoding protocol, whose messages are tried together, each decoding holder
-  // handles what it decodes.
-  protected splitHoldersByDecoding(holders: WebSocketConnectionHolder[]) {
-    const plainHolders: WebSocketConnectionHolder[] = [];
-    const frameDecoders: WebSocketFrameDecoder[] = [];
-
-    for (const holder of holders) {
-      const { protocol } = holder.interceptor;
-      const decode = protocol?.decode;
-
-      if (decode) {
-        frameDecoders.push({ holder, decode: (frame) => decode.call(protocol, frame, holder.client) });
-      } else {
-        plainHolders.push(holder);
-      }
-    }
-
-    return { plainHolders, frameDecoders };
-  }
-
   protected async handleFrameWithHandlers(
-    frame: WebSocketInterceptorProtocolFrame,
-    holders: WebSocketConnectionHolder[],
-  ) {
-    const { plainHolders, frameDecoders } = this.splitHoldersByDecoding(holders);
-
-    await Promise.all([this.decodeFrame(frame, frameDecoders), this.handlePlainFrame(frame, plainHolders)]);
-  }
-
-  protected async handlePlainFrame(
     frame: WebSocketMessageData<WebSocketMessageSchema>,
     holders: WebSocketConnectionHolder[],
   ) {
@@ -463,28 +414,6 @@ abstract class WebSocketInterceptorWorker {
 
     const message = await normalizeWebSocketMessageData<WebSocketMessageSchema>(frame);
     await this.handleMessageWithHandlers(message, holders);
-  }
-
-  // Frames are decoded synchronously, in the order they are received, because protocols may keep decoding state between
-  // frames, as with Socket.IO binary attachments.
-  protected decodeFrame(frame: WebSocketInterceptorProtocolFrame, frameDecoders: WebSocketFrameDecoder[]) {
-    const handlings: Promise<void>[] = [];
-
-    for (const { holder, decode } of frameDecoders) {
-      try {
-        handlings.push(this.handleDecodedMessages(holder, decode(frame)));
-      } catch (error) {
-        console.error(error);
-      }
-    }
-
-    return Promise.all(handlings);
-  }
-
-  private async handleDecodedMessages(holder: WebSocketConnectionHolder, messages: unknown[]) {
-    for (const message of messages) {
-      await this.handleDecodedMessage(holder.interceptor, holder.client, message);
-    }
   }
 
   // Decoded messages reach handlers unchanged, because the protocol already decided what each message is.

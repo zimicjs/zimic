@@ -64,7 +64,6 @@ export type {
 
 export type {
   WebSocketInterceptorProtocol,
-  WebSocketInterceptorProtocolClient,
   WebSocketInterceptorProtocolClientOptions,
   WebSocketInterceptorProtocolConnection,
   WebSocketInterceptorProtocolConnectionClaim,

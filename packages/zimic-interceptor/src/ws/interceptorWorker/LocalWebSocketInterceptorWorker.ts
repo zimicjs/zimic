@@ -52,9 +52,6 @@ interface LocalWebSocketConnectionQueues {
   // Converting a `Blob` to the binary type of the client is asynchronous, so server messages and closes run in order
   // through this chain.
   deliveries: Promise<void>;
-  // Reading a `Blob` frame takes longer than reading a later text frame, and protocols may keep decoding state between
-  // frames, so frames are read in order before they are decoded.
-  frameReadings: Promise<void>;
 }
 
 interface WebSocketClientRegistration extends LocalWebSocketConnectionQueues {
@@ -355,11 +352,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
   // The protocol closes a claimed connection, so it stays open after its holders let it go.
   private claimConnection(connection: LocalWebSocketClientConnection, holders: RegisteredWebSocketInterceptor[]) {
-    const queues: LocalWebSocketConnectionQueues = {
-      connection,
-      deliveries: Promise.resolve(),
-      frameReadings: Promise.resolve(),
-    };
+    const queues: LocalWebSocketConnectionQueues = { connection, deliveries: Promise.resolve() };
 
     const claim = this.claimConnectionWithProtocols(
       {
@@ -374,12 +367,16 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       return false;
     }
 
+    // Reading a `Blob` frame takes longer than reading a later text frame, and protocols may keep decoding state between
+    // frames, so frames are read in order before they reach the claim.
+    let frameReadings = Promise.resolve();
+
     connection.addEventListener('message', (event) => {
       event.preventDefault();
 
       const data = event.data as WebSocketMessageData<WebSocketMessageSchema>;
 
-      queues.frameReadings = queues.frameReadings.then(async () => {
+      frameReadings = frameReadings.then(async () => {
         claim.onFrame(await convertWebSocketMessageDataToBinaryType(data, 'arraybuffer'));
       });
     });
@@ -388,7 +385,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     connection.addEventListener(
       'close',
       () => {
-        queues.frameReadings = queues.frameReadings.then(() => claim.onClose());
+        frameReadings = frameReadings.then(() => claim.onClose());
       },
       { once: true },
     );
@@ -460,12 +457,11 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
         this.removeConnectionFromHolders(registration);
       },
       deliveries: Promise.resolve(),
-      frameReadings: Promise.resolve(),
     };
 
     for (const { registeredInterceptor, client } of registration.holders) {
       registeredInterceptor.clients.set(client, registration);
-      this.addClientToInterceptor(registeredInterceptor.interceptor, client);
+      registeredInterceptor.interceptor.addClient(client);
     }
 
     connection.addEventListener('message', registration.messageListener);
@@ -491,16 +487,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       client,
     }));
 
-    const { plainHolders, frameDecoders } = this.splitHoldersByDecoding(holders);
-
-    void this.handlePlainFrame(data, plainHolders);
-
-    if (frameDecoders.length > 0) {
-      registration.frameReadings = registration.frameReadings.then(async () => {
-        const frame = await convertWebSocketMessageDataToBinaryType(data, 'arraybuffer');
-        void this.decodeFrame(frame, frameDecoders);
-      });
-    }
+    void this.handleFrameWithHandlers(data, holders);
   }
 
   private removeConnectionFromHolders(registration: WebSocketClientRegistration) {

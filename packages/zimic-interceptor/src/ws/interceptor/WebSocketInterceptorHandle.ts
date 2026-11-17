@@ -4,19 +4,16 @@ import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema, WebSocke
 import { serializeWebSocketMessageDataForSocket } from '../utils/messageData';
 import type {
   InterceptedWebSocketInterceptorMessage,
+  WebSocketInterceptorClient,
   WebSocketInterceptorServer,
   WebSocketInterceptorServerSendOptions,
 } from './types/messages';
-import type {
-  WebSocketInterceptorProtocol,
-  WebSocketInterceptorProtocolClient,
-  WebSocketInterceptorProtocolFrame,
-} from './types/protocol';
+import type { WebSocketInterceptorProtocol } from './types/protocol';
 
 export interface InternalWebSocketInterceptorClient<
   Schema extends WebSocketSchema = WebSocketSchema,
   Path extends string = string,
-> extends WebSocketInterceptorProtocolClient<Schema, Path> {
+> extends WebSocketInterceptorClient<Schema, Path> {
   messages: InterceptedWebSocketInterceptorMessage<Schema, Path>[];
 }
 
@@ -71,16 +68,12 @@ class WebSocketInterceptorClientImplementation implements InternalWebSocketInter
 
   send(data: WebSocketMessageSchema | WebSocketMessageData<WebSocketMessageSchema>) {
     if (this.#protocol?.encode) {
-      for (const frame of this.#protocol.encode(data, this)) {
-        this.sendFrame(frame);
+      for (const frame of this.#protocol.encode(data)) {
+        this.#sendMessage(frame);
       }
     } else {
       this.#sendMessage(serializeWebSocketMessageDataForSocket<WebSocketMessageSchema>(data));
     }
-  }
-
-  sendFrame(frame: WebSocketInterceptorProtocolFrame) {
-    this.#sendMessage(frame);
   }
 
   close(rawCode?: number, reason?: string) {

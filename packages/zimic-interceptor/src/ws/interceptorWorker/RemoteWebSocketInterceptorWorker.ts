@@ -288,7 +288,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
       // The registry is intentionally schema-erased because one remote worker registers interceptors for any schema.
       registeredInterceptor.clients.set(connection.clientId, client);
-      this.addClientToInterceptor(registeredInterceptor.interceptor, client);
+      registeredInterceptor.interceptor.addClient(client);
       holders.push({ registeredInterceptor, client });
     }
 

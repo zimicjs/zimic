@@ -107,7 +107,6 @@ import {
   type WebSocketInterceptorServer,
   type WebSocketInterceptorServerSendOptions,
   type WebSocketInterceptorProtocol,
-  type WebSocketInterceptorProtocolClient,
   type WebSocketInterceptorProtocolClientOptions,
   type WebSocketInterceptorProtocolConnection,
   type WebSocketInterceptorProtocolConnectionClaim,
@@ -562,7 +561,6 @@ describe('Exports', () => {
       expectTypeOf<WebSocketInterceptorServer<never>>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorServerSendOptions<never>>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorProtocol<never>>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorProtocolClient>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorProtocolClientOptions<never>>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorProtocolConnection>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorProtocolConnectionClaim>().not.toBeAny();
