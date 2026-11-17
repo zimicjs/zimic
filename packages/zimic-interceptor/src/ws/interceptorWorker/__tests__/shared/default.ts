@@ -581,7 +581,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
 
           const closeEvent = await closeEventPromise;
           expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-          expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
+          expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
         } finally {
           await client.close();
         }

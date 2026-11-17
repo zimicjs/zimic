@@ -84,7 +84,8 @@ export interface WebSocketInterceptorProtocol<Message> {
   // Called for each WebSocket connection to the interceptor. The newest interceptor whose protocol returns a claim holds
   // the connection, receiving its frames and close through the claim instead of the connection handlers. An interceptor
   // with a protocol does not hold the connections its protocol does not claim, which go to the interceptors without a
-  // protocol. The protocol closes the connections it claims, including when it stops, because the interceptor never
+  // protocol. In remote mode, such a connection without another holder closes as if no interceptor were registered,
+  // because the interceptor server is its endpoint. The protocol closes the connections it claims, including when it stops, because the interceptor never
   // closes them. Errors are logged.
   claimConnection: (
     connection: WebSocketInterceptorProtocolConnection,

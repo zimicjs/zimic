@@ -1,9 +1,17 @@
 import type { HttpSchema } from '@zimic/http';
+import { waitFor } from '@zimic/utils/time';
+import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
 import type { WebSocketSchema } from '@zimic/ws';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { usingHttpInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 import { usingSocket, waitForSocketConnection } from '@tests/utils/socketIO';
+import {
+  usingWebSocketClient,
+  waitForWebSocketClientClose,
+  waitForWebSocketClientMessage,
+} from '@tests/utils/webSocket';
 
 import { createSocketIOProtocol } from '../../factory';
 import type { SocketIOProtocolOptions } from '../../types/options';
@@ -91,21 +99,59 @@ export function declareRoutingSocketIOProtocolTests(options: SharedSocketIOProto
 
       await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
         await usingWebSocketInterceptor<PlainSchema>({ type, baseURL: chatBaseURL }, async (chatInterceptor) => {
-          const socket = new WebSocket(chatBaseURL);
+          await promiseIfRemote(chatInterceptor.message().respond('pong'), chatInterceptor);
 
-          try {
-            await new Promise<void>((resolve) => {
-              socket.addEventListener('open', () => resolve(), { once: true });
-            });
+          await usingWebSocketClient<PlainSchema, '/'>(chatBaseURL, async (client) => {
+            const messagePromise = waitForWebSocketClientMessage(client);
+            client.send('ping');
+            await expect(messagePromise).resolves.toBe('pong');
 
             expect(chatInterceptor.clients).toHaveLength(1);
+            expect(interceptor.clients).toHaveLength(0);
+          });
+        });
+      });
+    });
+
+    it('should close connections to other paths under the base URL when their interceptor is cleared', async () => {
+      const chatBaseURL = `${baseURL}/chat`;
+
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async () => {
+        await usingWebSocketInterceptor<PlainSchema>({ type, baseURL: chatBaseURL }, async (chatInterceptor) => {
+          await usingWebSocketClient<PlainSchema, '/'>(chatBaseURL, async (client) => {
+            await waitFor(() => expect(chatInterceptor.clients).toHaveLength(1));
+
+            const closeEventPromise = waitForWebSocketClientClose(client);
+            await promiseIfRemote(chatInterceptor.clear(), chatInterceptor);
+
+            const closeEvent = await closeEventPromise;
+            expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
+          });
+        });
+      });
+    });
+
+    // Local interceptors let these connections pass through to the network, but the interceptor server is the endpoint
+    // of remote connections.
+    if (type === 'remote') {
+      it('should close connections to other paths under the base URL without other interceptors', async () => {
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+          const socket = new WebSocket(`${baseURL}/chat`);
+
+          try {
+            const closeEvent = await new Promise<CloseEvent>((resolve) => {
+              socket.addEventListener('close', resolve, { once: true });
+            });
+
+            expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
+            expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
             expect(interceptor.clients).toHaveLength(0);
           } finally {
             socket.close();
           }
         });
       });
-    });
+    }
   });
 
   describe('HTTP requests outside the Socket.IO path', () => {

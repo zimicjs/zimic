@@ -1938,48 +1938,6 @@ describe('Interceptor server', () => {
         });
       });
 
-      it('should close client connections when the worker accepts the connection for none of its interceptors', async () => {
-        server = createInternalInterceptorServer();
-        await server.start();
-
-        const baseURL = `ws://${server.hostname}:${server.port}/chat`;
-
-        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
-          url: `ws://${server.hostname}:${server.port}`,
-        });
-        worker.onChannel('event', 'interceptors/ws/clients/connect', () => ({
-          action: 'accept',
-          acceptedInterceptorIds: [],
-        }));
-
-        const client = new WebSocketClient<ChatSchema>(baseURL);
-
-        try {
-          await worker.start({
-            parameters: {
-              [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
-              [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
-            },
-            waitForAuthentication: true,
-          });
-
-          await worker.request('interceptors/ws/workers/reset', {
-            interceptors: [{ id: crypto.randomUUID(), baseURL }],
-          });
-
-          const closeEventPromise = waitForWebSocketClientClose(client);
-
-          await client.open();
-
-          const closeEvent = await closeEventPromise;
-          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-          expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
-        } finally {
-          await client.close();
-          await worker.stop();
-        }
-      });
-
       it('should not confirm client connections with replies from other workers', async () => {
         server = createInternalInterceptorServer();
         await server.start();

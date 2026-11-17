@@ -111,6 +111,11 @@ const CONNECTION_SETUP_FAILURE_CLOSURE: UserWebSocketConnectionClosure = Object.
   reason: WEB_SOCKET_CLOSE_REASONS.CONNECTION_SETUP_FAILED,
 });
 
+const NO_REGISTERED_INTERCEPTOR_CLOSURE: UserWebSocketConnectionClosure = Object.freeze({
+  code: WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR,
+  reason: WEB_SOCKET_CLOSE_REASONS.NO_REGISTERED_INTERCEPTOR,
+});
+
 interface WebSocketInterceptorServerRuntimeOptions {
   webSocketServer: WebSocketServer<InterceptorServerWebSocketSchema>;
   isWebSocketWorkerSocket: (socket: Socket) => boolean;
@@ -200,7 +205,8 @@ class WebSocketInterceptorServerRuntime {
     this.webSocketWorkersBySocket.delete(socket);
   }
 
-  // A claimed connection leaves the pending ones in the same task as its claim reply, before a worker can disconnect.
+  // Only active connections need scanning, because a claimed connection becomes active in the same task as its claim
+  // reply, before its worker can disconnect.
   private closeClaimedConnections(workerSocket: Socket) {
     for (const [userSocket, userConnection] of this.activeUserWebSocketConnections) {
       if (userConnection.isClaimedByProtocol && userConnection.workerSocket === workerSocket) {
@@ -302,11 +308,12 @@ class WebSocketInterceptorServerRuntime {
       if (reply.action === 'claim') {
         connection.isClaimedByProtocol = true;
       } else {
-        // Holders that let the connection go while it was being set up were already dropped.
-        const accepted = connection.holders.every((holder) => reply.acceptedInterceptorIds.includes(holder.id));
+        connection.holders = connection.holders.filter((holder) => reply.acceptedInterceptorIds.includes(holder.id));
 
-        if (!accepted) {
-          connection.closure ??= CONNECTION_SETUP_FAILURE_CLOSURE;
+        // Local interceptors let connections that no holder accepts pass through to the network, but the interceptor
+        // server is the endpoint of remote connections, so it closes them as if no interceptor were registered.
+        if (connection.holders.length === 0) {
+          connection.closure ??= NO_REGISTERED_INTERCEPTOR_CLOSURE;
         }
       }
     } catch (error) {
@@ -327,7 +334,7 @@ class WebSocketInterceptorServerRuntime {
 
     if (!connection) {
       socket.resume();
-      socket.close(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR, WEB_SOCKET_CLOSE_REASONS.NO_REGISTERED_INTERCEPTOR);
+      socket.close(NO_REGISTERED_INTERCEPTOR_CLOSURE.code, NO_REGISTERED_INTERCEPTOR_CLOSURE.reason);
       return;
     }
 
