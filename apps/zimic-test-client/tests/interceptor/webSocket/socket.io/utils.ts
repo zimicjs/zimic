@@ -93,11 +93,8 @@ export function createSocketIOTestSocket<Schema extends WebSocketSchema>(url: st
     },
 
     send(message) {
-      if (typeof message !== 'string') {
-        throw new TypeError('Socket.IO test sockets send JSON messages only.');
-      }
-
-      const { type, data } = JSON.parse(message) as { type: string; data: unknown };
+      // The shared cases send only JSON text through interceptor protocols, which cannot express binary frames.
+      const { type, data } = JSON.parse(message as string) as { type: string; data: unknown };
       socket.emit(type, data);
     },
 

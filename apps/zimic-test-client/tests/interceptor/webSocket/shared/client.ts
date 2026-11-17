@@ -46,28 +46,13 @@ export interface ClientTestWebSocket<Schema extends WebSocketSchema> {
 
 interface OpeningClientTestWebSocket {
   addEventListener: (type: 'open' | 'error', listener: ClientTestWebSocketLifecycleListener) => void;
-  removeEventListener: (type: 'open' | 'error', listener: ClientTestWebSocketLifecycleListener) => void;
 }
 
+// The listeners stay registered, because a socket emits only one of these events while opening.
 export async function waitForClientTestWebSocketOpen(socket: OpeningClientTestWebSocket) {
-  await new Promise<void>((resolve, reject) => {
-    function removeListeners() {
-      socket.removeEventListener('open', handleOpen); // eslint-disable-line @typescript-eslint/no-use-before-define
-      socket.removeEventListener('error', handleError); // eslint-disable-line @typescript-eslint/no-use-before-define
-    }
-
-    function handleOpen() {
-      removeListeners();
-      resolve();
-    }
-
-    function handleError(error: unknown) {
-      removeListeners();
-      reject(error);
-    }
-
-    socket.addEventListener('open', handleOpen);
-    socket.addEventListener('error', handleError);
+  await new Promise((resolve, reject) => {
+    socket.addEventListener('open', resolve);
+    socket.addEventListener('error', reject);
   });
 }
 
