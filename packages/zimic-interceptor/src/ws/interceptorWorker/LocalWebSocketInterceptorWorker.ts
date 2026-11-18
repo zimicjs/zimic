@@ -357,13 +357,14 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     const claim = this.claimConnectionWithProtocols(
       {
         url: connection.url.href,
-        send: (frame) => this.deliverMessage(queues, frame),
+        send: this.deliverMessage.bind(this, queues),
         close: (code, reason) => this.closeConnection(queues, code, reason),
       },
       holders,
     );
 
-    // Local Socket.IO interceptors close the WebSockets they claim, so their frames and close are not read.
+    // Local Socket.IO interceptors serve polling only and close the WebSockets they claim without sending to them, so
+    // their frames and close are not read.
     return claim !== undefined;
   }
 
