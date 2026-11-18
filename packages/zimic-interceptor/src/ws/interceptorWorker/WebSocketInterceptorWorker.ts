@@ -386,10 +386,6 @@ abstract class WebSocketInterceptorWorker {
     rawMessage: WebSocketMessageData<WebSocketMessageSchema>,
     holders: WebSocketConnectionHolder[],
   ) {
-    if (holders.length === 0) {
-      return;
-    }
-
     const message = await normalizeWebSocketMessageData<WebSocketMessageSchema>(rawMessage);
     await this.handleMessageWithHandlers(message, holders);
   }
