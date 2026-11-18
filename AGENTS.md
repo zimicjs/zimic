@@ -35,6 +35,7 @@ These rules apply to packages intended for direct external use.
 - Many packages are expected to work in both Node and browser environments. Keep changes runtime-safe unless the target code is clearly environment-specific.
 - Match the test dimensions already used by the target package.
 - Do not weaken coverage expectations for core packages.
+- Coverage thresholds also count test files. A line in a test that a passing run never reaches fails the 100% threshold.
 
 ## Implementation conventions
 
