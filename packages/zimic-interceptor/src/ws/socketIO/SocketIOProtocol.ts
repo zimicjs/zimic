@@ -19,8 +19,8 @@ function printInvalidMessage(message: object) {
   try {
     return JSON.stringify(message);
   } catch {
-    // `JSON.stringify` throws for bigints and circular references.
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string -- The default format is the fallback.
+    // If `JSON.stringify` fails, we render the message as a string anyway.
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     return String(message);
   }
 }

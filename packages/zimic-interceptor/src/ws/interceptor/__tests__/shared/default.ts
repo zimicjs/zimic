@@ -111,9 +111,7 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
     });
   });
 
-  const invalidProtocols = createInvalidTypeOfCases('object', { optional: true });
-
-  it.each(invalidProtocols)(
+  it.each(createInvalidTypeOfCases('object', { optional: true }))(
     'should throw an error if provided a protocol that is not an object ($label)',
     async ({ value, actualType }) => {
       const handler = vi.fn();
