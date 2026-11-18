@@ -367,12 +367,15 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
           expect(interceptor.clients).toHaveLength(1);
         });
 
-        interceptor.server.send(new Blob([createBinaryMessage(0x00, 0xff)]));
-        interceptor.clients[0].send('text');
+        await usingIgnoredConsole(['error'], async (console) => {
+          interceptor.server.send(new Blob([createBinaryMessage(0x00, 0xff)]));
+          interceptor.clients[0].send('text');
 
-        await interceptor.stop();
+          await interceptor.stop();
 
-        expect(interceptor.isRunning).toBe(false);
+          expect(interceptor.isRunning).toBe(false);
+          expect(console.error).not.toHaveBeenCalled();
+        });
       });
     });
   });

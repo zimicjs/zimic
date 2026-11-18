@@ -109,6 +109,9 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       this.webSocketClient.offChannel('event', 'interceptors/ws/clients/close', this.removeClosedClient);
       this.webSocketClient.offChannel('event', 'interceptors/ws/messages/handle', this.handleMessage);
 
+      // Queued sends and closes need the worker socket, so they finish before it stops.
+      await this.sendQueue;
+
       // Stopped interceptors already reset their registrations, so a reset is only needed for ones still registered.
       if (this.registeredInterceptors.size > 0) {
         await this.clearHandlers();
