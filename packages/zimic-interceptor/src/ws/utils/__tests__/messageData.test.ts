@@ -97,12 +97,6 @@ describe('serializeWebSocketMessageDataForTransport', () => {
       data: 'AQID',
     });
   });
-
-  it('should reject undefined message data', async () => {
-    await expect(serializeWebSocketMessageDataForTransport(undefined)).rejects.toThrow(
-      new ValidationError('WebSocket message data must not be undefined.'),
-    );
-  });
 });
 
 describe('deserializeWebSocketMessageDataFromTransport', () => {

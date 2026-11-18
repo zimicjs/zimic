@@ -46,12 +46,15 @@ async function resolveRelativeImport(importerPath: string, specifier: string) {
   }
 
   // Declarations reference sibling declarations by their JavaScript path, without an extension, or by their directory.
-  const isDirectory = await fs.promises.stat(importPath).then(
-    (stats) => stats.isDirectory(),
+  // As in TypeScript, a declaration file takes precedence over a directory of the same name.
+  const declarationPath = importPath.replace(/(\.js)?$/, '.d.ts');
+
+  const isDeclarationFile = await fs.promises.stat(declarationPath).then(
+    (stats) => stats.isFile(),
     () => false,
   );
 
-  return isDirectory ? path.join(importPath, 'index.d.ts') : importPath.replace(/(\.js)?$/, '.d.ts');
+  return isDeclarationFile ? declarationPath : path.join(importPath, 'index.d.ts');
 }
 
 async function getReachablePackageImports(entryPath: string) {
@@ -95,6 +98,10 @@ const peerPackageNamesByEntryFile: Record<string, PeerPackageName[]> = {
   'experimental/ws.d.ts': ['@zimic/ws'],
   'dist/experimental/ws.js': [],
   'dist/experimental/ws.mjs': [],
+
+  'experimental/ws/socket.io.d.ts': ['@zimic/ws', 'socket.io-parser'],
+  'dist/experimental/ws/socket.io.js': ['engine.io-parser', 'socket.io-parser'],
+  'dist/experimental/ws/socket.io.mjs': ['engine.io-parser', 'socket.io-parser'],
 
   'server.d.ts': [],
   'dist/server.js': [],

@@ -1,7 +1,7 @@
 import { HttpSearchParams } from '@zimic/utils/http';
 import { PossiblePromise } from '@zimic/utils/types';
 import { createRegexFromPath, validatePathParams } from '@zimic/utils/url';
-import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
+import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema } from '@zimic/ws';
 
 import { removeArrayElement } from '@/utils/arrays';
 import { isClientSide } from '@/utils/environment';
@@ -18,7 +18,16 @@ import {
   WebSocketInterceptorConnectionRequest,
 } from '../interceptor/types/messages';
 import { WebSocketInterceptorPlatform } from '../interceptor/types/options';
-import { InternalWebSocketInterceptorClient } from '../interceptor/WebSocketInterceptorHandle';
+import type {
+  WebSocketInterceptorProtocolClientOptions,
+  WebSocketInterceptorProtocolConnection,
+  WebSocketInterceptorProtocolConnectionClaim,
+  WebSocketInterceptorProtocolOpenClientResult,
+} from '../interceptor/types/protocol';
+import {
+  createWebSocketInterceptorClient,
+  InternalWebSocketInterceptorClient,
+} from '../interceptor/WebSocketInterceptorHandle';
 import WebSocketInterceptorImplementation, {
   AnyWebSocketInterceptorImplementation,
 } from '../interceptor/WebSocketInterceptorImplementation';
@@ -85,6 +94,11 @@ abstract class WebSocketInterceptorWorker {
   private runningInterceptors: AnyWebSocketInterceptorImplementation[] = [];
   private messageHandlers: WebSocketMessageHandler[] = [];
   private connectionHandlers: WebSocketConnectionHandler[] = [];
+
+  // Clients whose holders let the connection go. A client that closes leaves its interceptors without being released,
+  // because a real server still receives the messages sent before the close.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private releasedClients = new WeakSet<InternalWebSocketInterceptorClient<any>>();
 
   abstract start(): Promise<void>;
 
@@ -339,13 +353,111 @@ abstract class WebSocketInterceptorWorker {
     }
   }
 
+  // A protocol owns the framing of the connections it claims, so it takes them alone, before interceptors without
+  // protocols, which could not serve its frames. Among protocols, the newest claiming holder takes the connection, as
+  // the newest handler takes precedence. Interceptors without protocols share the connections no protocol claims, and a
+  // protocol serves only the connections it claims. The protocol closes a claimed connection, so it stays open after its
+  // holders let it go. No caller awaits claims, so their errors are logged.
+  protected routeConnectionToHolders<Holder extends { interceptor: AnyWebSocketInterceptorImplementation }>(
+    connection: WebSocketInterceptorProtocolConnection,
+    holders: Holder[],
+  ): { claim: WebSocketInterceptorProtocolConnectionClaim } | { claim?: undefined; holders: Holder[] } {
+    for (const { interceptor } of holders.toReversed()) {
+      try {
+        const claim = interceptor.protocol?.claimConnection(connection);
+
+        if (claim) {
+          return { claim };
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    return { holders: holders.filter(({ interceptor }) => interceptor.protocol === undefined) };
+  }
+
+  protected async handleRawMessageWithHandlers(
+    rawMessage: WebSocketMessageData<WebSocketMessageSchema>,
+    holders: WebSocketConnectionHolder[],
+  ) {
+    const message = await normalizeWebSocketMessageData<WebSocketMessageSchema>(rawMessage);
+    await this.handleMessageWithHandlers(message, holders);
+  }
+
+  // Protocols decode messages, so they skip frame normalization.
+  private async handleDecodedMessage(
+    interceptor: AnyWebSocketInterceptorImplementation,
+    client: InternalWebSocketInterceptorClient,
+    message: unknown,
+  ) {
+    const holders = [{ interceptor, client }];
+    await this.handleMessageWithHandlers(message as ReceivedWebSocketMessageData<WebSocketMessageSchema>, holders);
+  }
+
+  // As with a pending WebSocket connection, an interceptor that lets the client go while it is decided does not list it.
+  async openProtocolClient<Message>(
+    interceptor: AnyWebSocketInterceptorImplementation,
+    options: WebSocketInterceptorProtocolClientOptions<Message>,
+  ): Promise<WebSocketInterceptorProtocolOpenClientResult> {
+    function isHolding(candidate: AnyWebSocketInterceptorImplementation) {
+      return candidate === interceptor && !options.signal.aborted;
+    }
+
+    const handling = await this.handleConnectionWithHandlers({ url: options.url, protocols: [] }, isHolding);
+
+    if (!isHolding(interceptor)) {
+      return 'aborted';
+    }
+
+    if (handling.action === 'reject') {
+      return 'rejected';
+    }
+
+    // A client retained after its interceptor lets it go does nothing, as with WebSocket connection clients.
+    const client = createWebSocketInterceptorClient({
+      url: options.url,
+      protocols: [],
+      send: (message) => {
+        if (interceptor.clients.includes(client)) {
+          // Clients are schema-erased and user code may bypass types, so protocols validate what they send.
+          options.send(message as Message);
+        }
+      },
+      close: (code, reason) => {
+        if (interceptor.clients.includes(client)) {
+          options.close(code, reason);
+        }
+      },
+    });
+
+    interceptor.addClient(client);
+
+    options.signal.addEventListener(
+      'abort',
+      () => {
+        this.releaseClient(interceptor, client);
+      },
+      { once: true },
+    );
+
+    options.onOpen({
+      receive: (message) => {
+        void this.handleDecodedMessage(interceptor, client, message);
+      },
+    });
+
+    await this.applyConnectionEffect(handling, [{ registeredInterceptor: { interceptor }, client }]);
+
+    return 'accepted';
+  }
+
   // The handlers of all interceptors holding the connection are tried together, from the last created to the first, so
   // a newer handler wins regardless of the start order of its interceptor. Holders are ordered from oldest to newest.
   protected async handleMessageWithHandlers(
-    data: WebSocketMessageData<WebSocketMessageSchema>,
+    message: ReceivedWebSocketMessageData<WebSocketMessageSchema>,
     holders: WebSocketConnectionHolder[],
   ) {
-    const message = await normalizeWebSocketMessageData<WebSocketMessageSchema>(data);
     const failedMessageMatches: FailedWebSocketMessageMatch[] = [];
 
     // Handlers can be added or cleared while a message is handled, so the message is matched against a copy.
@@ -370,7 +482,7 @@ abstract class WebSocketInterceptorWorker {
         // A holder that let the connection go while its handler was matching the message does not handle it. As with
         // an HTTP handler cleared while matching a request, older handlers are not tried, whatever the match result.
         if (!this.isHoldingConnection(holder)) {
-          await this.logUnhandledMessageIfNecessary(data, holders);
+          await this.logUnhandledMessageIfNecessary(message, holders);
           return;
         }
 
@@ -389,7 +501,7 @@ abstract class WebSocketInterceptorWorker {
         const wasHandled = await holder.interceptor.handleMatchedMessage(handler.implementation, message, context);
 
         if (!wasHandled) {
-          await this.logUnhandledMessageIfNecessary(data, holders);
+          await this.logUnhandledMessageIfNecessary(message, holders);
         }
 
         return;
@@ -398,29 +510,37 @@ abstract class WebSocketInterceptorWorker {
 
         // A handler that threw may have already counted the message, such as toward its `times` limit, so older
         // handlers are not tried.
-        await this.logUnhandledMessageIfNecessary(data, holders);
+        await this.logUnhandledMessageIfNecessary(message, holders);
         return;
       }
     }
 
     this.markMessageAsUnhandled(message, failedMessageMatches);
-    await this.logUnhandledMessageIfNecessary(data, holders);
+    await this.logUnhandledMessageIfNecessary(message, holders);
   }
 
   // Holders that let the connection go while the message was handled no longer decide its strategy. If none is left,
   // the connection is closed and the message is dropped, as a cleared interceptor does not save the messages it was
   // handling.
   private async logUnhandledMessageIfNecessary(
-    data: WebSocketMessageData<WebSocketMessageSchema>,
+    message: ReceivedWebSocketMessageData<WebSocketMessageSchema>,
     holders: WebSocketConnectionHolder[],
   ) {
     const newestHolder = holders.findLast((holder) => this.isHoldingConnection(holder));
-    await newestHolder?.interceptor.logUnhandledMessageIfNecessary(data, newestHolder.client.url);
+    await newestHolder?.interceptor.logUnhandledMessageIfNecessary(message, newestHolder.client.url);
   }
 
-  // A holder lists the client from the moment it accepts the connection until it lets the connection go.
+  // A released holder ignores the messages it is still handling.
+  protected releaseClient<Schema extends WebSocketSchema>(
+    interceptor: AnyWebSocketInterceptorImplementation<Schema>,
+    client: InternalWebSocketInterceptorClient<Schema>,
+  ) {
+    interceptor.removeClient(client);
+    this.releasedClients.add(client);
+  }
+
   private isHoldingConnection(holder: WebSocketConnectionHolder) {
-    return holder.interceptor.clients.includes(holder.client);
+    return !this.releasedClients.has(holder.client);
   }
 
   // Handlers that failed only on restrictions record their diffs. The newest handler that failed for any other cause
@@ -449,22 +569,6 @@ abstract class WebSocketInterceptorWorker {
       break;
     }
   }
-
-  abstract sendToClient<Schema extends WebSocketSchema>(
-    client: InternalWebSocketInterceptorClient<Schema>,
-    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
-  ): PossiblePromise<void>;
-
-  abstract sendToClients<Schema extends WebSocketSchema>(
-    interceptor: AnyWebSocketInterceptorImplementation<Schema>,
-    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
-  ): PossiblePromise<void>;
-
-  abstract closeClient<Schema extends WebSocketSchema>(
-    client: InternalWebSocketInterceptorClient<Schema>,
-    code?: number,
-    reason?: string,
-  ): PossiblePromise<void>;
 
   abstract clearHandlers<Schema extends WebSocketSchema>(options?: {
     interceptor?: AnyWebSocketInterceptorImplementation<Schema>;

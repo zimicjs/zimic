@@ -31,9 +31,8 @@ import {
   SyncedRemoteWebSocketMessageHandler,
 } from '../../../messageHandler/types/public';
 import NotRunningWebSocketInterceptorError from '../../errors/NotRunningWebSocketInterceptorError';
-import { WebSocketInterceptorOptions } from '../../types/options';
 import WebSocketInterceptorStore from '../../WebSocketInterceptorStore';
-import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions, WebSocketInterceptorOptionsWithoutProtocol } from './utils';
 
 type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
 
@@ -58,7 +57,7 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
   const httpBaseURL = 'http://localhost:3000';
 
   let baseURL: string;
-  let interceptorOptions: WebSocketInterceptorOptions;
+  let interceptorOptions: WebSocketInterceptorOptionsWithoutProtocol;
 
   beforeEach(() => {
     baseURL = getBaseURL();

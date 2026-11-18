@@ -1,7 +1,7 @@
 import { waitFor } from '@zimic/utils/time';
 import { ValidationError } from '@zimic/utils/validation';
 import { WebSocketSchema } from '@zimic/ws';
-import { expect, it, vi } from 'vitest';
+import { beforeEach, expect, it, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
@@ -47,9 +47,13 @@ interface SharedWebSocketInterceptorSendsTestsOptions {
 export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketInterceptorSendsTestsOptions) {
   const { type, getBaseURL } = options;
 
-  it('should send server messages to a single client', async () => {
-    const baseURL = getBaseURL();
+  let baseURL: string;
 
+  beforeEach(() => {
+    baseURL = getBaseURL();
+  });
+
+  it('should send server messages to a single client', async () => {
     await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
       await usingWebSocketClient<ChatSchema>(baseURL, async (firstClient) => {
         await usingWebSocketClient<ChatSchema>(baseURL, async (secondClient) => {
@@ -77,8 +81,6 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
   });
 
   it('should send server messages to a readonly client list', async () => {
-    const baseURL = getBaseURL();
-
     await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
       await usingWebSocketClient<ChatSchema>(baseURL, async (firstClient) => {
         await usingWebSocketClient<ChatSchema>(baseURL, async (secondClient) => {
@@ -113,8 +115,6 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
   });
 
   it('should send server messages to no clients when the recipient list is empty', async () => {
-    const baseURL = getBaseURL();
-
     await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
       await usingWebSocketClient<ChatSchema>(baseURL, async (firstClient) => {
         await usingWebSocketClient<ChatSchema>(baseURL, async (secondClient) => {
@@ -142,8 +142,6 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
   });
 
   it('should broadcast server messages to all clients', async () => {
-    const baseURL = getBaseURL();
-
     await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
       await usingWebSocketClient<ChatSchema>(baseURL, async (firstClient) => {
         await usingWebSocketClient<ChatSchema>(baseURL, async (secondClient) => {
@@ -165,8 +163,6 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
   });
 
   it('should broadcast binary server messages to all clients', async () => {
-    const baseURL = getBaseURL();
-
     await usingWebSocketInterceptor<BinaryMessage>({ type, baseURL }, async (interceptor) => {
       await usingWebSocketClient<BinaryMessage>(baseURL, async (firstClient) => {
         await usingWebSocketClient<BinaryMessage>(baseURL, async (secondClient) => {
@@ -224,8 +220,6 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
         };
       }>;
 
-      const baseURL = getBaseURL();
-
       await usingWebSocketInterceptor<BinaryBufferMessage>({ type, baseURL }, async (interceptor) => {
         await usingWebSocketClient<BinaryBufferMessage>(baseURL, async (client) => {
           client.binaryType = binaryType;
@@ -248,6 +242,36 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
   it.each([
     {
       sender: 'server',
+      send: (interceptor: WebSocketInterceptor<ChatSchema>, message: ChatMessage) => {
+        interceptor.server.send(message);
+      },
+    },
+    {
+      sender: 'client',
+      send: (interceptor: WebSocketInterceptor<ChatSchema>, message: ChatMessage) => {
+        interceptor.clients[0].send(message);
+      },
+    },
+  ])('should send $sender object messages as their JSON text', async ({ send }) => {
+    await usingWebSocketInterceptor<ChatSchema>({ type, baseURL }, async (interceptor) => {
+      await usingWebSocketClient<ChatSchema>(baseURL, async (client) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        const messagePromise = waitForWebSocketClientMessage(client);
+
+        const message: ChatMessage = { type: 'server', text: 'object' };
+        send(interceptor, message);
+
+        expect(await messagePromise).toBe(JSON.stringify(message));
+      });
+    });
+  });
+
+  it.each([
+    {
+      sender: 'server',
       send: (interceptor: WebSocketInterceptor<BinaryOrTextMessage>, data: Blob | string) => {
         interceptor.server.send(data);
       },
@@ -259,8 +283,6 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
       },
     },
   ])('should send $sender messages in call order when a binary message precedes a text message', async ({ send }) => {
-    const baseURL = getBaseURL();
-
     await usingWebSocketInterceptor<BinaryOrTextMessage>({ type, baseURL }, async (interceptor) => {
       await usingWebSocketClient<BinaryOrTextMessage>(baseURL, async (client) => {
         client.binaryType = 'arraybuffer';
@@ -283,9 +305,7 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
     });
   });
 
-  it('should log send errors and keep sending later messages', async () => {
-    const baseURL = getBaseURL();
-
+  it('should reject invalid server messages', async () => {
     await usingWebSocketInterceptor<BinaryOrTextMessage>({ type, baseURL }, async (interceptor) => {
       await usingWebSocketClient<BinaryOrTextMessage>(baseURL, async (client) => {
         await waitFor(() => {
@@ -294,36 +314,21 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
 
         const messages = collectWebSocketClientMessages(client);
 
-        await usingIgnoredConsole(['error'], async (console) => {
-          // Simulates an invalid runtime value, which typed code cannot send.
-          interceptor.server.send(undefined as unknown as string);
-          interceptor.server.send('valid');
+        expect(() => {
+          // @ts-expect-error Simulates an invalid runtime value, which typed code cannot send.
+          interceptor.server.send(undefined);
+        }).toThrow(new ValidationError('Expected serialized WebSocket message data to be string, but got undefined.'));
 
-          await waitFor(() => {
-            expect(messages).toContain('valid');
-          });
+        interceptor.server.send('valid');
 
-          // Remote interceptors serialize messages to send them through the interceptor server, which rejects invalid
-          // data. Local interceptors pass the data to the client connection as is.
-          if (type === 'remote') {
-            expect(messages).toEqual(['valid']);
-            expect(console.error).toHaveBeenCalledTimes(1);
-            expect(console.error).toHaveBeenCalledWith(
-              new ValidationError('WebSocket message data must not be undefined.'),
-            );
-          } else {
-            expect(messages).toHaveLength(2);
-            expect(messages[1]).toBe('valid');
-            expect(console.error).not.toHaveBeenCalled();
-          }
+        await waitFor(() => {
+          expect(messages).toEqual(['valid']);
         });
       });
     });
   });
 
   it('should log binary send errors and keep sending later messages', async () => {
-    const baseURL = getBaseURL();
-
     await usingWebSocketInterceptor<BinaryOrTextMessage>({ type, baseURL }, async (interceptor) => {
       await usingWebSocketClient<BinaryOrTextMessage>(baseURL, async (client) => {
         client.binaryType = 'arraybuffer';
@@ -356,20 +361,21 @@ export function declareSendsWebSocketInterceptorTests(options: SharedWebSocketIn
   });
 
   it('should not reject sends when the interceptor stops right after them', async () => {
-    const baseURL = getBaseURL();
-
     await usingWebSocketInterceptor<BinaryOrTextMessage>({ type, baseURL }, async (interceptor) => {
       await usingWebSocketClient<BinaryOrTextMessage>(baseURL, async () => {
         await waitFor(() => {
           expect(interceptor.clients).toHaveLength(1);
         });
 
-        interceptor.server.send(new Blob([createBinaryMessage(0x00, 0xff)]));
-        interceptor.clients[0].send('text');
+        await usingIgnoredConsole(['error'], async (console) => {
+          interceptor.server.send(new Blob([createBinaryMessage(0x00, 0xff)]));
+          interceptor.clients[0].send('text');
 
-        await interceptor.stop();
+          await interceptor.stop();
 
-        expect(interceptor.isRunning).toBe(false);
+          expect(interceptor.isRunning).toBe(false);
+          expect(console.error).not.toHaveBeenCalled();
+        });
       });
     });
   });

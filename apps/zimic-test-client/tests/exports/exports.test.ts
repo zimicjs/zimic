@@ -92,6 +92,7 @@ import {
   type WebSocketInterceptorClient,
   type WebSocketInterceptorServer,
   type WebSocketInterceptorServerSendOptions,
+  type WebSocketInterceptorProtocol,
   type WebSocketMessageHandler,
   type LocalWebSocketMessageHandler,
   type RemoteWebSocketMessageHandler,
@@ -133,6 +134,20 @@ import {
   DisabledConnectionSavingError,
   WebSocketTimesCheckError,
 } from '@zimic/interceptor/experimental/ws';
+import {
+  createSocketIOProtocol,
+  type SocketIOSchema,
+  type SocketIOEventMessage,
+  type SocketIOAckMessage,
+  type SocketIOMessage,
+  type SocketIOParser,
+  type SocketIOPollingSchema,
+  type SocketIOProtocolOptions,
+  SharedSocketIOProtocolError,
+  DuplicateSocketIONamespaceError,
+  MismatchedSocketIOProtocolOptionsError,
+  InvalidSocketIOPollingInterceptorError,
+} from '@zimic/interceptor/experimental/ws/socket.io';
 import {
   createHttpInterceptor,
   type HttpInterceptor,
@@ -490,6 +505,31 @@ describe('Exports', () => {
       expect(typeof TimesCheckError).toBe('function');
     });
 
+    it('exports all expected resources from @zimic/interceptor/experimental/ws/socket.io', () => {
+      expectTypeOf(createSocketIOProtocol).not.toBeAny();
+      expect(typeof createSocketIOProtocol).toBe('function');
+
+      expectTypeOf<SocketIOSchema>().not.toBeAny();
+      expectTypeOf<SocketIOEventMessage>().not.toBeAny();
+      expectTypeOf<SocketIOAckMessage>().not.toBeAny();
+      expectTypeOf<SocketIOMessage>().not.toBeAny();
+      expectTypeOf<SocketIOParser>().not.toBeAny();
+      expectTypeOf<SocketIOPollingSchema>().not.toBeAny();
+      expectTypeOf<SocketIOProtocolOptions>().not.toBeAny();
+
+      expectTypeOf<SharedSocketIOProtocolError>().not.toBeAny();
+      expect(typeof SharedSocketIOProtocolError).toBe('function');
+
+      expectTypeOf<DuplicateSocketIONamespaceError>().not.toBeAny();
+      expect(typeof DuplicateSocketIONamespaceError).toBe('function');
+
+      expectTypeOf<MismatchedSocketIOProtocolOptionsError>().not.toBeAny();
+      expect(typeof MismatchedSocketIOProtocolOptionsError).toBe('function');
+
+      expectTypeOf<InvalidSocketIOPollingInterceptorError>().not.toBeAny();
+      expect(typeof InvalidSocketIOPollingInterceptorError).toBe('function');
+    });
+
     it('exports all expected resources from @zimic/interceptor/experimental/ws', () => {
       expectTypeOf(createWebSocketInterceptor).not.toBeAny();
       expect(typeof createWebSocketInterceptor).toBe('function');
@@ -500,9 +540,9 @@ describe('Exports', () => {
       expectTypeOf<WebSocketInterceptorPlatform>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorType>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorAuthOptions>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorOptions>().not.toBeAny();
-      expectTypeOf<LocalWebSocketInterceptorOptions>().not.toBeAny();
-      expectTypeOf<RemoteWebSocketInterceptorOptions>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorOptions<never>>().not.toBeAny();
+      expectTypeOf<LocalWebSocketInterceptorOptions<never>>().not.toBeAny();
+      expectTypeOf<RemoteWebSocketInterceptorOptions<never>>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorMessageSaving>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorConnectionSaving>().not.toBeAny();
       expectTypeOf<UnhandledMessageStrategy>().not.toBeAny();
@@ -513,6 +553,7 @@ describe('Exports', () => {
       expectTypeOf<WebSocketInterceptorClient<never>>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorServer<never>>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorServerSendOptions<never>>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorProtocol<never>>().not.toBeAny();
 
       expectTypeOf<WebSocketMessageHandler<never>>().not.toBeAny();
       expectTypeOf<LocalWebSocketMessageHandler<never>>().not.toBeAny();

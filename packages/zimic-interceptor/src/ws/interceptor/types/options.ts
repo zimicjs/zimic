@@ -1,6 +1,7 @@
 import { PossiblePromise } from '@zimic/utils/types';
-import { WebSocketMessageSchema } from '@zimic/ws';
+import { WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 
+import type { WebSocketInterceptorProtocol } from './protocol';
 import { WebSocketInterceptorConnectionSaving, WebSocketInterceptorMessageSaving } from './public';
 
 /**
@@ -47,7 +48,7 @@ export type UnhandledMessageStrategy =
   UnhandledMessageStrategy.Declaration | UnhandledMessageStrategy.DeclarationFactory;
 
 /** The options shared by local and remote WebSocket interceptors. */
-export interface SharedWebSocketInterceptorOptions {
+export interface SharedWebSocketInterceptorOptions<Schema extends WebSocketSchema = WebSocketSchema> {
   /** The type of the interceptor, either `local` or `remote`. Defaults to `local`. */
   type?: WebSocketInterceptorType;
 
@@ -64,6 +65,12 @@ export interface SharedWebSocketInterceptorOptions {
   connectionSaving?: Partial<WebSocketInterceptorConnectionSaving>;
 
   /**
+   * Serves a protocol, such as Socket.IO, on its own transports, opening the clients whose messages handlers receive.
+   * With a protocol, the interceptor holds only the WebSocket connections its protocol claims.
+   */
+  protocol?: WebSocketInterceptorProtocol<WebSocketSchemaMessage<Schema>>;
+
+  /**
    * The strategy applied to client messages that no handler matches. Defaults to logging a warning for each unhandled
    * message.
    */
@@ -75,7 +82,9 @@ export interface SharedWebSocketInterceptorOptions {
  *
  * The options to create a local WebSocket interceptor.
  */
-export interface LocalWebSocketInterceptorOptions extends SharedWebSocketInterceptorOptions {
+export interface LocalWebSocketInterceptorOptions<
+  Schema extends WebSocketSchema = WebSocketSchema,
+> extends SharedWebSocketInterceptorOptions<Schema> {
   type?: 'local';
 }
 
@@ -95,7 +104,9 @@ export interface WebSocketInterceptorAuthOptions {
  *
  * The options to create a remote WebSocket interceptor.
  */
-export interface RemoteWebSocketInterceptorOptions extends SharedWebSocketInterceptorOptions {
+export interface RemoteWebSocketInterceptorOptions<
+  Schema extends WebSocketSchema = WebSocketSchema,
+> extends SharedWebSocketInterceptorOptions<Schema> {
   type: 'remote';
 
   /**
@@ -110,4 +121,5 @@ export interface RemoteWebSocketInterceptorOptions extends SharedWebSocketInterc
  *
  * The options to create a WebSocket interceptor.
  */
-export type WebSocketInterceptorOptions = LocalWebSocketInterceptorOptions | RemoteWebSocketInterceptorOptions;
+export type WebSocketInterceptorOptions<Schema extends WebSocketSchema = WebSocketSchema> =
+  LocalWebSocketInterceptorOptions<Schema> | RemoteWebSocketInterceptorOptions<Schema>;

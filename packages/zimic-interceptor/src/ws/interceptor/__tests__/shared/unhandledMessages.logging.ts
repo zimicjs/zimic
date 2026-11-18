@@ -13,8 +13,12 @@ import {
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
 
-import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../types/options';
-import { RuntimeSharedWebSocketInterceptorTestsOptions, verifyUnhandledMessageWarning } from './utils';
+import { UnhandledMessageStrategy } from '../../types/options';
+import {
+  RuntimeSharedWebSocketInterceptorTestsOptions,
+  WebSocketInterceptorOptionsWithoutProtocol,
+  verifyUnhandledMessageWarning,
+} from './utils';
 
 type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
 
@@ -32,7 +36,7 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
   const { platform, getBaseURL, getInterceptorOptions } = options;
 
   let baseURL: string;
-  let interceptorOptions: WebSocketInterceptorOptions;
+  let interceptorOptions: WebSocketInterceptorOptionsWithoutProtocol;
 
   beforeEach(() => {
     baseURL = getBaseURL();

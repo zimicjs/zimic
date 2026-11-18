@@ -40,7 +40,10 @@ export function isUserCloseCode(code: number) {
 
 type WebSocketInterceptorClientCloser = (code?: number, reason?: string) => void;
 
-type SendWebSocketInterceptorClientMessage = (data: WebSocketMessageData<WebSocketMessageSchema>) => void;
+type SendWebSocketInterceptorClientMessage = (
+  // Unserialized: connections serialize and protocols encode them.
+  data: WebSocketMessageSchema | WebSocketMessageData<WebSocketMessageSchema>,
+) => void;
 
 // Workers create clients for connections of any path and interceptor, so a client is schema-erased when created.
 class WebSocketInterceptorClientImplementation implements InternalWebSocketInterceptorClient {
@@ -61,7 +64,7 @@ class WebSocketInterceptorClientImplementation implements InternalWebSocketInter
     this.#closeConnection = closeConnection;
   }
 
-  send(data: WebSocketMessageData<WebSocketMessageSchema>) {
+  send(data: WebSocketMessageSchema | WebSocketMessageData<WebSocketMessageSchema>) {
     this.#sendMessage(data);
   }
 
@@ -102,7 +105,7 @@ export interface InternalWebSocketInterceptorServer<
 }
 
 type SendWebSocketInterceptorServerMessage<Schema extends WebSocketSchema> = (
-  data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+  data: WebSocketSchemaMessage<Schema> | WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
   options?: WebSocketInterceptorServerSendOptions<Schema>,
 ) => void;
 
@@ -124,7 +127,7 @@ class WebSocketInterceptorServerImplementation<
   }
 
   send(
-    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+    data: WebSocketSchemaMessage<Schema> | WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
     options?: WebSocketInterceptorServerSendOptions<Schema>,
   ) {
     this.#sendMessage(data, options);

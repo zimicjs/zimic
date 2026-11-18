@@ -84,16 +84,16 @@ export function createInternalHttpInterceptor<Schema extends HttpSchema>(options
 }
 
 export function createInternalWebSocketInterceptor<Schema extends WebSocketSchema>(
-  options: LocalWebSocketInterceptorOptions,
+  options: LocalWebSocketInterceptorOptions<Schema>,
 ): LocalWebSocketInterceptor<Schema>;
 export function createInternalWebSocketInterceptor<Schema extends WebSocketSchema>(
-  options: RemoteWebSocketInterceptorOptions,
+  options: RemoteWebSocketInterceptorOptions<Schema>,
 ): RemoteWebSocketInterceptor<Schema>;
 export function createInternalWebSocketInterceptor<Schema extends WebSocketSchema>(
-  options: WebSocketInterceptorOptions,
+  options: WebSocketInterceptorOptions<Schema>,
 ): LocalWebSocketInterceptor<Schema> | RemoteWebSocketInterceptor<Schema>;
 export function createInternalWebSocketInterceptor<Schema extends WebSocketSchema>(
-  options: WebSocketInterceptorOptions,
+  options: WebSocketInterceptorOptions<Schema>,
 ) {
   return createWebSocketInterceptor<Schema>({
     messageSaving: { enabled: false },
@@ -170,38 +170,38 @@ export async function usingHttpInterceptor<Schema extends HttpSchema>(
 type UsingWebSocketInterceptorCallback<Interceptor> = (interceptor: Interceptor) => PossiblePromise<void>;
 
 export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
-  interceptorOptions: LocalWebSocketInterceptorOptions,
+  interceptorOptions: LocalWebSocketInterceptorOptions<Schema>,
   callback: UsingWebSocketInterceptorCallback<PublicLocalWebSocketInterceptor<Schema>>,
 ): Promise<void>;
 export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
-  interceptorOptions: LocalWebSocketInterceptorOptions,
+  interceptorOptions: LocalWebSocketInterceptorOptions<Schema>,
   options: UsingInterceptorOptions,
   callback: UsingWebSocketInterceptorCallback<PublicLocalWebSocketInterceptor<Schema>>,
 ): Promise<void>;
 export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
-  interceptorOptions: RemoteWebSocketInterceptorOptions,
+  interceptorOptions: RemoteWebSocketInterceptorOptions<Schema>,
   callback: UsingWebSocketInterceptorCallback<PublicRemoteWebSocketInterceptor<Schema>>,
 ): Promise<void>;
 export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
-  interceptorOptions: RemoteWebSocketInterceptorOptions,
+  interceptorOptions: RemoteWebSocketInterceptorOptions<Schema>,
   options: UsingInterceptorOptions,
   callback: UsingWebSocketInterceptorCallback<PublicRemoteWebSocketInterceptor<Schema>>,
 ): Promise<void>;
 export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
-  interceptorOptions: WebSocketInterceptorOptions,
+  interceptorOptions: WebSocketInterceptorOptions<Schema>,
   callback: UsingWebSocketInterceptorCallback<
     PublicLocalWebSocketInterceptor<Schema> | PublicRemoteWebSocketInterceptor<Schema>
   >,
 ): Promise<void>;
 export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
-  interceptorOptions: WebSocketInterceptorOptions,
+  interceptorOptions: WebSocketInterceptorOptions<Schema>,
   options: UsingInterceptorOptions,
   callback: UsingWebSocketInterceptorCallback<
     PublicLocalWebSocketInterceptor<Schema> | PublicRemoteWebSocketInterceptor<Schema>
   >,
 ): Promise<void>;
 export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
-  interceptorOptions: WebSocketInterceptorOptions,
+  interceptorOptions: WebSocketInterceptorOptions<Schema>,
   callbackOrOptions:
     | UsingWebSocketInterceptorCallback<PublicLocalWebSocketInterceptor<Schema>>
     | UsingWebSocketInterceptorCallback<PublicRemoteWebSocketInterceptor<Schema>>

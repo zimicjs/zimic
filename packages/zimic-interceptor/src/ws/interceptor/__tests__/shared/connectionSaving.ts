@@ -17,10 +17,9 @@ import {
 import ConnectionSavingSafeLimitExceededError from '../../errors/ConnectionSavingSafeLimitExceededError';
 import MessageSavingSafeLimitExceededError from '../../errors/MessageSavingSafeLimitExceededError';
 import { createWebSocketInterceptor } from '../../factory';
-import { WebSocketInterceptorOptions } from '../../types/options';
 import { WebSocketInterceptorConnectionSaving } from '../../types/public';
 import { DEFAULT_CONNECTION_SAVING_SAFE_LIMIT } from '../../WebSocketInterceptorImplementation';
-import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
+import { RuntimeSharedWebSocketInterceptorTestsOptions, WebSocketInterceptorOptionsWithoutProtocol } from './utils';
 
 type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
 
@@ -49,7 +48,7 @@ export function declareConnectionSavingWebSocketInterceptorTests(
   const { platform, getBaseURL, getInterceptorOptions } = options;
 
   let baseURL: string;
-  let interceptorOptions: WebSocketInterceptorOptions;
+  let interceptorOptions: WebSocketInterceptorOptionsWithoutProtocol;
 
   beforeEach(() => {
     baseURL = getBaseURL();

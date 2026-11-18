@@ -4,6 +4,7 @@ import { createInvalidTypeOfCases, ValidationError } from '@zimic/utils/validati
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { removeTrailingSlash } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
@@ -16,9 +17,13 @@ import {
 
 import RunningWebSocketInterceptorError from '../../errors/RunningWebSocketInterceptorError';
 import { createWebSocketInterceptor } from '../../factory';
-import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../types/options';
+import { UnhandledMessageStrategy } from '../../types/options';
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../WebSocketInterceptorImplementation';
-import { RuntimeSharedWebSocketInterceptorTestsOptions, verifyUnhandledMessageWarning } from './utils';
+import {
+  RuntimeSharedWebSocketInterceptorTestsOptions,
+  WebSocketInterceptorOptionsWithoutProtocol,
+  verifyUnhandledMessageWarning,
+} from './utils';
 
 type Message = { type: 'client'; index: number } | { type: 'server'; index: number };
 
@@ -32,7 +37,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
   const { platform, type, getBaseURL, getOtherBaseURL, getInterceptorOptions } = options;
 
   let defaultBaseURL: string;
-  let interceptorOptions: WebSocketInterceptorOptions;
+  let interceptorOptions: WebSocketInterceptorOptionsWithoutProtocol;
 
   beforeEach(() => {
     defaultBaseURL = getBaseURL();
@@ -40,7 +45,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
   });
 
   it('should handle base URLs and paths correctly', async () => {
-    const baseURLWithoutSlash = defaultBaseURL.replace(/\/$/, '');
+    const baseURLWithoutSlash = removeTrailingSlash(defaultBaseURL);
 
     for (const { baseURL, path } of [
       { baseURL: baseURLWithoutSlash, path: 'path' },
@@ -62,7 +67,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
   });
 
   it('should intercept messages sent to the base URL with a trailing slash', async () => {
-    const baseURL = joinURL(defaultBaseURL.replace(/\/$/, ''), 'path');
+    const baseURL = joinURL(removeTrailingSlash(defaultBaseURL), 'path');
 
     await usingWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, baseURL }, async (interceptor) => {
       await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
@@ -1195,7 +1200,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     const baseURL = defaultBaseURL;
 
     await usingWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, baseURL }, async (interceptor) => {
-      expect(interceptor.baseURL).toBe(baseURL.replace(/\/$/, ''));
+      expect(interceptor.baseURL).toBe(removeTrailingSlash(baseURL));
 
       await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
 
@@ -1213,7 +1218,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
       expect(interceptor.isRunning).toBe(false);
 
       interceptor.baseURL = newBaseURL;
-      expect(interceptor.baseURL).toBe(newBaseURL.replace(/\/$/, ''));
+      expect(interceptor.baseURL).toBe(removeTrailingSlash(newBaseURL));
 
       await interceptor.start();
       expect(interceptor.isRunning).toBe(true);
@@ -1271,7 +1276,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
       const server = interceptor.server;
 
       interceptor.baseURL = changedBaseURL.href;
-      expect(interceptor.baseURL).toBe(changedBaseURL.href.replace(/\/$/, ''));
+      expect(interceptor.baseURL).toBe(removeTrailingSlash(changedBaseURL.href));
       expect(interceptor.server).toBe(server);
       expect(server.url).toBe(interceptor.baseURL);
     },
@@ -1291,7 +1296,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
 
       await startPromise;
 
-      expect(interceptor.baseURL).toBe(defaultBaseURL.replace(/\/$/, ''));
+      expect(interceptor.baseURL).toBe(removeTrailingSlash(defaultBaseURL));
     });
   });
 
@@ -1313,7 +1318,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
 
       await Promise.all([startPromise, stopPromise]);
 
-      expect(interceptor.baseURL).toBe(defaultBaseURL.replace(/\/$/, ''));
+      expect(interceptor.baseURL).toBe(removeTrailingSlash(defaultBaseURL));
     });
   });
 
@@ -1321,7 +1326,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
     const baseURL = joinURL(defaultBaseURL, 'path');
 
     await usingWebSocketInterceptor<MessageSchema>({ ...interceptorOptions, baseURL }, async (interceptor) => {
-      expect(interceptor.baseURL).toBe(baseURL.replace(/\/$/, ''));
+      expect(interceptor.baseURL).toBe(removeTrailingSlash(baseURL));
 
       await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
 
@@ -1346,7 +1351,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
         ),
       );
 
-      expect(interceptor.baseURL).toBe(baseURL.replace(/\/$/, ''));
+      expect(interceptor.baseURL).toBe(removeTrailingSlash(baseURL));
 
       const newBaseURLMessageListener = vi.fn();
 
@@ -1457,7 +1462,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
         baseURL: supportedBaseURL,
       });
 
-      expect(interceptor.baseURL).toBe(supportedBaseURL.replace(/\/$/, ''));
+      expect(interceptor.baseURL).toBe(removeTrailingSlash(supportedBaseURL));
     },
   );
 
@@ -1487,7 +1492,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
       baseURL: baseURLWithNonPathParameters,
     });
 
-    expect(interceptor.baseURL).toBe(defaultBaseURL.replace(/\/$/, ''));
+    expect(interceptor.baseURL).toBe(removeTrailingSlash(defaultBaseURL));
   });
 
   describe('Connections', () => {

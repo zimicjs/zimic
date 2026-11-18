@@ -19,8 +19,8 @@ import {
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
 
-import { UnhandledMessageStrategy, WebSocketInterceptorOptions } from '../../types/options';
-import { RuntimeSharedWebSocketInterceptorTestsOptions } from './utils';
+import { UnhandledMessageStrategy } from '../../types/options';
+import { RuntimeSharedWebSocketInterceptorTestsOptions, WebSocketInterceptorOptionsWithoutProtocol } from './utils';
 
 type Message = { type: 'create'; body: { text: string } } | { type: 'delete'; id: string };
 
@@ -45,7 +45,7 @@ export function declareTimesWebSocketInterceptorTests(options: RuntimeSharedWebS
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
 
   let baseURL: string;
-  let interceptorOptions: WebSocketInterceptorOptions;
+  let interceptorOptions: WebSocketInterceptorOptionsWithoutProtocol;
 
   beforeEach(() => {
     baseURL = getBaseURL();

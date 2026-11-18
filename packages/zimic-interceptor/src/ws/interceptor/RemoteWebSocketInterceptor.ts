@@ -20,16 +20,18 @@ import WebSocketInterceptorStore from './WebSocketInterceptorStore';
 class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements PublicRemoteWebSocketInterceptor<Schema> {
   private store = new WebSocketInterceptorStore();
   implementation: WebSocketInterceptorImplementation<Schema>;
-  #auth?: RemoteWebSocketInterceptorOptions['auth'];
+  #auth?: RemoteWebSocketInterceptorOptions<Schema>['auth'];
 
-  constructor(options: RemoteWebSocketInterceptorOptions) {
+  constructor(options: RemoteWebSocketInterceptorOptions<Schema>) {
     const baseURL = new URL(options.baseURL);
 
     this.implementation = new WebSocketInterceptorImplementation<Schema>({
+      type: 'remote',
       baseURL,
       messageSaving: options.messageSaving,
       connectionSaving: options.connectionSaving,
       onUnhandledMessage: options.onUnhandledMessage,
+      protocol: options.protocol,
       MessageHandler: RemoteWebSocketMessageHandler,
       ConnectionHandler: RemoteWebSocketConnectionHandler,
       createWorker: () => {
@@ -54,7 +56,7 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
     return this.implementation.baseURLAsString;
   }
 
-  set baseURL(baseURL: RemoteWebSocketInterceptorOptions['baseURL']) {
+  set baseURL(baseURL: RemoteWebSocketInterceptorOptions<Schema>['baseURL']) {
     this.implementation.baseURL = new URL(baseURL);
   }
 
@@ -62,7 +64,7 @@ class RemoteWebSocketInterceptor<Schema extends WebSocketSchema> implements Publ
     return this.#auth;
   }
 
-  set auth(auth: RemoteWebSocketInterceptorOptions['auth'] | undefined) {
+  set auth(auth: RemoteWebSocketInterceptorOptions<Schema>['auth'] | undefined) {
     const cannotChangeAuthWhileRunningMessage =
       'Did you forget to call `await interceptor.stop()` before changing the authentication parameters?';
 

@@ -18,11 +18,7 @@ import {
   createWebSocketInterceptorMessageHandlerIndex,
   type WebSocketInterceptorMessageHandlerIndex,
 } from '../interceptor/WebSocketInterceptorMessageStore';
-import {
-  isWebSocketBinaryMessageData,
-  normalizeWebSocketBinaryMessageData,
-  serializeWebSocketMessageDataForSocket,
-} from '../utils/messageData';
+import { isWebSocketBinaryMessageData, normalizeWebSocketBinaryMessageData } from '../utils/messageData';
 import DisabledMessageSavingError from './errors/DisabledMessageSavingError';
 import { WebSocketMessageHandlerDelayFactory } from './types/messages';
 import {
@@ -419,7 +415,7 @@ class WebSocketMessageHandlerImplementation<
     response: WebSocketInterceptorPathMessage<Schema, Path>,
     context: WebSocketMessageHandlerApplyContext<Schema, Path>,
   ) {
-    context.sender.send(serializeWebSocketMessageDataForSocket(response));
+    context.sender.send(response);
   }
 
   saveInterceptedMessage(

@@ -14,8 +14,11 @@ import {
 } from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorClient } from '../../types/messages';
-import { WebSocketInterceptorOptions } from '../../types/options';
-import { RuntimeSharedWebSocketInterceptorTestsOptions, verifyUnhandledMessageWarning } from './utils';
+import {
+  RuntimeSharedWebSocketInterceptorTestsOptions,
+  WebSocketInterceptorOptionsWithoutProtocol,
+  verifyUnhandledMessageWarning,
+} from './utils';
 
 type Message = { type: 'create'; body: { text: string } } | { type: 'delete'; id: string };
 
@@ -33,7 +36,7 @@ export function declareEffectWebSocketInterceptorTests(options: RuntimeSharedWeb
   const { platform, getBaseURL, getInterceptorOptions } = options;
 
   let baseURL: string;
-  let interceptorOptions: WebSocketInterceptorOptions;
+  let interceptorOptions: WebSocketInterceptorOptionsWithoutProtocol;
 
   beforeEach(() => {
     baseURL = getBaseURL();

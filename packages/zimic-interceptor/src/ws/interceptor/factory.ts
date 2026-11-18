@@ -14,15 +14,15 @@ import {
   RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor,
 } from './types/public';
 
-function isLocalWebSocketInterceptorOptions(
-  options: WebSocketInterceptorOptions,
-): options is LocalWebSocketInterceptorOptions {
+function isLocalWebSocketInterceptorOptions<Schema extends WebSocketSchema>(
+  options: WebSocketInterceptorOptions<Schema>,
+): options is LocalWebSocketInterceptorOptions<Schema> {
   return options.type === undefined || options.type === 'local';
 }
 
-function isRemoteWebSocketInterceptorOptions(
-  options: WebSocketInterceptorOptions,
-): options is RemoteWebSocketInterceptorOptions {
+function isRemoteWebSocketInterceptorOptions<Schema extends WebSocketSchema>(
+  options: WebSocketInterceptorOptions<Schema>,
+): options is RemoteWebSocketInterceptorOptions<Schema> {
   return options.type === 'remote';
 }
 
@@ -33,16 +33,16 @@ function isRemoteWebSocketInterceptorOptions(
  * argument.
  */
 export function createWebSocketInterceptor<Schema extends WebSocketSchema>(
-  options: LocalWebSocketInterceptorOptions,
+  options: LocalWebSocketInterceptorOptions<Schema>,
 ): PublicLocalWebSocketInterceptor<Schema>;
 export function createWebSocketInterceptor<Schema extends WebSocketSchema>(
-  options: RemoteWebSocketInterceptorOptions,
+  options: RemoteWebSocketInterceptorOptions<Schema>,
 ): PublicRemoteWebSocketInterceptor<Schema>;
 export function createWebSocketInterceptor<Schema extends WebSocketSchema>(
-  options: WebSocketInterceptorOptions,
+  options: WebSocketInterceptorOptions<Schema>,
 ): PublicLocalWebSocketInterceptor<Schema> | PublicRemoteWebSocketInterceptor<Schema>;
 export function createWebSocketInterceptor<Schema extends WebSocketSchema>(
-  options: WebSocketInterceptorOptions,
+  options: WebSocketInterceptorOptions<Schema>,
 ): PublicLocalWebSocketInterceptor<Schema> | PublicRemoteWebSocketInterceptor<Schema> {
   assertTypeOf('options.baseURL', options.baseURL, 'string');
   assertTypeOf('options.messageSaving', options.messageSaving, 'object', { optional: true });
@@ -55,6 +55,8 @@ export function createWebSocketInterceptor<Schema extends WebSocketSchema>(
   if (typeof options.onUnhandledMessage === 'object') {
     assertTypeOf('options.onUnhandledMessage.log', options.onUnhandledMessage.log, 'boolean', { optional: true });
   }
+
+  assertTypeOf('options.protocol', options.protocol, 'object', { optional: true });
 
   // Local interceptors do not authenticate, so they ignore the authentication option.
   if (isRemoteWebSocketInterceptorOptions(options)) {

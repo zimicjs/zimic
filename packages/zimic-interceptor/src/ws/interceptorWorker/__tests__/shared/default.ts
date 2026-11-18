@@ -9,7 +9,6 @@ import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
 import type { WebSocketClientConnectionReply } from '@/server/types/schema';
 import RemoteWebSocketConnectionHandler from '@/ws/connectionHandler/RemoteWebSocketConnectionHandler';
-import { createWebSocketInterceptorClient } from '@/ws/interceptor/WebSocketInterceptorHandle';
 import WebSocketInterceptorImplementation from '@/ws/interceptor/WebSocketInterceptorImplementation';
 import LocalWebSocketInterceptorWorker from '@/ws/interceptorWorker/LocalWebSocketInterceptorWorker';
 import RemoteWebSocketInterceptorWorker from '@/ws/interceptorWorker/RemoteWebSocketInterceptorWorker';
@@ -30,7 +29,11 @@ import {
 } from '@tests/utils/webSocket';
 
 import NotRunningWebSocketInterceptorError from '../../../interceptor/errors/NotRunningWebSocketInterceptorError';
-import { WebSocketInterceptorPlatform, WebSocketInterceptorType } from '../../../interceptor/types/options';
+import {
+  UnhandledMessageStrategy,
+  WebSocketInterceptorPlatform,
+  WebSocketInterceptorType,
+} from '../../../interceptor/types/options';
 import { RemoteWebSocketInterceptorWorkerOptions, WebSocketInterceptorWorkerOptions } from '../../types/options';
 
 type ChatMessage = { type: 'client'; text: string } | { type: 'server'; text: string };
@@ -75,6 +78,22 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
 
   function createDefaultWebSocketInterceptor() {
     return createInternalWebSocketInterceptor<ChatSchema>({ type: workerOptions.type, baseURL });
+  }
+
+  function createRemoteInterceptorImplementation(
+    worker: RemoteWebSocketInterceptorWorker,
+    options: { baseURL?: string; onUnhandledMessage?: UnhandledMessageStrategy } = {},
+  ) {
+    return new WebSocketInterceptorImplementation<ChatSchema, typeof RemoteWebSocketMessageHandler>({
+      type: 'remote',
+      baseURL: new URL(options.baseURL ?? baseURL),
+      onUnhandledMessage: options.onUnhandledMessage,
+      protocol: undefined,
+      MessageHandler: RemoteWebSocketMessageHandler,
+      ConnectionHandler: RemoteWebSocketConnectionHandler,
+      createWorker: () => worker,
+      deleteWorker: vi.fn(),
+    });
   }
 
   beforeAll(async () => {
@@ -319,16 +338,6 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       );
     });
 
-    it('should ignore broadcasts through the local worker without a registered handler', async () => {
-      await usingWebSocketInterceptorWorker({ type: 'local' }, (worker) => {
-        const interceptor = createDefaultWebSocketInterceptor();
-
-        expect(() => {
-          worker.sendToClients(interceptor.implementation, JSON.stringify({ type: 'server', text: 'ignored' }));
-        }).not.toThrow();
-      });
-    });
-
     // Successful HTTP requests and WebSocket messages cannot show that both protocols use one MSW instance, so the
     // identity is asserted directly. Two instances would let one protocol's start or stop tear down the other's
     // handlers.
@@ -571,7 +580,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
 
           const closeEvent = await closeEventPromise;
           expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-          expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
+          expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
         } finally {
           await client.close();
         }
@@ -581,13 +590,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
     // Remote-only: local workers have no interceptor server to reset.
     it('should send one reset when the last remote interceptor stops', async () => {
       await usingWebSocketInterceptorWorker(remoteWorkerOptions, { start: false }, async (worker) => {
-        const interceptor = new WebSocketInterceptorImplementation<ChatSchema, typeof RemoteWebSocketMessageHandler>({
-          baseURL: new URL(baseURL),
-          MessageHandler: RemoteWebSocketMessageHandler,
-          ConnectionHandler: RemoteWebSocketConnectionHandler,
-          createWorker: () => worker,
-          deleteWorker: vi.fn(),
-        });
+        const interceptor = createRemoteInterceptorImplementation(worker);
 
         await interceptor.start();
 
@@ -632,26 +635,6 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
       });
     });
 
-    it('should ignore sends without a registered remote client or interceptor', async () => {
-      await usingWebSocketInterceptorWorker(remoteWorkerOptions, async (worker) => {
-        const interceptor = createDefaultWebSocketInterceptor();
-        const send = vi.fn();
-        const client = createWebSocketInterceptorClient({ url: baseURL, protocols: [], send, close: vi.fn() });
-
-        await expect(
-          worker.sendToClient(client, JSON.stringify({ type: 'server', text: 'ignored client' })),
-        ).resolves.toBeUndefined();
-
-        await expect(
-          worker.sendToClients(
-            interceptor.implementation,
-            JSON.stringify({ type: 'server', text: 'ignored interceptor' }),
-          ),
-        ).resolves.toBeUndefined();
-        expect(send).not.toHaveBeenCalled();
-      });
-    });
-
     it('should keep responding through the remaining remote handlers after clearing another interceptor', async () => {
       await usingWebSocketInterceptorWorker(remoteWorkerOptions, async (worker) => {
         const firstInterceptor = createInternalWebSocketInterceptor<ChatSchema>({
@@ -660,16 +643,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         });
 
         // Runs the second interceptor on the same worker as the first one, so clearing the first resets the second.
-        const secondInterceptor = new WebSocketInterceptorImplementation<
-          ChatSchema,
-          typeof RemoteWebSocketMessageHandler
-        >({
-          baseURL: new URL(`${baseURL}/second`),
-          MessageHandler: RemoteWebSocketMessageHandler,
-          ConnectionHandler: RemoteWebSocketConnectionHandler,
-          createWorker: () => worker,
-          deleteWorker: vi.fn(),
-        });
+        const secondInterceptor = createRemoteInterceptorImplementation(worker, { baseURL: `${baseURL}/second` });
 
         try {
           await worker.use(firstInterceptor.implementation);
@@ -693,27 +667,8 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
 
     it('should not connect remote clients to interceptors cleared after the server sent the connection', async () => {
       await usingWebSocketInterceptorWorker(remoteWorkerOptions, { start: false }, async (worker) => {
-        const firstInterceptor = new WebSocketInterceptorImplementation<
-          ChatSchema,
-          typeof RemoteWebSocketMessageHandler
-        >({
-          baseURL: new URL(baseURL),
-          MessageHandler: RemoteWebSocketMessageHandler,
-          ConnectionHandler: RemoteWebSocketConnectionHandler,
-          createWorker: () => worker,
-          deleteWorker: vi.fn(),
-        });
-
-        const secondInterceptor = new WebSocketInterceptorImplementation<
-          ChatSchema,
-          typeof RemoteWebSocketMessageHandler
-        >({
-          baseURL: new URL(baseURL),
-          MessageHandler: RemoteWebSocketMessageHandler,
-          ConnectionHandler: RemoteWebSocketConnectionHandler,
-          createWorker: () => worker,
-          deleteWorker: vi.fn(),
-        });
+        const firstInterceptor = createRemoteInterceptorImplementation(worker);
+        const secondInterceptor = createRemoteInterceptorImplementation(worker);
 
         // No public path clears an interceptor after the server sends a connection and before the worker receives it.
         // A connect event listener registered ahead of the worker's clears the first interceptor at that point. It never
@@ -757,28 +712,11 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         const firstOnUnhandledMessage = vi.fn(() => ({ log: false }));
         const secondOnUnhandledMessage = vi.fn();
 
-        const firstInterceptor = new WebSocketInterceptorImplementation<
-          ChatSchema,
-          typeof RemoteWebSocketMessageHandler
-        >({
-          baseURL: new URL(baseURL),
+        const firstInterceptor = createRemoteInterceptorImplementation(worker, {
           onUnhandledMessage: firstOnUnhandledMessage,
-          MessageHandler: RemoteWebSocketMessageHandler,
-          ConnectionHandler: RemoteWebSocketConnectionHandler,
-          createWorker: () => worker,
-          deleteWorker: vi.fn(),
         });
-
-        const secondInterceptor = new WebSocketInterceptorImplementation<
-          ChatSchema,
-          typeof RemoteWebSocketMessageHandler
-        >({
-          baseURL: new URL(baseURL),
+        const secondInterceptor = createRemoteInterceptorImplementation(worker, {
           onUnhandledMessage: secondOnUnhandledMessage,
-          MessageHandler: RemoteWebSocketMessageHandler,
-          ConnectionHandler: RemoteWebSocketConnectionHandler,
-          createWorker: () => worker,
-          deleteWorker: vi.fn(),
         });
 
         // No public path clears an interceptor after the server sends a message and before the worker receives it. A

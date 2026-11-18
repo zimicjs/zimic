@@ -47,7 +47,7 @@ type BinaryMessage = WebSocketSchema<{
 
 type BinaryOrTextMessage = WebSocketSchema<{
   '/': {
-    message: Blob | string;
+    message: Blob | ArrayBuffer | string;
   };
 }>;
 
@@ -515,6 +515,29 @@ export function declareConnectionsWebSocketInterceptorTests(
         expect(await readBytes(messages[0] as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
       });
     });
+  });
+
+  it('should intercept client messages sent right before the client closes', async () => {
+    const baseURL = getBaseURL();
+
+    await usingWebSocketInterceptor<BinaryOrTextMessage>(
+      { type, baseURL, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        const handler = await interceptor.message().times(1);
+
+        await usingWebSocketClient<BinaryOrTextMessage>(baseURL, async (client) => {
+          // Node's native WebSocket drops a Blob sent right before closing, so the message is an ArrayBuffer.
+          client.send(createBinaryMessage(0x00, 0xff));
+          await client.close();
+        });
+
+        await waitFor(() => {
+          expect(handler.messages).toHaveLength(1);
+        });
+
+        expect(await readBytes(handler.messages[0].data as Blob | ArrayBuffer)).toEqual([0x00, 0xff]);
+      },
+    );
   });
 
   it('should remove closed clients from every interceptor holding them', async () => {

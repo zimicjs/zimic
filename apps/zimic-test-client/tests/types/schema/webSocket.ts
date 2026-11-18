@@ -1,8 +1,6 @@
 import { JSONSerialized } from '@zimic/http';
 import { WebSocketSchema } from '@zimic/ws';
 
-import { SocketIOWebSocketSchema } from '@tests/interceptor/webSocket/socketIO/utils';
-
 import {
   ConflictError,
   InternalServerError,
@@ -120,10 +118,3 @@ export type BinaryWebSocketSchema = WebSocketSchema<{
     message: BinaryWebSocketMessage;
   };
 }>;
-
-export interface UserSocketIOEvents {
-  'user:delete': UserWebSocketMessageOfType<'user:delete'>['data'];
-  'user:delete:success': UserWebSocketMessageOfType<'user:delete:success'>['data'];
-}
-
-export type UserSocketIOWebSocketSchema = SocketIOWebSocketSchema<UserSocketIOEvents>;

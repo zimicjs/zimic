@@ -1,5 +1,5 @@
 import { excludeNonPathParams, validateURLProtocol } from '@zimic/utils/url';
-import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
+import { WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 
 import { removeArrayElement } from '@/utils/arrays';
 import { isServerSide } from '@/utils/environment';
@@ -17,17 +17,12 @@ import {
   AnyWebSocketMessageHandlerImplementation,
   WebSocketMessageHandlerApplyContext,
 } from '../messageHandler/WebSocketMessageHandlerImplementation';
-import { normalizeWebSocketMessageData } from '../utils/messageData';
 import ConnectionSavingSafeLimitExceededError from './errors/ConnectionSavingSafeLimitExceededError';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
-import type {
-  ReceivedWebSocketMessageData,
-  WebSocketInterceptorClient,
-  WebSocketInterceptorConnectionRequest,
-  WebSocketInterceptorServerSendOptions,
-} from './types/messages';
-import type { UnhandledMessageStrategy } from './types/options';
+import type { ReceivedWebSocketMessageData, WebSocketInterceptorConnectionRequest } from './types/messages';
+import type { UnhandledMessageStrategy, WebSocketInterceptorType } from './types/options';
+import type { WebSocketInterceptorProtocol, WebSocketInterceptorProtocolContext } from './types/protocol';
 import type { WebSocketInterceptorConnectionSaving, WebSocketInterceptorMessageSaving } from './types/public';
 import type { WebSocketInterceptorPathMessage } from './types/schema';
 import {
@@ -45,12 +40,6 @@ const DEFAULT_UNHANDLED_MESSAGE_STRATEGY = Object.freeze({
   log: true,
 }) satisfies UnhandledMessageStrategy.Declaration;
 
-function isWebSocketInterceptorClientArray<Schema extends WebSocketSchema>(
-  clients: WebSocketInterceptorServerSendOptions<Schema>['to'],
-): clients is readonly WebSocketInterceptorClient<Schema>[] {
-  return Array.isArray(clients);
-}
-
 export type WebSocketMessageHandlerConstructor =
   typeof LocalWebSocketMessageHandler | typeof RemoteWebSocketMessageHandler;
 
@@ -61,6 +50,8 @@ class WebSocketInterceptorImplementation<
   Schema extends WebSocketSchema,
   MessageHandlerConstructor extends WebSocketMessageHandlerConstructor = WebSocketMessageHandlerConstructor,
 > {
+  readonly type: WebSocketInterceptorType;
+
   #baseURL!: URL;
 
   messageSaving: WebSocketInterceptorMessageSaving;
@@ -79,8 +70,10 @@ class WebSocketInterceptorImplementation<
   // Kept in registration order, so times checks run in the order the handlers were declared.
   private handlers: (AnyWebSocketMessageHandlerImplementation | AnyWebSocketConnectionHandlerImplementation)[] = [];
 
-  private _server: InternalWebSocketInterceptorServer<Schema>;
-  private _clients: InternalWebSocketInterceptorClient<Schema>[] = [];
+  #server: InternalWebSocketInterceptorServer<Schema>;
+  #clients: InternalWebSocketInterceptorClient<Schema>[] = [];
+
+  readonly protocol: WebSocketInterceptorProtocol<WebSocketSchemaMessage<Schema>> | undefined;
 
   private createWorker: () => WebSocketInterceptorWorker;
   private deleteWorker: () => void;
@@ -93,15 +86,19 @@ class WebSocketInterceptorImplementation<
   private connectionSavingGeneration = {};
 
   constructor(options: {
+    type: WebSocketInterceptorType;
     baseURL: URL;
     messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
     connectionSaving?: Partial<WebSocketInterceptorConnectionSaving>;
     onUnhandledMessage?: UnhandledMessageStrategy;
+    protocol: WebSocketInterceptorProtocol<WebSocketSchemaMessage<Schema>> | undefined;
     MessageHandler: MessageHandlerConstructor;
     ConnectionHandler: WebSocketConnectionHandlerConstructor;
     createWorker: () => WebSocketInterceptorWorker;
     deleteWorker: () => void;
   }) {
+    this.type = options.type;
+
     this.baseURL = options.baseURL;
 
     this.messageSaving = {
@@ -117,27 +114,36 @@ class WebSocketInterceptorImplementation<
 
     this.onUnhandledMessage = options.onUnhandledMessage;
 
+    this.protocol = options.protocol;
+
     this.MessageHandler = options.MessageHandler;
     this.ConnectionHandler = options.ConnectionHandler;
+
     this.createWorker = options.createWorker;
     this.deleteWorker = options.deleteWorker;
-    this._server = createWebSocketInterceptorServer(
+
+    this.#server = createWebSocketInterceptorServer(
       () => this.baseURLAsString,
       (data, options) => {
-        if (options?.to === undefined) {
-          void this.worker?.sendToClients(this, data);
-          return;
-        }
+        const requestedRecipients = options?.to === undefined ? undefined : [options.to].flat();
 
-        const clients = isWebSocketInterceptorClientArray(options.to) ? options.to : [options.to];
+        const recipients =
+          requestedRecipients === undefined
+            ? [...this.#clients]
+            : this.#clients.filter((client) => requestedRecipients.includes(client));
 
-        for (const client of this._clients) {
-          if (clients.includes(client)) {
-            void this.worker?.sendToClient(client, data);
-          }
+        for (const client of recipients) {
+          client.send(data);
         }
       },
     );
+  }
+
+  private createProtocolContext(): WebSocketInterceptorProtocolContext<WebSocketSchemaMessage<Schema>> {
+    return {
+      interceptor: { type: this.type, baseURL: this.baseURLAsString },
+      openClient: (options) => this.workerOrThrow.openProtocolClient(this, options),
+    };
   }
 
   private getDefaultSavingEnabled(): boolean {
@@ -211,7 +217,17 @@ class WebSocketInterceptorImplementation<
       this.worker.registerRunningInterceptor(this);
 
       await this.worker.start();
-      await this.worker.use(this);
+
+      // Starts before the worker routes connections here, so the protocol claims all of them. A rejected start cleans up
+      // after itself.
+      await this.protocol?.start(this.createProtocolContext());
+
+      try {
+        await this.worker.use(this);
+      } catch (error) {
+        await this.protocol?.stop();
+        throw error;
+      }
 
       this.isRunning = true;
     } catch (error) {
@@ -244,11 +260,15 @@ class WebSocketInterceptorImplementation<
       return;
     }
 
-    // Clearing and unregistering in one worker call sends a single reset to a remote server, so no connection opened
-    // during the stop reaches an interceptor that is cleared but still registered.
-    await this.clearAndOptionallyUnregister({ preserveInterceptorRegistration: false });
+    try {
+      await this.protocol?.stop();
+    } finally {
+      // Clearing and unregistering in one worker call sends a single reset to a remote server, so no connection opened
+      // during the stop reaches an interceptor that is cleared but still registered.
+      await this.clearAndOptionallyUnregister({ preserveInterceptorRegistration: false });
 
-    await this.stopWorker();
+      await this.stopWorker();
+    }
   }
 
   private async stopWorker() {
@@ -283,11 +303,11 @@ class WebSocketInterceptorImplementation<
   }
 
   get server() {
-    return this._server;
+    return this.#server;
   }
 
   get clients() {
-    return this._clients;
+    return this.#clients;
   }
 
   // As in HTTP, handlers declared with a concrete path are typed with the declared path it belongs to.
@@ -415,8 +435,10 @@ class WebSocketInterceptorImplementation<
 
   // Unlike HTTP, unhandled messages have no bypass or reject action. WebSocket is not request-response, so a message
   // needs no reply and the connection stays open.
-  async logUnhandledMessageIfNecessary(data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>, url: string) {
-    const message = await normalizeWebSocketMessageData(data);
+  async logUnhandledMessageIfNecessary(
+    message: ReceivedWebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+    url: string,
+  ) {
     const strategy = await this.getUnhandledMessageStrategy(message);
 
     if (strategy.log ?? DEFAULT_UNHANDLED_MESSAGE_STRATEGY.log) {
@@ -440,11 +462,11 @@ class WebSocketInterceptorImplementation<
   }
 
   addClient(client: InternalWebSocketInterceptorClient<Schema>) {
-    this._clients.push(client);
+    this.#clients.push(client);
   }
 
   removeClient(client: InternalWebSocketInterceptorClient<Schema>) {
-    removeArrayElement(this._clients, client);
+    removeArrayElement(this.#clients, client);
   }
 
   checkTimes() {
@@ -464,6 +486,8 @@ class WebSocketInterceptorImplementation<
     this.connectionSavingGeneration = {};
 
     const clearResult = worker.clearHandlers({ interceptor: this, ...options });
+
+    this.protocol?.clear();
 
     for (const handler of this.handlers) {
       handler.clear();
