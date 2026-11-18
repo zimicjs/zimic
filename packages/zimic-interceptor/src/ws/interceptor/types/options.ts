@@ -1,6 +1,7 @@
 import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 
+import type { ReceivedWebSocketMessageData } from './messages';
 import type { WebSocketInterceptorProtocol } from './protocol';
 import { WebSocketInterceptorConnectionSaving, WebSocketInterceptorMessageSaving } from './public';
 
@@ -30,8 +31,12 @@ export namespace UnhandledMessageStrategy {
     log?: boolean;
   }
 
+  // Generic over the message, not the schema. TypeScript does not relate the messages of two schemas by variance, so a
+  // schema parameter would reject a factory of the default schema on an interceptor with a declared schema.
   /** @see {@link https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages Unhandled messages} */
-  export type DeclarationFactory = (message: WebSocketMessageSchema) => PossiblePromise<Declaration>;
+  export type DeclarationFactory<Message extends WebSocketMessageSchema = WebSocketMessageSchema> = (
+    message: ReceivedWebSocketMessageData<Message>,
+  ) => PossiblePromise<Declaration>;
 }
 
 /**
@@ -39,8 +44,8 @@ export namespace UnhandledMessageStrategy {
  *
  * @see {@link https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages Unhandled messages}
  */
-export type UnhandledMessageStrategy =
-  UnhandledMessageStrategy.Declaration | UnhandledMessageStrategy.DeclarationFactory;
+export type UnhandledMessageStrategy<Schema extends WebSocketSchema = WebSocketSchema> =
+  UnhandledMessageStrategy.Declaration | UnhandledMessageStrategy.DeclarationFactory<WebSocketSchemaMessage<Schema>>;
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
 export interface SharedWebSocketInterceptorOptions<Schema extends WebSocketSchema = WebSocketSchema> {
@@ -63,7 +68,7 @@ export interface SharedWebSocketInterceptorOptions<Schema extends WebSocketSchem
   protocol?: WebSocketInterceptorProtocol<WebSocketSchemaMessage<Schema>>;
 
   /** @see {@link https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages Unhandled messages} */
-  onUnhandledMessage?: UnhandledMessageStrategy;
+  onUnhandledMessage?: UnhandledMessageStrategy<Schema>;
 }
 
 /**

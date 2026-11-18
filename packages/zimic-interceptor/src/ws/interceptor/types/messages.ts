@@ -26,6 +26,16 @@ export type ReceivedWebSocketMessageData<Message extends WebSocketMessageSchema>
     : Replace<Message, Blob | ArrayBufferView, ArrayBuffer>;
 
 /**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * A message that no handler of the interceptor matched.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages Unhandled messages}
+ */
+export type UnhandledWebSocketInterceptorMessage<Schema extends WebSocketSchema = WebSocketSchema> =
+  ReceivedWebSocketMessageData<WebSocketSchemaMessage<Schema>>;
+
+/**
  * The top-level JSON values that text messages keep as text, because only objects and arrays are parsed. Top-level
  * `null` is absent because a `WebSocketMessageSchema` cannot be `null`.
  */

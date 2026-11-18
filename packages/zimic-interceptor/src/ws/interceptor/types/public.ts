@@ -57,7 +57,7 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
   connectionSaving: WebSocketInterceptorConnectionSaving;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptoronunhandledmessage `interceptor.onUnhandledMessage` API reference} */
-  onUnhandledMessage?: UnhandledMessageStrategy;
+  onUnhandledMessage?: UnhandledMessageStrategy<Schema>;
 
   /**
    * @readonly

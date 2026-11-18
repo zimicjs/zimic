@@ -4,7 +4,8 @@ import { describe, expectTypeOf, it } from 'vitest';
 import type { LocalWebSocketMessageHandler } from '@/ws/messageHandler/types/public';
 
 import { createWebSocketInterceptor } from '../factory';
-import { WebSocketInterceptorOptions, WebSocketInterceptorType } from '../types/options';
+import { UnhandledWebSocketInterceptorMessage } from '../types/messages';
+import { UnhandledMessageStrategy, WebSocketInterceptorOptions, WebSocketInterceptorType } from '../types/options';
 import { LocalWebSocketInterceptor, RemoteWebSocketInterceptor } from '../types/public';
 import { InferWebSocketInterceptorSchema } from '../types/schema';
 import { declareWebSocketInterceptorTypes } from './shared/utils';
@@ -164,6 +165,41 @@ describe('WebSocketInterceptor > Types', () => {
       }
 
       expectTypeOf(declareInvalidMessages).toBeFunction();
+    });
+  });
+
+  describe('Unhandled messages', () => {
+    it('should correctly type the unhandled message strategy', () => {
+      declareWebSocketInterceptorTypes<MessageSchema>((interceptor) => {
+        expectTypeOf(interceptor.onUnhandledMessage).toEqualTypeOf<
+          UnhandledMessageStrategy<MessageSchema> | undefined
+        >();
+      });
+    });
+
+    it('should type unhandled message factories with the messages of the schema', () => {
+      function declareInterceptor(baseURL: string) {
+        createWebSocketInterceptor<MessageSchema>({
+          baseURL,
+          onUnhandledMessage(message) {
+            expectTypeOf(message).toEqualTypeOf<UnhandledWebSocketInterceptorMessage<MessageSchema>>();
+            expectTypeOf(message).toEqualTypeOf<Message>();
+
+            // @ts-expect-error The property is not declared in the messages of the schema.
+            return { log: message.unknown === 'value' };
+          },
+        });
+      }
+
+      expectTypeOf(declareInterceptor).toBeFunction();
+    });
+
+    it('should accept unhandled message strategies of the default schema', () => {
+      function declareInterceptor(baseURL: string, onUnhandledMessage: UnhandledMessageStrategy) {
+        createWebSocketInterceptor<MessageSchema>({ baseURL, onUnhandledMessage });
+      }
+
+      expectTypeOf(declareInterceptor).toBeFunction();
     });
   });
 });

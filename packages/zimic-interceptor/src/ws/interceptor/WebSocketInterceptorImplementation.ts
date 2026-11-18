@@ -60,7 +60,7 @@ class WebSocketInterceptorImplementation<
   connectionSaving: WebSocketInterceptorConnectionSaving;
   private numberOfSavedConnections = 0;
 
-  onUnhandledMessage?: UnhandledMessageStrategy;
+  onUnhandledMessage?: UnhandledMessageStrategy<Schema>;
 
   isRunning = false;
 
@@ -90,7 +90,7 @@ class WebSocketInterceptorImplementation<
     baseURL: URL;
     messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
     connectionSaving?: Partial<WebSocketInterceptorConnectionSaving>;
-    onUnhandledMessage?: UnhandledMessageStrategy;
+    onUnhandledMessage?: UnhandledMessageStrategy<Schema>;
     protocol: WebSocketInterceptorProtocol<WebSocketSchemaMessage<Schema>> | undefined;
     MessageHandler: MessageHandlerConstructor;
     ConnectionHandler: WebSocketConnectionHandlerConstructor;
