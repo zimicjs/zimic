@@ -353,33 +353,28 @@ abstract class WebSocketInterceptorWorker {
     }
   }
 
-  // The newest claiming holder takes the connection alone, as the newest handler takes precedence. The protocol closes a
-  // claimed connection, so it stays open after its holders let it go. No caller awaits claims, so their errors are
-  // logged.
-  protected claimConnectionWithProtocols(
+  // A protocol owns the framing of the connections it claims, so it takes them alone, before interceptors without
+  // protocols, which could not serve its frames. Among protocols, the newest claiming holder takes the connection, as
+  // the newest handler takes precedence. Interceptors without protocols share the connections no protocol claims, and a
+  // protocol serves only the connections it claims. The protocol closes a claimed connection, so it stays open after its
+  // holders let it go. No caller awaits claims, so their errors are logged.
+  protected routeConnectionToHolders<Holder extends { interceptor: AnyWebSocketInterceptorImplementation }>(
     connection: WebSocketInterceptorProtocolConnection,
-    holders: { interceptor: AnyWebSocketInterceptorImplementation }[],
-  ): WebSocketInterceptorProtocolConnectionClaim | undefined {
+    holders: Holder[],
+  ): { claim: WebSocketInterceptorProtocolConnectionClaim } | { claim?: undefined; holders: Holder[] } {
     for (const { interceptor } of holders.toReversed()) {
       try {
         const claim = interceptor.protocol?.claimConnection(connection);
 
         if (claim) {
-          return claim;
+          return { claim };
         }
       } catch (error) {
         console.error(error);
       }
     }
 
-    return undefined;
-  }
-
-  // A protocol serves only the connections it claims, so its interceptor holds no other connection.
-  protected filterHoldersWithoutProtocols<Holder extends { interceptor: AnyWebSocketInterceptorImplementation }>(
-    holders: Holder[],
-  ) {
-    return holders.filter(({ interceptor }) => interceptor.protocol === undefined);
+    return { holders: holders.filter(({ interceptor }) => interceptor.protocol === undefined) };
   }
 
   protected async handleRawMessageWithHandlers(

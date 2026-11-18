@@ -329,11 +329,13 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     const holderCandidates = this.findConnectionHolders(connection.url);
 
-    if (this.claimConnection(connection, holderCandidates)) {
+    const routing = this.routeLocalConnectionToHolders(connection, holderCandidates);
+
+    if (routing.claim) {
       return;
     }
 
-    const holderInterceptors = this.filterHoldersWithoutProtocols(holderCandidates);
+    const holderInterceptors = routing.holders;
 
     if (holderInterceptors.length === 0) {
       server.connect();
@@ -351,10 +353,15 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     await this.decideConnection(pendingConnection);
   }
 
-  private claimConnection(connection: LocalWebSocketClientConnection, holders: RegisteredWebSocketInterceptor[]) {
+  private routeLocalConnectionToHolders(
+    connection: LocalWebSocketClientConnection,
+    holders: RegisteredWebSocketInterceptor[],
+  ) {
     const queues: LocalWebSocketConnectionQueues = { connection, deliveries: Promise.resolve() };
 
-    const claim = this.claimConnectionWithProtocols(
+    // Local Socket.IO interceptors serve polling only and close the WebSockets they claim without sending to them, so
+    // the frames and close of a claim are not read.
+    return this.routeConnectionToHolders(
       {
         url: connection.url.href,
         send: this.deliverMessage.bind(this, queues),
@@ -362,10 +369,6 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       },
       holders,
     );
-
-    // Local Socket.IO interceptors serve polling only and close the WebSockets they claim without sending to them, so
-    // their frames and close are not read.
-    return claim !== undefined;
   }
 
   private async decideConnection(pendingConnection: PendingLocalWebSocketConnection) {

@@ -200,11 +200,11 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     return this.sendQueue;
   }
 
-  private claimConnection(clientId: string, url: string, holders: RegisteredWebSocketInterceptor[]) {
+  private routeClientToHolders(clientId: string, url: string, holders: RegisteredWebSocketInterceptor[]) {
     // Protocols may close a connection while handling its close, when the server no longer has it.
     let isClosed = false;
 
-    const claim = this.claimConnectionWithProtocols(
+    const routing = this.routeConnectionToHolders(
       {
         url,
         send: (frame) => {
@@ -219,17 +219,17 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       holders,
     );
 
-    if (claim) {
+    if (routing.claim) {
       this.claimedConnections.set(clientId, {
-        onFrame: claim.onFrame,
+        onFrame: routing.claim.onFrame,
         onClose: () => {
           isClosed = true;
-          claim.onClose();
+          routing.claim.onClose();
         },
       });
     }
 
-    return claim !== undefined;
+    return routing;
   }
 
   // The server no longer reports the close of claimed connections once the worker disconnects.
@@ -262,13 +262,13 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       return registeredInterceptor && isHolding(registeredInterceptor) ? [registeredInterceptor] : [];
     });
 
-    const hasClaimedConnection = this.claimConnection(connection.clientId, connection.url, holderCandidates);
+    const routing = this.routeClientToHolders(connection.clientId, connection.url, holderCandidates);
 
-    if (hasClaimedConnection) {
+    if (routing.claim) {
       return { action: 'claim' };
     }
 
-    const holderInterceptors = this.filterHoldersWithoutProtocols(holderCandidates);
+    const holderInterceptors = routing.holders;
 
     this.decidingClientIds.add(connection.clientId);
 
