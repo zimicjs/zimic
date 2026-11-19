@@ -7,7 +7,7 @@
 </h1>
 
 <p align="center">
-  Next-gen TypeScript-first HTTP integrations
+  Next-gen TypeScript-first HTTP and WebSocket integrations
 </p>
 
 <p align="center">
@@ -30,7 +30,7 @@
 
 ---
 
-Zimic is a collection of TypeScript-first HTTP integration libraries.
+Zimic is a collection of TypeScript-first HTTP and WebSocket integration libraries.
 
 ## Highlights
 
