@@ -102,14 +102,14 @@ await handler.with((message) => matchesMessage);
 
 1. **restriction**: `WebSocketMessageHandlerRestriction<RestrictedMessage>`
 
-   The restriction to match intercepted messages. It can be static, declared as one of the following:
+   The restriction to match intercepted messages. It can be [static](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#static-restrictions), declared as one of the following:
    - A partial JSON object or array, matching JSON messages that contain it.
    - A text, matching text messages that include it. Top-level number and boolean schema members arrive as text, so their restrictions are also text, such as `'42'` or `'true'`.
    - Binary data, as a `Blob`, an `ArrayBuffer`, or an `ArrayBufferView`, matching binary messages with the same bytes.
 
    A text restriction must fit a text member of the schema. For example, if the schema declares the literal members `'ping'` and `'pong'`, `handler.with('pi')` is a type error, even though it would match `'ping'` at runtime. To match part of a literal member, use a computed restriction, such as `handler.with((message) => message.includes('pi'))`.
 
-   Restrictions can also be computed, declared as a function to dynamically decide whether the message matches:
+   Restrictions can also be [computed](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#computed-restrictions), declared as a function to dynamically decide whether the message matches:
 
    **Arguments**:
    1. **message**: `ReceivedWebSocketMessageData<RestrictedMessage>`
@@ -173,6 +173,11 @@ The same handler, now considering the specified restriction. JSON and binary sta
 
 If the interceptor is local, the restriction is immediately applied to the handler. If the interceptor is remote, the restriction is asynchronously sent to the [interceptor server](/docs/zimic-interceptor/cli/1-server.md). Because of the asynchronous nature of remote interceptors, make sure to await the handler before sending messages.
 
+**Related**:
+
+- [Restrictions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#restrictions)
+- [Using client messages](/docs/zimic-interceptor/guides/ws/3-messages.mdx#using-client-messages)
+
 ## `handler.from()`
 
 Restricts the handler to messages sent by a specific connected client.
@@ -204,6 +209,10 @@ await handler.from(client);
 **Returns**: `WebSocketMessageHandler<Schema, Path, RestrictedMessage>`
 
 The same handler, now considering only messages sent by the client.
+
+**Related**:
+
+- [Using connected clients](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#using-connected-clients)
 
 ## `handler.delay()`
 
@@ -246,6 +255,10 @@ await handler.delay((message) => milliseconds);
 **Returns**: `WebSocketMessageHandler<Schema, Path, RestrictedMessage>`
 
 The same handler, now including the configured delay.
+
+**Related**:
+
+- [Declarative delays](/docs/zimic-interceptor/guides/ws/6-declarative-delays.mdx)
 
 ## `handler.effect()`
 
@@ -303,6 +316,10 @@ The same handler, now including the declared effect.
 
 Handlers with an effect and no response are valid. They can observe messages, save them when message saving is enabled, and count toward [`handler.times()`](#handlertimes).
 
+**Related**:
+
+- [Sending server messages](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#sending-server-messages)
+
 ## `handler.respond()`
 
 Declares a server message to send to the client that sent a matched message. The message type is statically validated against the schema of the handler path.
@@ -357,6 +374,10 @@ The same handler, now including the declared response.
 
 If the interceptor is local, the response declaration is immediately applied to the handler. If the interceptor is remote, the declaration is asynchronously sent to the [interceptor server](/docs/zimic-interceptor/cli/1-server.md). Because of the asynchronous nature of remote interceptors, make sure to await the handler before sending messages.
 
+**Related**:
+
+- [Using server messages](/docs/zimic-interceptor/guides/ws/3-messages.mdx#using-server-messages)
+
 ## `handler.times()`
 
 Declares a number of intercepted messages that the handler will be able to match.
@@ -404,6 +425,10 @@ The same handler, now considering the specified number of messages.
 To make sure that all expected messages were sent, use [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes) or [`handler.checkTimes()`](#handlerchecktimes). [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes) is generally preferred, as it checks all handlers created by the interceptor with a single call.
 
 :::
+
+**Related**:
+
+- [Declarative assertions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#number-of-messages-and-connections)
 
 ## `handler.checkTimes()`
 

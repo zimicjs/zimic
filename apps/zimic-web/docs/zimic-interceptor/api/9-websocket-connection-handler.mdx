@@ -104,7 +104,7 @@ await handler.with((request) => matchesRequest);
 
 1. **restriction**: `WebSocketConnectionHandlerRestriction<Schema, Path>`
 
-   The restriction to match intercepted connections. It can be static, defined as an object with the following properties:
+   The restriction to match intercepted connections. It can be [static](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#static-restrictions), defined as an object with the following properties:
    - **searchParams**: `Partial<SearchParamsSchema> | HttpSearchParams<SearchParamsSchema> | undefined`
 
      A set of search params that the connection URL must contain to match the handler, declared as a partial record or an [`HttpSearchParams`](/docs/zimic-http/api/3-http-search-params.md) instance. Array values declare a search param with multiple values, such as `{ tag: ['a', 'b'] }` for `?tag=a&tag=b`. If exact is `true`, the connection URL must contain exactly these search params and no others.
@@ -117,7 +117,7 @@ await handler.with((request) => matchesRequest);
 
      If `true`, the connection must contain **exactly** the search params and subprotocols declared in this restriction. Otherwise, the connection must contain **at least** them.
 
-   Restrictions can also be computed, declared as a function to dynamically decide whether the connection matches:
+   Restrictions can also be [computed](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#computed-restrictions), declared as a function to dynamically decide whether the connection matches:
 
    **Arguments**:
    1. **request**: `WebSocketInterceptorConnectionRequest<Schema, Path>`
@@ -181,6 +181,10 @@ The same handler, now considering the specified restriction.
 
 If the interceptor is local, the restriction is immediately applied to the handler. If the interceptor is remote, the restriction is asynchronously sent to the [interceptor server](/docs/zimic-interceptor/cli/1-server.md). Because of the asynchronous nature of remote interceptors, make sure to await the handler before opening clients.
 
+**Related**:
+
+- [Restrictions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#restrictions)
+
 ## `handler.delay()`
 
 Declares a delay to wait before answering the handshake of matched connections. The delay runs before [`handler.respond()`](#handlerrespond) decides the connection, so the client stays in the `CONNECTING` state during the delay, whether the connection is accepted or rejected afterward. This is useful for simulating network latency or testing connecting states in your application, for example.
@@ -222,6 +226,10 @@ await handler.delay((request) => milliseconds);
 **Returns**: `WebSocketConnectionHandler<Schema, Path>`
 
 The same handler, now including the configured delay.
+
+**Related**:
+
+- [Declarative delays](/docs/zimic-interceptor/guides/ws/6-declarative-delays.mdx)
 
 ## `handler.respond()`
 
@@ -308,6 +316,10 @@ Remote interceptors refuse the handshake with an HTTP `403` response, which clie
 
 :::
 
+**Related**:
+
+- [Rejecting connections](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#rejecting-connections)
+
 ## `handler.effect()`
 
 Declares a side effect to run when the handler accepts a matched connection. Only the effect of the handler that decided the connection runs.
@@ -363,6 +375,10 @@ A rejected connection has no client, so the effect of a handler that [rejects](#
 
 :::
 
+**Related**:
+
+- [Running effects on connection](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#running-effects-on-connection)
+
 ## `handler.times()`
 
 Declares a number of intercepted connections that the handler will be able to match. Accepted and rejected connections both count.
@@ -410,6 +426,10 @@ The same handler, now considering the specified number of connections.
 To make sure that all expected connections were made, use [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes) or [`handler.checkTimes()`](#handlerchecktimes). [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes) is generally preferred, as it checks all handlers created by the interceptor with a single call.
 
 :::
+
+**Related**:
+
+- [Declarative assertions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#number-of-messages-and-connections)
 
 ## `handler.checkTimes()`
 

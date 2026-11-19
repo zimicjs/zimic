@@ -78,6 +78,10 @@ Configures if intercepted messages are saved and how they are handled.
 
   The safe number of messages to save in memory before logging warnings in the console. If `messageSaving.enabled` is `true` and the interceptor is not regularly cleared with [`interceptor.clear()`](#interceptorclear), the messages may accumulate in memory and cause performance issues. This option does not limit the number of messages saved in memory, only when to log warnings.
 
+**Related**:
+
+- [Testing](/docs/zimic-interceptor/guides/ws/8-testing.mdx#saving-messages-and-connections)
+
 ## `interceptor.connectionSaving`
 
 Configures if intercepted connections are saved and how they are handled.
@@ -99,6 +103,10 @@ Configures if intercepted connections are saved and how they are handled.
 - **safeLimit**: `number | undefined` (default: `1000`)
 
   The safe number of connections to save in memory before logging warnings in the console. If `connectionSaving.enabled` is `true` and the interceptor is not regularly cleared with [`interceptor.clear()`](#interceptorclear), the connections may accumulate in memory and cause performance issues. This option does not limit the number of connections saved in memory, only when to log a `ConnectionSavingSafeLimitExceededError` warning.
+
+**Related**:
+
+- [Testing](/docs/zimic-interceptor/guides/ws/8-testing.mdx#saving-messages-and-connections)
 
 ## `interceptor.onUnhandledMessage`
 
@@ -320,6 +328,10 @@ When message saving is enabled, matched client-to-server messages are available 
 
 Messages sent with `interceptor.server.send()` are delivered to connected clients, but they are not added to handler or client saved message lists. Saved messages are produced by matched client-to-server messages.
 
+**Related**:
+
+- [Sending server messages](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#sending-server-messages)
+
 ## `interceptor.clients`
 
 The clients connected to the interceptor, one for each accepted connection it holds. Connections still being decided by [connection handlers](#declaring-connection-handlers) and rejected connections are not listed. The clients are typed with the messages of all paths in the schema.
@@ -327,6 +339,10 @@ The clients connected to the interceptor, one for each accepted connection it ho
 **Type**: `readonly WebSocketInterceptorClient<Schema>[]`
 
 Learn more about the members of each client in the [`WebSocketInterceptorClient`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx) reference.
+
+**Related**:
+
+- [Using connected clients](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#using-connected-clients)
 
 ## `interceptor.checkTimes()`
 
