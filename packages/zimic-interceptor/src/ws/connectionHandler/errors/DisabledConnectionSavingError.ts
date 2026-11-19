@@ -2,6 +2,8 @@
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * Error thrown when trying to access connections when the interceptor is not configured to save them.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorconnectionsaving `interceptor.connectionSaving` API reference}
  */
 class DisabledConnectionSavingError extends TypeError {
   constructor() {

@@ -25,19 +25,14 @@ export interface WebSocketInterceptorMessageSaving {
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * Configures if intercepted connections are saved and how they are handled.
+ * @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorconnectionsaving `interceptor.connectionSaving` API reference}
  */
 export interface WebSocketInterceptorConnectionSaving {
-  /**
-   * Whether connection handlers should save their matched connection attempts in memory and make them accessible
-   * through `handler.connections`. Defaults to `process.env.NODE_ENV === 'test'` in Node.js and `false` in browsers.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorconnectionsaving `interceptor.connectionSaving` API reference} */
   enabled: boolean;
 
-  /**
-   * The number of saved connections after which the interceptor logs warnings in the console. It does not limit how
-   * many connections are saved. Defaults to `1000`.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorconnectionsaving `interceptor.connectionSaving` API reference} */
   safeLimit: number;
 }
 
@@ -53,7 +48,7 @@ export interface WebSocketInterceptor<Schema extends WebSocketSchema> {
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptormessagesaving `interceptor.messageSaving` API reference} */
   messageSaving: WebSocketInterceptorMessageSaving;
 
-  /** Configures if intercepted connections are saved and how they are handled. */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorconnectionsaving `interceptor.connectionSaving` API reference} */
   connectionSaving: WebSocketInterceptorConnectionSaving;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptoronunhandledmessage `interceptor.onUnhandledMessage` API reference} */
@@ -114,13 +109,7 @@ export interface LocalWebSocketInterceptor<Schema extends WebSocketSchema> exten
     path?: Path,
   ) => LocalWebSocketMessageHandler<Schema, WebSocketInterceptorHandlerPath<Schema, Path>>;
 
-  /**
-   * Creates a connection handler for connection attempts to the interceptor, which can accept or reject them before
-   * they open.
-   *
-   * @param path The path of the connections to match, relative to the base URL of the interceptor, such as
-   *   `/rooms/:roomId`. If omitted, the handler matches every connection to the interceptor.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorconnection `interceptor.connection()` API reference} */
   connection: <Path extends WebSocketSchemaPath.NonLiteral<Schema> = never>(
     path?: Path,
   ) => LocalWebSocketConnectionHandler<Schema, WebSocketInterceptorHandlerPath<Schema, Path>>;
@@ -153,13 +142,7 @@ export interface RemoteWebSocketInterceptor<Schema extends WebSocketSchema> exte
     path?: Path,
   ) => RemoteWebSocketMessageHandler<Schema, WebSocketInterceptorHandlerPath<Schema, Path>>;
 
-  /**
-   * Creates a connection handler for connection attempts to the interceptor, which can accept or reject them before
-   * they open.
-   *
-   * @param path The path of the connections to match, relative to the base URL of the interceptor, such as
-   *   `/rooms/:roomId`. If omitted, the handler matches every connection to the interceptor.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorconnection `interceptor.connection()` API reference} */
   connection: <Path extends WebSocketSchemaPath.NonLiteral<Schema> = never>(
     path?: Path,
   ) => RemoteWebSocketConnectionHandler<Schema, WebSocketInterceptorHandlerPath<Schema, Path>>;

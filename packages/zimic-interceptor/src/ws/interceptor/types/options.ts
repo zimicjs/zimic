@@ -58,7 +58,7 @@ export interface SharedWebSocketInterceptorOptions<Schema extends WebSocketSchem
   /** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
   messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
 
-  /** Configures if intercepted connections are saved and how they are handled. */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
   connectionSaving?: Partial<WebSocketInterceptorConnectionSaving>;
 
   /**

@@ -118,19 +118,24 @@ export type WebSocketInterceptorConnectionProtocol<
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * The handshake of a connection attempt to the interceptor, as matched by a connection handler before it is answered.
- * It describes the attempt and is not a native `Request`.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
  */
 export interface WebSocketInterceptorConnectionRequest<
   Schema extends WebSocketSchema = WebSocketSchema,
   Path extends string = string,
 > {
-  /** The URL used to open the connection. */
+  /**
+   * The URL used to open the connection.
+   *
+   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
+   */
   url: string;
 
   /**
-   * The subprotocols requested by the client when opening the connection, in the order they were requested, as in
-   * {@link https://developer.mozilla.org/docs/Web/API/WebSocket/WebSocket#protocols `new WebSocket(url, protocols)`}.
-   * Empty if the client requested none.
+   * The subprotocols requested by the client when opening the connection, in the order they were requested.
+   *
+   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
    */
   protocols: readonly WebSocketInterceptorConnectionProtocol<Schema, Path>[];
 
