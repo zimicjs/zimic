@@ -9,7 +9,7 @@ describe('Example tests', () => {
     chatInterceptor
       .connection('/rooms/:roomId')
       .effect((client) => {
-        client.send(JSON.stringify({ type: 'presence', data: { online: true } }));
+        client.send({ type: 'presence', data: { online: true } });
       })
       .times(1);
 
