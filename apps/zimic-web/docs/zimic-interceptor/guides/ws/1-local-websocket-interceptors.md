@@ -188,15 +188,15 @@ console.log(handler.messages.length); // 1
 
 ### Connected clients
 
-Use [`interceptor.on('connection', listener)`](/docs/interceptor/api/websocket-interceptor#interceptoron) to run code when a client first connects, before it sends any messages. The callback receives the typed client handle:
+Use a [connection handler](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx) effect, declared with [`interceptor.connection()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorconnection), to run code when a client connects, before it sends any messages. The callback receives the typed client handle:
 
 ```ts
-interceptor.on('connection', (client) => {
+interceptor.connection().effect((client) => {
   client.send(JSON.stringify({ type: 'presence', data: { online: true } }));
 });
 ```
 
-Register the listener before opening application clients. Existing connections are not replayed. Remove a listener with `interceptor.off('connection', listener)`, passing the same callback reference. `interceptor.clear()` and `interceptor.stop()` also remove listeners, so register them again after clearing or restarting the interceptor.
+Declare the handler before opening application clients. Existing connections are not replayed. `interceptor.clear()` and `interceptor.stop()` also remove connection handlers, so declare them again after clearing or restarting the interceptor.
 
 The interceptor tracks currently connected clients in `interceptor.clients`. Each client is a public handle that can send messages back to the real WebSocket connection. You can use these handles in `.from(...)` restrictions or inside effects.
 
