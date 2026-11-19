@@ -160,7 +160,7 @@ A type-safe interceptor library for handling and mocking HTTP requests and WebSo
 
 - :bulb: **Readability**
 
-  `@zimic/interceptor` was designed to encourage clarity and readability. Declare intuitive mocks, test with confidence, and verify that your application is making the expected HTTP requests or WebSocket messages with [declarative assertions](/docs/interceptor/guides/http/declarative-assertions).
+  `@zimic/interceptor` was designed to encourage clarity and readability. Declare intuitive mocks, test with confidence, and verify that your application is making the expected HTTP requests or WebSocket messages with declarative assertions for [HTTP](/docs/interceptor/guides/http/declarative-assertions) and [WebSocket](/docs/interceptor/guides/ws/declarative-assertions).
 
 **Learn more**:
 

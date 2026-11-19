@@ -74,7 +74,7 @@ WebSocket interception requires a native or polyfilled [WebSocket API](https://d
 
 - :bulb: **Readability**
 
-  `@zimic/interceptor` was designed to encourage clarity and readability. Declare intuitive mocks, test with confidence, and verify that your application is making the expected HTTP requests or WebSocket messages with [declarative assertions](https://zimic.dev/docs/interceptor/guides/http/declarative-assertions).
+  `@zimic/interceptor` was designed to encourage clarity and readability. Declare intuitive mocks, test with confidence, and verify that your application is making the expected HTTP requests or WebSocket messages with declarative assertions for [HTTP](https://zimic.dev/docs/interceptor/guides/http/declarative-assertions) and [WebSocket](https://zimic.dev/docs/interceptor/guides/ws/declarative-assertions).
 
 **Learn more**:
 
