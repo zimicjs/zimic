@@ -63,7 +63,9 @@ export interface SharedWebSocketInterceptorOptions<Schema extends WebSocketSchem
 
   /**
    * Serves a protocol, such as Socket.IO, on its own transports, opening the clients whose messages handlers receive.
-   * With a protocol, the interceptor holds only the WebSocket connections its protocol claims.
+   *
+   * @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference}
+   * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io Mocking Socket.IO servers}
    */
   protocol?: WebSocketInterceptorProtocol<WebSocketSchemaMessage<Schema>>;
 

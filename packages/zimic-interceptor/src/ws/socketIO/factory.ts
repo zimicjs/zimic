@@ -12,6 +12,8 @@ const DEFAULT_NAMESPACE = '/';
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * Creates a protocol to mock Socket.IO servers with WebSocket interceptor handlers.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#creating-a-socketio-interceptor Creating a Socket.IO interceptor}
  */
 export function createSocketIOProtocol<Message extends SocketIOMessage = SocketIOMessage>(
   options: SocketIOProtocolOptions = {},

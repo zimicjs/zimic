@@ -16,6 +16,8 @@ interface SocketIOPollingErrorBody {
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * The HTTP schema of the interceptor passed as the `polling` option of {@link createSocketIOProtocol}.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#polling Socket.IO polling}
  */
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- HTTP schemas need the implicit index signature of type aliases.
 export type SocketIOPollingSchema = {
@@ -68,6 +70,8 @@ interface SocketIOPollingHandler<Method extends keyof SocketIOPollingSchema['/']
 /**
  * An HTTP interceptor of {@link SocketIOPollingSchema}, created with `createHttpInterceptor` from
  * `@zimic/interceptor/http`.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#polling Socket.IO polling}
  */
 export interface SocketIOPollingInterceptor {
   /** The type of the interceptor, the same as the WebSocket interceptor. */
