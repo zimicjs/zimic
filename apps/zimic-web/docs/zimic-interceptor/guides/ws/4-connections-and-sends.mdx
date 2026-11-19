@@ -1,0 +1,258 @@
+---
+title: Using connections and server sends | @zimic/interceptor
+sidebar_label: Using connections and server sends
+slug: /interceptor/guides/ws/connections-and-sends
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Using connections and server sends
+
+:::warning EXPERIMENTAL
+
+WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. Their API may change before becoming stable.
+
+:::
+
+Unlike HTTP requests, WebSocket connections are long-lived and bidirectional. After a client opens a connection, the server can send messages at any time, not only in response to a client message, and either side can close the connection.
+
+WebSocket interceptors let you decide which connections open, act on connected clients, and send server messages on your own schedule.
+
+The examples on this page use the following [schema](/docs/zimic-ws/guides/1-schemas.md):
+
+```ts title='schema.ts'
+import { WebSocketSchema } from '@zimic/ws';
+
+type ChatMessage =
+  | { type: 'message'; data: { text: string } }
+  | { type: 'typing'; data: { username: string } }
+  | { type: 'presence'; data: { online: boolean } };
+
+type Schema = WebSocketSchema<{
+  '/chat': {
+    connection: {
+      searchParams: { token: string };
+    };
+    message: ChatMessage;
+  };
+}>;
+```
+
+## Handling connections
+
+Connection attempts are handled by [connection handlers](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx), created with [`interceptor.connection()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorconnection). Connection handlers can restrict which connections they match, delay the handshake, accept or reject the connection, and run an effect when it opens.
+
+As with [message handlers](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#declaring-message-handlers), the handlers are tried from the **last** one created to the first, and the first handler that matches decides the connection. A handler without a response accepts the connection, and a connection that matches no handler is also accepted. Learn more about [declaring connection handlers](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#declaring-connection-handlers).
+
+### Running effects on connection
+
+Use [`handler.effect()`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlereffect) to run code when a client connects, before it sends any messages, such as sending an initial server message. The effect receives the [client](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx) of the connection.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .connection('/chat')
+  // highlight-start
+  .effect((client) => {
+    client.send({ type: 'presence', data: { online: true } });
+  });
+// highlight-end
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .connection('/chat')
+  // highlight-start
+  .effect((client) => {
+    client.send({ type: 'presence', data: { online: true } });
+  });
+// highlight-end
+```
+
+  </TabItem>
+</Tabs>
+
+Declare connection handlers before your application opens its connections. Connections that are already open are not replayed to new handlers.
+
+### Rejecting connections
+
+Use [`handler.respond()`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerrespond) with `{ action: 'reject' }` to refuse the handshake, such as to test how your application handles authentication failures. Combine it with [`handler.with()`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerwith) to reject only some connections.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .connection('/chat')
+  .with({ searchParams: { token: 'invalid' } })
+  // highlight-next-line
+  .respond({ action: 'reject' })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .connection('/chat')
+  .with({ searchParams: { token: 'invalid' } })
+  // highlight-next-line
+  .respond({ action: 'reject' })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+A rejected connection never dispatches `open` and does not become a connected client. As when a real server refuses the handshake, browsers and Node.js 24 or later dispatch `error`, then `close` with code `1006`, whereas Node.js 22 dispatches only `error`. Remote interceptors refuse the handshake with an HTTP `403` response, which clients that expose the handshake response can read.
+
+:::info INFO: <span>Connection setup in remote interceptors</span>
+
+Messages that a client sends right after `open` are handled in order, as in local interceptors. If the interceptor server cannot set up a connection, such as when the remote interceptor disconnects while the connection opens, the server closes it with code `1002`.
+
+:::
+
+## Using connected clients
+
+The clients connected to an interceptor are listed in [`interceptor.clients`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclients), one for each accepted connection. A client is also available as the `client` argument of connection effects and as the `sender` of intercepted messages. Each [client](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx) describes its connection, sends messages to it, and closes it.
+
+To restrict a message handler to the messages of a specific client, use [`handler.from()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerfrom).
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+const [client] = interceptor.clients;
+
+interceptor
+  .message('/chat')
+  // highlight-next-line
+  .from(client)
+  .with({ type: 'typing' })
+  .respond({ type: 'presence', data: { online: true } });
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+const [client] = interceptor.clients;
+
+await interceptor
+  .message('/chat')
+  // highlight-next-line
+  .from(client)
+  .with({ type: 'typing' })
+  .respond({ type: 'presence', data: { online: true } });
+```
+
+  </TabItem>
+</Tabs>
+
+## Sending server messages
+
+Use [`interceptor.server.send()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorserver) to send a server message outside of a handler, such as a broadcast or a push notification. Without options, the message is sent to all clients in `interceptor.clients`. To send to some clients only, pass them in `options.to`.
+
+```ts
+// highlight-next-line
+interceptor.server.send({ type: 'presence', data: { online: true } });
+
+// highlight-next-line
+interceptor.server.send({ type: 'presence', data: { online: false } }, { to: interceptor.clients.slice(0, 2) });
+```
+
+To send to a single client, you can also use [`client.send()`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientsend), such as in an effect with the [`sender`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlereffect) of a message.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .message('/chat')
+  .with({ type: 'message' })
+  .effect((message, { sender }) => {
+    // highlight-next-line
+    sender.send({ type: 'presence', data: { online: true } });
+  });
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .message('/chat')
+  .with({ type: 'message' })
+  .effect((message, { sender }) => {
+    // highlight-next-line
+    sender.send({ type: 'presence', data: { online: true } });
+  });
+```
+
+  </TabItem>
+</Tabs>
+
+Server messages are sent as described in [Using server messages](/docs/zimic-interceptor/guides/ws/3-messages.mdx#using-server-messages). They are not saved in [`handler.messages`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlermessages) or [`client.messages`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientmessages), which list only client messages.
+
+## Closing connections
+
+Use [`client.close()`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientclose) to close a connection as if the server closed it, optionally with a close code and reason. Messages sent before closing are delivered first, and the client is removed from `interceptor.clients`.
+
+A common use is to test how your application reconnects. In the following example, the newest handler closes the first connection. Once its [`handler.times()`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlertimes) limit is reached, the reconnection falls through to the older handler, which accepts it.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+test('reconnects after the server closes the connection', () => {
+  // Accepts the reconnection
+  interceptor.connection('/chat').times(1);
+
+  // Closes the first connection
+  interceptor
+    .connection('/chat')
+    .effect((client) => {
+      // highlight-next-line
+      client.close(4000, 'Server restarting.');
+    })
+    .times(1);
+
+  // Run the application and wait for it to reconnect...
+});
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+test('reconnects after the server closes the connection', async () => {
+  // Accepts the reconnection
+  await interceptor.connection('/chat').times(1);
+
+  // Closes the first connection
+  await interceptor
+    .connection('/chat')
+    .effect((client) => {
+      // highlight-next-line
+      client.close(4000, 'Server restarting.');
+    })
+    .times(1);
+
+  // Run the application and wait for it to reconnect...
+});
+```
+
+  </TabItem>
+</Tabs>
