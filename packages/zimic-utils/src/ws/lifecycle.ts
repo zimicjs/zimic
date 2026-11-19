@@ -1,5 +1,10 @@
 export const DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT = 60 * 1000;
 
+/**
+ * The base class of the errors thrown when a WebSocket client or server does not open or close before its timeout.
+ *
+ * @see {@link https://zimic.dev/docs/ws/api/websocket-client#websockettimeouterror `WebSocketTimeoutError` API reference}
+ */
 export class WebSocketTimeoutError extends Error {
   constructor(message: string) {
     super(message);
@@ -7,6 +12,11 @@ export class WebSocketTimeoutError extends Error {
   }
 }
 
+/**
+ * Thrown when a WebSocket client or server does not open before its timeout.
+ *
+ * @see {@link https://zimic.dev/docs/ws/api/websocket-client#websocketopentimeouterror `WebSocketOpenTimeoutError` API reference}
+ */
 export class WebSocketOpenTimeoutError extends WebSocketTimeoutError {
   constructor(reachedTimeout: number) {
     super(`Web socket open timed out after ${reachedTimeout}ms.`);
@@ -14,6 +24,11 @@ export class WebSocketOpenTimeoutError extends WebSocketTimeoutError {
   }
 }
 
+/**
+ * Thrown when a WebSocket client or server does not close before its timeout.
+ *
+ * @see {@link https://zimic.dev/docs/ws/api/websocket-client#websocketclosetimeouterror `WebSocketCloseTimeoutError` API reference}
+ */
 export class WebSocketCloseTimeoutError extends WebSocketTimeoutError {
   constructor(reachedTimeout: number) {
     super(`Web socket close timed out after ${reachedTimeout}ms.`);
