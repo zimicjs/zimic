@@ -16,7 +16,7 @@ slug: /interceptor
 
 - :zap: **WebSocket interceptors**
 
-  Use your [`@zimic/ws` schema](/docs/ws/guides/schemas) to declare [experimental WebSocket interceptors](/docs/interceptor/guides/ws/local-interceptors). Mock typed message flows, observe connected clients, send server messages, and verify expected messages in development and tests.
+  Use your [`@zimic/ws` schema](/docs/zimic-ws/guides/1-schemas.md) to declare [experimental WebSocket interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md). Mock typed message flows, observe connected clients, send server messages, and verify expected messages in development and tests.
 
 - :link: **Network-level interception**
 
@@ -28,7 +28,7 @@ slug: /interceptor
 
 **Learn more**:
 
-- [`@zimic/interceptor` - Getting started](/docs/interceptor/getting-started)
+- [`@zimic/interceptor` - Getting started](/docs/zimic-interceptor/2-getting-started.mdx)
 - [`@zimic/interceptor` - Guides](/docs/interceptor/guides)
 - [`@zimic/interceptor` - API](/docs/interceptor/api)
 - [`@zimic/interceptor` - CLI](/docs/interceptor/cli)
