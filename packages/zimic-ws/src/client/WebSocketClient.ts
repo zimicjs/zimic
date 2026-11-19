@@ -21,25 +21,50 @@ type WebSocketClientConstructorArgument<Path extends string, Argument> = [Path] 
   : Argument;
 
 export namespace WebSocketClient {
+  /**
+   * The ready states of a {@link WebSocketClient}.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientreadystate `client.readyState` API reference}
+   */
   export type ReadyState =
     | typeof WebSocketClient.CONNECTING
     | typeof WebSocketClient.OPEN
     | typeof WebSocketClient.CLOSING
     | typeof WebSocketClient.CLOSED;
 
+  /**
+   * The event dispatched when a {@link WebSocketClient} opens.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientonopen `client.onopen` API reference}
+   */
   // The schema is not used in the event types, but it's included for consistency and future extensibility.
   // eslint-disable-next-line @typescript-eslint/naming-convention
   export type OpenEvent<_Schema extends WebSocketSchema> = globalThis.Event;
 
+  /**
+   * The event dispatched when a {@link WebSocketClient} receives a message, with data typed by the schema.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientonmessage `client.onmessage` API reference}
+   */
   export type MessageEvent<
     Schema extends WebSocketSchema,
     Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketClientDefaultPath<Schema>,
   > = globalThis.MessageEvent<WebSocketMessageData<WebSocketSchemaMessage<Schema, Path>>>;
 
+  /**
+   * The event dispatched when a {@link WebSocketClient} closes.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientonclose `client.onclose` API reference}
+   */
   // The schema is not used in the event types, but it's included for consistency and future extensibility.
   // eslint-disable-next-line @typescript-eslint/naming-convention
   export type CloseEvent<_Schema extends WebSocketSchema> = globalThis.CloseEvent;
 
+  /**
+   * The event dispatched when a {@link WebSocketClient} has an error.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientonerror `client.onerror` API reference}
+   */
   // The schema is not used in the event types, but it's included for consistency and future extensibility.
   // eslint-disable-next-line @typescript-eslint/naming-convention
   export type ErrorEvent<_Schema extends WebSocketSchema> = globalThis.Event;
@@ -54,8 +79,18 @@ export namespace WebSocketClient {
     error: ErrorEvent<Schema>;
   }
 
+  /**
+   * The types of the events dispatched by a {@link WebSocketClient}.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientaddeventlistener `client.addEventListener()` API reference}
+   */
   export type EventType = keyof Events;
 
+  /**
+   * An event dispatched by a {@link WebSocketClient}, by event type.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientaddeventlistener `client.addEventListener()` API reference}
+   */
   export type Event<
     Schema extends WebSocketSchema = WebSocketSchema,
     Type extends EventType = EventType,
@@ -69,6 +104,11 @@ export namespace WebSocketClient {
     error: [event: Event<Schema, 'error', Path>];
   }
 
+  /**
+   * A listener of the events dispatched by a {@link WebSocketClient}, by event type.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientaddeventlistener `client.addEventListener()` API reference}
+   */
   export type EventListener<
     Schema extends WebSocketSchema,
     Type extends EventType,
@@ -82,8 +122,9 @@ export namespace WebSocketClient {
 type WebSocketClientRawEventListener = (this: WebSocket, event: Event) => PossiblePromise<void>;
 
 /**
- * A native-like `WebSocket` client typed with a {@link WebSocketSchema}. Schemas with multiple paths require the path of
- * the client as the second type argument, such as `new WebSocketClient<Schema, '/rooms/:roomId'>(url)`.
+ * A native-like `WebSocket` client typed with a {@link WebSocketSchema}.
+ *
+ * @see {@link https://zimic.dev/docs/ws/api/websocket-client `WebSocketClient` API reference}
  */
 export class WebSocketClient<
   Schema extends WebSocketSchema,
@@ -91,6 +132,10 @@ export class WebSocketClient<
 > implements Omit<WebSocket, `${string}EventListener` | `on${string}`> {
   private socket?: WebSocket;
   private openingSocket?: WebSocket;
+
+  // A client created with a URL has not connected yet, which matches a native socket that is still connecting. After
+  // an open attempt or a close, a client without a socket is closed.
+  #readyStateWithoutSocket: WebSocketClient.ReadyState = WebSocketClient.CONNECTING;
 
   #url: string;
   #protocols?: string | string[];
@@ -117,7 +162,17 @@ export class WebSocketClient<
     error: new Map(),
   };
 
+  /**
+   * Creates a client that wraps an existing native `WebSocket`.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#constructor `WebSocketClient` constructor API reference}
+   */
   constructor(socket: WebSocketClientConstructorArgument<Path, WebSocket>);
+  /**
+   * Creates a client that connects to a URL when opened.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#constructor `WebSocketClient` constructor API reference}
+   */
   constructor(_url: WebSocketClientConstructorArgument<Path, string>, protocols?: string | string[]);
   constructor(urlOrSocket: WebSocket | string, protocols?: string | string[]) {
     if (typeof urlOrSocket === 'string') {
@@ -130,38 +185,83 @@ export class WebSocketClient<
     this.#protocols = protocols;
   }
 
+  /**
+   * The ready state of a socket that is connecting.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientconnecting `client.CONNECTING` API reference}
+   */
   static get CONNECTING() {
     return WebSocket.CONNECTING;
   }
 
+  /**
+   * The ready state of a socket that is connecting.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientconnecting `client.CONNECTING` API reference}
+   */
   get CONNECTING() {
     return WebSocketClient.CONNECTING;
   }
 
+  /**
+   * The ready state of an open socket.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientopen-1 `client.OPEN` API reference}
+   */
   static get OPEN() {
     return WebSocket.OPEN;
   }
 
+  /**
+   * The ready state of an open socket.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientopen-1 `client.OPEN` API reference}
+   */
   get OPEN() {
     return WebSocketClient.OPEN;
   }
 
+  /**
+   * The ready state of a socket that is closing.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientclosing `client.CLOSING` API reference}
+   */
   static get CLOSING() {
     return WebSocket.CLOSING;
   }
 
+  /**
+   * The ready state of a socket that is closing.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientclosing `client.CLOSING` API reference}
+   */
   get CLOSING() {
     return WebSocketClient.CLOSING;
   }
 
+  /**
+   * The ready state of a closed socket.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientclosed `client.CLOSED` API reference}
+   */
   static get CLOSED() {
     return WebSocket.CLOSED;
   }
 
+  /**
+   * The ready state of a closed socket.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientclosed `client.CLOSED` API reference}
+   */
   get CLOSED() {
     return WebSocketClient.CLOSED;
   }
 
+  /**
+   * The type of the binary data received in message events.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientbinarytype `client.binaryType` API reference}
+   */
   get binaryType() {
     return this.socket?.binaryType ?? this.#binaryType;
   }
@@ -178,27 +278,57 @@ export class WebSocketClient<
     }
   }
 
+  /**
+   * The URL of the socket, or the URL given to the constructor if the client has no socket.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clienturl `client.url` API reference}
+   */
   get url() {
     return this.socket?.url ?? this.#url;
   }
 
+  /**
+   * The subprotocol selected by the server, or an empty string if the client has no socket.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientprotocol `client.protocol` API reference}
+   */
   get protocol() {
     return this.socket?.protocol ?? '';
   }
 
+  /**
+   * The extensions selected by the server, or an empty string if the client has no socket.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientextensions `client.extensions` API reference}
+   */
   get extensions() {
     return this.socket?.extensions ?? '';
   }
 
+  /**
+   * The state of the socket, `CONNECTING` before the client is opened, or `CLOSED` if the client was closed.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientreadystate `client.readyState` API reference}
+   */
   get readyState(): WebSocketClient.ReadyState {
-    const readyState = this.socket?.readyState ?? WebSocket.CLOSED;
-    return readyState;
+    const socket = this.socket ?? this.openingSocket;
+    return socket ? socket.readyState : this.#readyStateWithoutSocket;
   }
 
+  /**
+   * The number of bytes queued by `send()` and not yet transmitted, or `0` if the client has no socket.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientbufferedamount `client.bufferedAmount` API reference}
+   */
   get bufferedAmount() {
     return this.socket?.bufferedAmount ?? 0;
   }
 
+  /**
+   * Connects the client with a new native `WebSocket`, unless it is already open.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientopen `client.open()` API reference}
+   */
   async open(options?: WebSocketClientOpenOptions) {
     if (this.readyState === WebSocketClient.OPEN) {
       return;
@@ -208,6 +338,7 @@ export class WebSocketClient<
 
     const socket = new WebSocket(this.#url, this.#protocols);
     this.openingSocket = socket;
+    this.#readyStateWithoutSocket = WebSocketClient.CLOSED;
 
     try {
       if (socket.binaryType !== this.binaryType) {
@@ -246,6 +377,11 @@ export class WebSocketClient<
     }
   }
 
+  /**
+   * Closes the connection and waits for the socket to close.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientclose `client.close()` API reference}
+   */
   async close(code?: number, reason?: string, options?: WebSocketClientCloseOptions) {
     if (!this.socket) {
       return;
@@ -255,13 +391,32 @@ export class WebSocketClient<
       await closeWebSocketClient(this.socket, { ...options, code, reason });
     } finally {
       this.socket = undefined;
+      this.#readyStateWithoutSocket = WebSocketClient.CLOSED;
     }
   }
 
+  /**
+   * Sends a message through the socket, typed with the messages of the client path. Throws an `InvalidStateError` if
+   * the client is connecting or was not opened.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientsend `client.send()` API reference}
+   */
   send(data: WebSocketMessageData<WebSocketSchemaMessage<Schema, Path>>) {
-    this.socket?.send(data);
+    const socket = this.socket ?? this.openingSocket;
+
+    // Like a native socket, a client without a socket throws while connecting and discards the data once closed.
+    if (socket) {
+      socket.send(data);
+    } else if (this.readyState === WebSocketClient.CONNECTING) {
+      throw new DOMException('Still in CONNECTING state.', 'InvalidStateError');
+    }
   }
 
+  /**
+   * Adds a listener to the current socket and to the sockets created by later calls to `open()`.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientaddeventlistener `client.addEventListener()` API reference}
+   */
   addEventListener<Type extends WebSocketClient.EventType>(
     type: Type,
     listener: WebSocketClient.EventListener<Schema, Type, Path>,
@@ -273,6 +428,11 @@ export class WebSocketClient<
     this.listenerToRawListener[type].set(listener, rawListener);
   }
 
+  /**
+   * Removes a listener added with `addEventListener()`.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientremoveeventlistener `client.removeEventListener()` API reference}
+   */
   removeEventListener<Type extends WebSocketClient.EventType>(
     type: Type,
     listener: WebSocketClient.EventListener<Schema, Type, Path>,
@@ -286,6 +446,11 @@ export class WebSocketClient<
     }
   }
 
+  /**
+   * The listener called when the socket opens, or `null`.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientonopen `client.onopen` API reference}
+   */
   get onopen() {
     return this.unitaryListeners.open;
   }
@@ -294,6 +459,11 @@ export class WebSocketClient<
     this.setEventListener('open', listener);
   }
 
+  /**
+   * The listener called when the socket receives a message, or `null`.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientonmessage `client.onmessage` API reference}
+   */
   get onmessage() {
     return this.unitaryListeners.message;
   }
@@ -302,6 +472,11 @@ export class WebSocketClient<
     this.setEventListener('message', listener);
   }
 
+  /**
+   * The listener called when the socket closes, or `null`.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientonclose `client.onclose` API reference}
+   */
   get onclose() {
     return this.unitaryListeners.close;
   }
@@ -310,6 +485,11 @@ export class WebSocketClient<
     this.setEventListener('close', listener);
   }
 
+  /**
+   * The listener called when the socket has an error, or `null`.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientonerror `client.onerror` API reference}
+   */
   get onerror() {
     return this.unitaryListeners.error;
   }
@@ -352,6 +532,11 @@ export class WebSocketClient<
     }
   }
 
+  /**
+   * Dispatches an event on the current socket, returning `false` if the client has no socket.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientdispatchevent `client.dispatchEvent()` API reference}
+   */
   dispatchEvent<Type extends WebSocketClient.EventType>(event: WebSocketClient.Event<Schema, Type, Path>) {
     return this.socket?.dispatchEvent(event) ?? false;
   }

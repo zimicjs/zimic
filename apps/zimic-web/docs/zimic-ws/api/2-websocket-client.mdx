@@ -1,0 +1,432 @@
+---
+title: WebSocketClient | @zimic/ws
+sidebar_label: WebSocketClient
+slug: /ws/api/websocket-client
+---
+
+# `WebSocketClient`
+
+A typed wrapper around a native [`WebSocket`](https://developer.mozilla.org/docs/Web/API/WebSocket).
+
+Unlike a native `WebSocket`, a `WebSocketClient` created from a URL does not connect when constructed. Call [`client.open()`](#clientopen) to connect and [`client.close()`](#clientclose) to disconnect.
+
+```ts
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+
+type Schema = WebSocketSchema<{ '/': { message: { type: 'ping'; data: { id: string } } } }>;
+
+const client = new WebSocketClient<Schema>('ws://localhost:3000');
+
+await client.open();
+client.send(JSON.stringify({ type: 'ping', data: { id: '1' } }));
+await client.close();
+```
+
+## `constructor()`
+
+Creates a new `WebSocketClient` instance, from a URL or from an existing native `WebSocket`.
+
+```ts
+new WebSocketClient<Schema, Path>(url);
+new WebSocketClient<Schema, Path>(url, protocols);
+new WebSocketClient<Schema, Path>(socket);
+```
+
+**Arguments**:
+
+1. **url**: `string`
+
+   The WebSocket URL to connect to when [`client.open()`](#clientopen) is called.
+
+2. **protocols**: `string | string[] | undefined`
+
+   Optional subprotocols to request when connecting.
+
+3. **socket**: `WebSocket`
+
+   An existing native `WebSocket` to wrap. The client uses it until [`client.close()`](#clientclose) or [`client.open()`](#clientopen) replaces it.
+
+**Type arguments**:
+
+1. **Schema**: `WebSocketSchema`
+
+   The [WebSocket schema](/docs/zimic-ws/guides/1-schemas.md) of the service.
+
+2. **Path**: `string`
+
+   The path of the schema the client connects to, which types the messages it sends and receives. It is optional if the schema has a single path. If the schema has multiple paths and `Path` is omitted, the constructor reports a type error with this message:
+
+   ```
+   This schema has multiple paths. Declare the path of the client: new WebSocketClient<Schema, '/path'>(url).
+   ```
+
+```ts
+import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+
+type Schema = WebSocketSchema<{
+  '/notifications': {
+    message: { type: 'notification'; data: { id: string } };
+  };
+  '/rooms/:roomId': {
+    message: { type: 'message'; data: { text: string } };
+  };
+}>;
+
+// highlight-next-line
+const client = new WebSocketClient<Schema, '/rooms/:roomId'>('ws://localhost:3000/rooms/1');
+```
+
+:::tip TIP: <span>URLs are not checked</span>
+
+URLs are plain strings, so they are not checked against the `Path` type argument or the connection schema.
+
+:::
+
+**Related**:
+
+- [Guides - Using schemas with clients](/docs/zimic-ws/guides/1-schemas.md#using-schemas-with-clients)
+- [`WebSocket()` - MDN reference](https://developer.mozilla.org/docs/Web/API/WebSocket/WebSocket)
+
+## `client.open()`
+
+Connects the client with a new native `WebSocket`. If the client is already open, the method returns without reconnecting. Otherwise, it closes the current socket, if any, and creates a new one with the URL and protocols of the client. Listeners and the [binary type](#clientbinarytype) of the client are applied to the new socket.
+
+```ts
+client.open();
+client.open(options);
+```
+
+**Arguments**:
+
+1. **options**: `WebSocketClientOpenOptions | undefined`
+   - **timeout**: `number | undefined` (default `60000`)
+
+     The maximum time, in milliseconds, to wait for the connection to open.
+
+**Returns**: `Promise<void>`
+
+The promise rejects with a [`WebSocketOpenTimeoutError`](#websocketopentimeouterror) if the connection does not open before the timeout, or with the `error` or `close` event of the socket if the connection fails.
+
+```ts
+await client.open({ timeout: 5000 });
+```
+
+## `client.close()`
+
+Closes the connection and waits for the socket to close. If the client has no socket, the method returns without throwing.
+
+```ts
+client.close();
+client.close(code);
+client.close(code, reason);
+client.close(code, reason, options);
+```
+
+**Arguments**:
+
+1. **code**: `number | undefined`
+
+   Optional close code.
+
+2. **reason**: `string | undefined`
+
+   Optional close reason.
+
+3. **options**: `WebSocketClientCloseOptions | undefined`
+   - **timeout**: `number | undefined` (default `60000`)
+
+     The maximum time, in milliseconds, to wait for the connection to close.
+
+**Returns**: `Promise<void>`
+
+The promise rejects with a [`WebSocketCloseTimeoutError`](#websocketclosetimeouterror) if the connection does not close before the timeout, or with the `error` event of the socket if closing fails.
+
+```ts
+await client.close(1000, 'Done');
+```
+
+**Related**:
+
+- [`WebSocket.close()` - MDN reference](https://developer.mozilla.org/docs/Web/API/WebSocket/close)
+
+## `client.send()`
+
+Sends a message through the socket. The data is typed with [`WebSocketMessageData`](/docs/zimic-ws/api/1-websocket-schema.md#websocketmessagedata) for the messages of the client path.
+
+Like the native `WebSocket.send()`, the method throws a `DOMException` named `InvalidStateError` if the client is [connecting](#clientconnecting), including before [`client.open()`](#clientopen) is called. If the client is closing or closed, the message is discarded without an error.
+
+```ts
+client.send(data);
+```
+
+**Arguments**:
+
+1. **data**: `WebSocketMessageData<WebSocketSchemaMessage<Schema, Path>>`
+
+   The message to send.
+
+```ts
+client.send(JSON.stringify({ type: 'ping', data: { id: '1' } }));
+```
+
+**Related**:
+
+- [`WebSocket.send()` - MDN reference](https://developer.mozilla.org/docs/Web/API/WebSocket/send)
+
+## `client.addEventListener()`
+
+Adds a listener for an `open`, `message`, `close`, or `error` event. The listener is added to the current socket and to the sockets created by later calls to [`client.open()`](#clientopen). Inside the listener, `this` is the client.
+
+```ts
+client.addEventListener(type, listener);
+client.addEventListener(type, listener, options);
+```
+
+**Arguments**:
+
+1. **type**: `'open' | 'message' | 'close' | 'error'`
+
+   The type of the event.
+
+2. **listener**: `WebSocketClient.EventListener<Schema, Type, Path>`
+
+   The function to call with the event. Message events have `data` typed with the messages of the client path.
+
+3. **options**: `boolean | AddEventListenerOptions | undefined`
+
+   Optional listener options, applied to the current socket.
+
+```ts
+client.addEventListener('message', (event) => {
+  const message = JSON.parse(event.data);
+  console.log(message.type);
+});
+```
+
+**Related**:
+
+- [`EventTarget.addEventListener()` - MDN reference](https://developer.mozilla.org/docs/Web/API/EventTarget/addEventListener)
+
+## `client.removeEventListener()`
+
+Removes a listener added with [`client.addEventListener()`](#clientaddeventlistener).
+
+```ts
+client.removeEventListener(type, listener);
+client.removeEventListener(type, listener, options);
+```
+
+**Arguments**:
+
+1. **type**: `'open' | 'message' | 'close' | 'error'`
+
+   The type of the event.
+
+2. **listener**: `WebSocketClient.EventListener<Schema, Type, Path>`
+
+   The listener to remove.
+
+3. **options**: `boolean | EventListenerOptions | undefined`
+
+   Optional listener options, applied to the current socket.
+
+**Related**:
+
+- [`EventTarget.removeEventListener()` - MDN reference](https://developer.mozilla.org/docs/Web/API/EventTarget/removeEventListener)
+
+## `client.dispatchEvent()`
+
+Dispatches an event on the current socket.
+
+```ts
+client.dispatchEvent(event);
+```
+
+**Arguments**:
+
+1. **event**: `WebSocketClient.Event<Schema, Type, Path>`
+
+   The event to dispatch.
+
+**Returns**: `boolean`
+
+The result of dispatching the event on the socket, or `false` if the client has no socket.
+
+**Related**:
+
+- [`EventTarget.dispatchEvent()` - MDN reference](https://developer.mozilla.org/docs/Web/API/EventTarget/dispatchEvent)
+
+## `client.onopen`
+
+The listener called when the socket opens, or `null`. Like listeners added with [`client.addEventListener()`](#clientaddeventlistener), it is kept across calls to [`client.open()`](#clientopen).
+
+**Type**: `WebSocketClient.EventListener<Schema, 'open', Path> | null`
+
+**Related**:
+
+- [`WebSocket` `open` event - MDN reference](https://developer.mozilla.org/docs/Web/API/WebSocket/open_event)
+
+## `client.onmessage`
+
+The listener called when the socket receives a message, or `null`. Like listeners added with [`client.addEventListener()`](#clientaddeventlistener), it is kept across calls to [`client.open()`](#clientopen).
+
+**Type**: `WebSocketClient.EventListener<Schema, 'message', Path> | null`
+
+```ts
+client.onmessage = (event) => {
+  console.log(event.data);
+};
+```
+
+**Related**:
+
+- [`WebSocket` `message` event - MDN reference](https://developer.mozilla.org/docs/Web/API/WebSocket/message_event)
+
+## `client.onclose`
+
+The listener called when the socket closes, or `null`. Like listeners added with [`client.addEventListener()`](#clientaddeventlistener), it is kept across calls to [`client.open()`](#clientopen).
+
+**Type**: `WebSocketClient.EventListener<Schema, 'close', Path> | null`
+
+```ts
+client.onclose = (event) => {
+  console.log(event.code, event.reason);
+};
+```
+
+**Related**:
+
+- [`WebSocket` `close` event - MDN reference](https://developer.mozilla.org/docs/Web/API/WebSocket/close_event)
+
+## `client.onerror`
+
+The listener called when the socket has an error, or `null`. Like listeners added with [`client.addEventListener()`](#clientaddeventlistener), it is kept across calls to [`client.open()`](#clientopen).
+
+**Type**: `WebSocketClient.EventListener<Schema, 'error', Path> | null`
+
+**Related**:
+
+- [`WebSocket` `error` event - MDN reference](https://developer.mozilla.org/docs/Web/API/WebSocket/error_event)
+
+## `client.url`
+
+The URL of the socket, or the URL given to the constructor if the client has no socket.
+
+**Type**: `string`
+
+**Related**:
+
+- [`WebSocket.url` - MDN reference](https://developer.mozilla.org/docs/Web/API/WebSocket/url)
+
+## `client.protocol`
+
+The subprotocol selected by the server, or an empty string if the client has no socket.
+
+**Type**: `string`
+
+**Related**:
+
+- [`WebSocket.protocol` - MDN reference](https://developer.mozilla.org/docs/Web/API/WebSocket/protocol)
+
+## `client.extensions`
+
+The extensions selected by the server, or an empty string if the client has no socket.
+
+**Type**: `string`
+
+**Related**:
+
+- [`WebSocket.extensions` - MDN reference](https://developer.mozilla.org/docs/Web/API/WebSocket/extensions)
+
+## `client.readyState`
+
+The state of the socket. Before [`client.open()`](#clientopen) is called, the state is [`client.CONNECTING`](#clientconnecting). After the client is closed or fails to open, the state is [`client.CLOSED`](#clientclosed).
+
+**Type**: `WebSocketClient.ReadyState`
+
+```ts
+if (client.readyState === client.OPEN) {
+  client.send(JSON.stringify({ type: 'ping', data: { id: '1' } }));
+}
+```
+
+**Related**:
+
+- [`WebSocket.readyState` - MDN reference](https://developer.mozilla.org/docs/Web/API/WebSocket/readyState)
+
+## `client.bufferedAmount`
+
+The number of bytes queued by [`client.send()`](#clientsend) and not yet transmitted, or `0` if the client has no socket.
+
+**Type**: `number`
+
+**Related**:
+
+- [`WebSocket.bufferedAmount` - MDN reference](https://developer.mozilla.org/docs/Web/API/WebSocket/bufferedAmount)
+
+## `client.binaryType`
+
+The type of the binary data received in message events. Changing it applies to the current socket and to the sockets created by later calls to [`client.open()`](#clientopen).
+
+**Type**: `'blob' | 'arraybuffer'` (default `'blob'`)
+
+```ts
+client.binaryType = 'arraybuffer';
+```
+
+**Related**:
+
+- [`WebSocket.binaryType` - MDN reference](https://developer.mozilla.org/docs/Web/API/WebSocket/binaryType)
+
+## `client.CONNECTING`
+
+The ready state of a socket that is connecting. Also available as `WebSocketClient.CONNECTING`.
+
+**Type**: `0`
+
+## `client.OPEN`
+
+The ready state of an open socket. Also available as `WebSocketClient.OPEN`.
+
+**Type**: `1`
+
+## `client.CLOSING`
+
+The ready state of a socket that is closing. Also available as `WebSocketClient.CLOSING`.
+
+**Type**: `2`
+
+## `client.CLOSED`
+
+The ready state of a closed socket. Also available as `WebSocketClient.CLOSED`.
+
+**Type**: `3`
+
+## `WebSocketTimeoutError`
+
+The base class of the errors thrown when a WebSocket client or server does not open or close before its timeout.
+
+```ts
+import { WebSocketTimeoutError } from '@zimic/ws';
+
+try {
+  await client.open({ timeout: 5000 });
+} catch (error) {
+  if (error instanceof WebSocketTimeoutError) {
+    console.error(error.message);
+  }
+}
+```
+
+## `WebSocketOpenTimeoutError`
+
+Thrown by [`client.open()`](#clientopen) and [`server.open()`](/docs/zimic-ws/api/3-websocket-server.mdx#serveropen) when the client or server does not open before the timeout. Extends [`WebSocketTimeoutError`](#websockettimeouterror).
+
+## `WebSocketCloseTimeoutError`
+
+Thrown by [`client.close()`](#clientclose) and [`server.close()`](/docs/zimic-ws/api/3-websocket-server.mdx#serverclose) when the client or server does not close before the timeout. Extends [`WebSocketTimeoutError`](#websockettimeouterror).
+
+**Related**:
+
+- [Guides - Declaring schemas](/docs/zimic-ws/guides/1-schemas.md)
+- [API - `WebSocketServer`](/docs/zimic-ws/api/3-websocket-server.mdx)

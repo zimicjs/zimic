@@ -89,6 +89,7 @@ import {
   type WebSocketInterceptorConnectionSaving,
   type InferWebSocketInterceptorSchema,
   type InterceptedWebSocketInterceptorMessage,
+  type UnhandledWebSocketInterceptorMessage,
   type WebSocketInterceptorClient,
   type WebSocketInterceptorServer,
   type WebSocketInterceptorServerSendOptions,
@@ -550,6 +551,7 @@ describe('Exports', () => {
       expectTypeOf<UnhandledMessageStrategy.DeclarationFactory>().not.toBeAny();
       expectTypeOf<InferWebSocketInterceptorSchema<never>>().not.toBeAny();
       expectTypeOf<InterceptedWebSocketInterceptorMessage<never>>().not.toBeAny();
+      expectTypeOf<UnhandledWebSocketInterceptorMessage>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorClient<never>>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorServer<never>>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorServerSendOptions<never>>().not.toBeAny();

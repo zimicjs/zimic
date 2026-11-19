@@ -1,0 +1,132 @@
+---
+title: Declarative delays | @zimic/interceptor
+sidebar_label: Declarative delays
+slug: /interceptor/guides/ws/declarative-delays
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Declarative delays
+
+:::warning EXPERIMENTAL
+
+WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. Their API may change before becoming stable.
+
+:::
+
+[WebSocket interceptors](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx) are very efficient and can accept connections and respond to messages within milliseconds. This is great to keep your development and test environments fast, but sometimes you may want to simulate network latency, reproduce server processing time, check connecting and loading states in your application, or test how it behaves under slow conditions.
+
+[`handler.delay()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerdelay) allows you to add declarative delays to your intercepted messages. The delay runs before the effects and the response of the handler.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .message('/chat')
+  .respond({ type: 'presence', data: { online: true } })
+  // highlight-next-line
+  .delay(200); // Static delay of 200ms
+
+interceptor
+  .message('/chat')
+  .respond({ type: 'presence', data: { online: true } })
+  // highlight-next-line
+  .delay(100, 500); // Random delay between 100ms and 500ms
+
+interceptor
+  .message('/chat')
+  .respond({ type: 'presence', data: { online: true } })
+  // highlight-start
+  .delay((message) => {
+    const isSlow = message.type === 'typing';
+    return isSlow ? 1000 : 0;
+  }); // Dynamic delay based on message
+// highlight-end
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .message('/chat')
+  .respond({ type: 'presence', data: { online: true } })
+  // highlight-next-line
+  .delay(200); // Static delay of 200ms
+
+await interceptor
+  .message('/chat')
+  .respond({ type: 'presence', data: { online: true } })
+  // highlight-next-line
+  .delay(100, 500); // Random delay between 100ms and 500ms
+
+await interceptor
+  .message('/chat')
+  .respond({ type: 'presence', data: { online: true } })
+  // highlight-start
+  .delay((message) => {
+    const isSlow = message.type === 'typing';
+    return isSlow ? 1000 : 0;
+  }); // Dynamic delay based on message
+// highlight-end
+```
+
+  </TabItem>
+</Tabs>
+
+Connection handlers also support [`handler.delay()`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerdelay), which delays the handshake of matched connections. The client stays in the `CONNECTING` state during the delay, whether the connection is accepted or rejected afterward.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .connection('/chat')
+  // highlight-next-line
+  .delay(200); // Static delay of 200ms
+
+interceptor
+  .connection('/chat')
+  // highlight-next-line
+  .delay(100, 500); // Random delay between 100ms and 500ms
+
+interceptor
+  .connection('/chat')
+  // highlight-start
+  .delay((request) => {
+    const isSlow = request.searchParams.get('slow') === 'true';
+    return isSlow ? 1000 : 0;
+  }); // Dynamic delay based on connection
+// highlight-end
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .connection('/chat')
+  // highlight-next-line
+  .delay(200); // Static delay of 200ms
+
+await interceptor
+  .connection('/chat')
+  // highlight-next-line
+  .delay(100, 500); // Random delay between 100ms and 500ms
+
+await interceptor
+  .connection('/chat')
+  // highlight-start
+  .delay((request) => {
+    const isSlow = request.searchParams.get('slow') === 'true';
+    return isSlow ? 1000 : 0;
+  }); // Dynamic delay based on connection
+// highlight-end
+```
+
+  </TabItem>
+</Tabs>

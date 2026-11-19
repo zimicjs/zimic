@@ -1,0 +1,261 @@
+---
+title: Mocking Socket.IO servers | @zimic/interceptor
+sidebar_label: Socket.IO
+slug: /interceptor/guides/ws/socket-io
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Mocking Socket.IO servers
+
+:::warning EXPERIMENTAL
+
+WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`, and the Socket.IO protocol from `@zimic/interceptor/experimental/ws/socket.io`. Their API may change before becoming stable.
+
+:::
+
+WebSocket interceptors can mock [Socket.IO](https://socket.io) servers with `createSocketIOProtocol()`. The protocol implements the Engine.IO and Socket.IO handshakes, pings, namespaces, and acknowledgements, so your handlers receive and send Socket.IO events. It supports clients using Engine.IO protocol 4, such as [`socket.io-client`](https://socket.io/docs/v4/client-api) v3 and v4.
+
+## Installation
+
+The Socket.IO protocol uses `socket.io-parser` and `engine.io-parser`. Install them with `@zimic/http`, which types the HTTP interceptor serving [polling](#polling) requests:
+
+```bash
+npm install @zimic/ws @zimic/http @zimic/interceptor socket.io-parser engine.io-parser --save-dev
+```
+
+## Creating a Socket.IO interceptor
+
+Declare the events of your server with `SocketIOSchema`, using the same event maps as `socket.io-client`. A trailing callback declares the acknowledgement of an event.
+
+```ts title='schema.ts'
+import type { SocketIOSchema } from '@zimic/interceptor/experimental/ws/socket.io';
+
+interface ServerToClientEvents {
+  'user:created': (user: { id: string }) => void;
+}
+
+interface ClientToServerEvents {
+  'user:create': (input: { name: string }, ack: (user: { id: string }) => void) => void;
+}
+
+type Schema = SocketIOSchema<ServerToClientEvents, ClientToServerEvents>;
+```
+
+Then, pass `createSocketIOProtocol()` as the [`protocol`](/docs/zimic-interceptor/api/6-create-websocket-interceptor.mdx) of a WebSocket interceptor. The `baseURL` is the Socket.IO endpoint, including its path, which is `/socket.io` by default. Create one protocol for each interceptor.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+import { createSocketIOProtocol, type SocketIOPollingSchema } from '@zimic/interceptor/experimental/ws/socket.io';
+import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
+
+const interceptor = createWebSocketInterceptor<Schema>({
+  type: 'local',
+  baseURL: 'ws://localhost:3000/socket.io',
+  // highlight-start
+  protocol: createSocketIOProtocol({
+    polling: createHttpInterceptor<SocketIOPollingSchema>({
+      type: 'local',
+      baseURL: 'http://localhost:3000/socket.io',
+    }),
+  }),
+  // highlight-end
+});
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+import { createSocketIOProtocol, type SocketIOPollingSchema } from '@zimic/interceptor/experimental/ws/socket.io';
+import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
+
+const interceptor = createWebSocketInterceptor<Schema>({
+  type: 'remote',
+  baseURL: 'ws://localhost:4000/socket.io',
+  // highlight-start
+  protocol: createSocketIOProtocol({
+    polling: createHttpInterceptor<SocketIOPollingSchema>({
+      type: 'remote',
+      baseURL: 'http://localhost:4000/socket.io',
+    }),
+  }),
+  // highlight-end
+});
+```
+
+  </TabItem>
+</Tabs>
+
+The interceptor answers handshakes, namespace connections, and pings without any handlers. Start, clear, and stop it as any other WebSocket interceptor, as described in [Using local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md#websocket-interceptor-lifecycle) and [Using remote interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md#websocket-interceptor-lifecycle).
+
+### Connecting clients
+
+`socket.io-client` reads the path of the URL passed to `io()` as the namespace, not as the endpoint. If the base URL of the interceptor has a path other than `/socket.io`, such as a [path discriminator](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md#path-discriminators), pass the origin to `io()` and the path of the base URL, with a trailing slash, in the `path` option.
+
+```ts
+import { io } from 'socket.io-client';
+
+// Interceptor base URL: 'ws://localhost:4000/chat/socket.io'
+const socket = io('http://localhost:4000', {
+  // highlight-next-line
+  path: '/chat/socket.io/',
+});
+```
+
+## Polling
+
+Socket.IO clients connect over HTTP long-polling by default and then try to upgrade to WebSocket. The protocol serves polling requests with the HTTP interceptor passed in the `polling` option. Create it with `SocketIOPollingSchema`, the same `type` as the WebSocket interceptor, and the WebSocket base URL with `http` instead of `ws`. Otherwise, `interceptor.start()` throws an `InvalidSocketIOPollingInterceptorError`.
+
+The protocol starts and stops the polling interceptor and declares its handlers, so do not start, stop, or clear it yourself.
+
+### Local interceptors
+
+Local interceptors serve Socket.IO over polling only. They require the `polling` option, and clients with the default transports of `socket.io-client` need no changes. Local interceptors offer no WebSocket upgrades to polling sessions, so their clients stay on polling.
+
+Clients restricted to `transports: ['websocket']` need [remote interceptors](#remote-interceptors). If a local interceptor receives a Socket.IO WebSocket connection, it closes it with code `4000` and reason `'Local Socket.IO interceptors support polling. Use a remote interceptor for WebSocket transports'`.
+
+### Remote interceptors
+
+Remote interceptors serve polling and WebSocket transports. Polling sessions upgrade to WebSocket and keep the same [client](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx), so the messages of a socket reach the same handlers before and after the upgrade.
+
+If your clients use `transports: ['websocket']` only, you can omit the `polling` option, which disables polling.
+
+### Polling errors
+
+As Engine.IO servers, the protocol answers invalid polling requests with status `400` and an Engine.IO error, declared in `SocketIOPollingSchema`:
+
+- A `POST` without a session ID receives `{ code: 2, message: 'Bad handshake method' }`.
+- A `POST` with an unknown session ID receives `{ code: 1, message: 'Session ID unknown' }`.
+
+## Handling events
+
+Handlers receive events as `{ type, data, args?, ackId? }`. `type` is the event name, `data` is the first argument, and `args` holds the remaining arguments, omitted when there are none. Restrictions, responses, sends, and [`handler.messages`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlermessages) use the same shape.
+
+:::info INFO: <span>`args` is not `...args`</span>
+
+Unlike the `...args` of a Socket.IO listener, `args` does not include the first argument.
+
+:::
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .message()
+  .with({ type: 'user:create', data: { name: 'Name' } })
+  .respond({ type: 'user:created', data: { id: '1' } })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .message()
+  .with({ type: 'user:create', data: { name: 'Name' } })
+  .respond({ type: 'user:created', data: { id: '1' } })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+Binary arguments arrive as `ArrayBuffer`. Handlers can send `ArrayBuffer`s and typed arrays, but not `Blob`s.
+
+### Acknowledging events
+
+When a client passes an ack callback, the event carries an `ackId`. To call the callback, respond or send an ack message `{ ackId, data, args? }`, whose `data` and `args` are the arguments of the callback. Events declared with a required ack callback always have an `ackId`.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .message()
+  .with({ type: 'user:create' })
+  // highlight-next-line
+  .respond((message) => ({ ackId: message.ackId, data: { id: '1' } }));
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .message()
+  .with({ type: 'user:create' })
+  // highlight-next-line
+  .respond((message) => ({ ackId: message.ackId, data: { id: '1' } }));
+```
+
+  </TabItem>
+</Tabs>
+
+### Sending events
+
+[`interceptor.server.send()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorserver) and [`client.send()`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientsend) send Socket.IO events and acks, as described in [Sending server messages](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#sending-server-messages).
+
+```ts
+interceptor.server.send({ type: 'user:created', data: { id: '1' } });
+```
+
+Sends accept message objects only and throw a `ValidationError` for the JSON text of a message. Only ack messages carry an `ackId`, so sending an event message with an `ackId` also throws a `ValidationError`.
+
+## Namespaces
+
+Each interceptor handles one namespace, `'/'` by default, and ignores the packets of the others. To mock several namespaces, create one interceptor for each one with the same base URL, and pass the same polling interceptor to their protocols.
+
+```ts
+const polling = createHttpInterceptor<SocketIOPollingSchema>({
+  baseURL: 'http://localhost:3000/socket.io',
+});
+
+const interceptor = createWebSocketInterceptor<Schema>({
+  baseURL: 'ws://localhost:3000/socket.io',
+  protocol: createSocketIOProtocol({ polling }),
+});
+
+const adminInterceptor = createWebSocketInterceptor<AdminSchema>({
+  baseURL: 'ws://localhost:3000/socket.io',
+  // highlight-next-line
+  protocol: createSocketIOProtocol({ namespace: '/admin', polling }),
+});
+```
+
+The interceptors of a base URL share each Engine.IO connection, so their protocols must use the same `polling` and `parser` options. Otherwise, `interceptor.start()` throws a `MismatchedSocketIOProtocolOptionsError`. Starting two interceptors on the same namespace of a base URL throws a `DuplicateSocketIONamespaceError`, and starting two interceptors with the same protocol throws a `SharedSocketIOProtocolError`. A socket connecting to a namespace without an interceptor fails with a `connect_error` of message `'Invalid namespace'`.
+
+## Connections and clients
+
+As with the `connection` event of a Socket.IO server, an interceptor lists a [client](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx) in [`interceptor.clients`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclients) and runs its [connection handlers](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx) when a socket joins its namespace.
+
+- A connection handler rejecting a socket fails it with a `connect_error` of message `'Connection rejected'`. Other namespaces on the same connection stay connected.
+- `socket.disconnect()` in the client removes its client from the interceptor of its namespace.
+- [`client.close()`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientclose) disconnects the socket from the namespace, as `socket.disconnect()` in a Socket.IO server. Socket.IO has no close codes, so the code and reason are ignored.
+- [`interceptor.clear()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclear) and [`interceptor.stop()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorstop) disconnect the sockets of the namespace and close the connections that no other namespace uses.
+
+An interceptor with a Socket.IO protocol takes the WebSocket connections to its base URL alone, ahead of interceptors without a protocol, even ones started later. Those interceptors cannot serve Engine.IO packets, so they do not receive these connections and their connection handlers are not tried. Among Socket.IO interceptors, the newest one that claims a connection takes it. Connections to other paths under the base URL, such as `ws://localhost:3000/socket.io/chat`, are left to other interceptors.
+
+## Custom parsers
+
+If your client uses a custom parser, such as [`socket.io-msgpack-parser`](https://github.com/socketio/socket.io-msgpack-parser), pass the same parser to the protocol.
+
+```ts
+import msgpackParser from 'socket.io-msgpack-parser';
+
+const protocol = createSocketIOProtocol({
+  polling,
+  // highlight-next-line
+  parser: msgpackParser,
+});
+```

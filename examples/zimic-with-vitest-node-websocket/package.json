@@ -1,0 +1,21 @@
+{
+  "name": "zimic-example-with-vitest-node-websocket",
+  "version": "0.0.0",
+  "private": false,
+  "scripts": {
+    "test": "vitest",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test --reporter verbose",
+    "types:check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@zimic/ws": "canary"
+  },
+  "devDependencies": {
+    "@zimic/interceptor": "canary",
+    "dotenv-cli": "^11.1.0",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  }
+}

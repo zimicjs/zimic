@@ -1,0 +1,151 @@
+---
+title: Testing | @zimic/interceptor
+sidebar_label: Testing
+slug: /interceptor/guides/ws/testing
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Testing
+
+:::warning EXPERIMENTAL
+
+WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. Their API may change before becoming stable.
+
+:::
+
+`@zimic/interceptor` is designed with testing in mind and provides utilities to give you confidence in your tests. Using [declarative assertions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx), you can write your expectations in a readable way that makes it clear how many messages and connections the application should send and open, what data they should have, and what responses they will receive. If you need more specific assertions, the messages and connections processed by the interceptor are available in [`handler.messages`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlermessages) and [`handler.connections`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerconnections).
+
+## Configuration
+
+Configuring `@zimic/interceptor` in a testing environment usually depends on your method of intercepting connections, with [local](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md) or [remote](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md) interceptors, and how you are applying your mocks.
+
+### Interceptor lifecycle
+
+`@zimic/interceptor` interceptors need to be started before they can intercept connections and messages. You can start an interceptor by calling [`interceptor.start()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorstart).
+
+When an interceptor is running, you can declare mocks with [`interceptor.message()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptormessage) and [`interceptor.connection()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorconnection). To make sure that your tests do not affect each other, it's a good practice to clear the interceptor between tests with [`interceptor.clear()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclear). Clearing also closes the connections that no other interceptor holds.
+
+After each test, you can check that all expected messages and connections were made with [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes). This method will throw an error if the number of messages or connections does not match the expectations you set with `handler.times()` in [message handlers](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlertimes) and [connection handlers](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlertimes), considering their [restrictions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#restrictions).
+
+After all tests are done, stop the interceptor with [`interceptor.stop()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorstop).
+
+A common way to manage this lifecycle is to have a test setup file with hooks such as `beforeAll`, `beforeEach`, `afterEach`, and `afterAll`. The specific implementation may vary depending on your test framework.
+
+As an example, this is a simple setup using [Jest](https://jestjs.io) or [Vitest](https://vitest.dev):
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts title='tests/setup.ts'
+beforeAll(async () => {
+  // Start intercepting connections and messages
+  // highlight-next-line
+  await interceptor.start();
+});
+
+beforeEach(() => {
+  // Clear interceptors so that no tests affect each other
+  // highlight-next-line
+  interceptor.clear();
+});
+
+afterEach(() => {
+  // Check that all expected messages and connections were made
+  // highlight-next-line
+  interceptor.checkTimes();
+});
+
+afterAll(async () => {
+  // Stop intercepting connections and messages
+  // highlight-next-line
+  await interceptor.stop();
+});
+```
+
+  </TabItem>
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts title='tests/setup.ts'
+beforeAll(async () => {
+  // Start intercepting connections and messages
+  // highlight-next-line
+  await interceptor.start();
+});
+
+beforeEach(async () => {
+  // Clear interceptors so that no tests affect each other
+  // highlight-next-line
+  await interceptor.clear();
+});
+
+afterEach(async () => {
+  // Check that all expected messages and connections were made
+  // highlight-next-line
+  await interceptor.checkTimes();
+});
+
+afterAll(async () => {
+  // Stop intercepting connections and messages
+  // highlight-next-line
+  await interceptor.stop();
+});
+```
+
+  </TabItem>
+</Tabs>
+
+:::info INFO: <span>Remote interceptors are asynchronous</span>
+
+Note that [`interceptor.clear()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclear) and [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes) are awaited in the remote interceptor example, whereas this is not necessary for local interceptors.
+
+This is because many operations in [remote interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md) are asynchronous because they may involve communication with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is different from [local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md), which have mostly synchronous operations.
+
+:::
+
+For more information on the available interceptor methods, check the [`WebSocketInterceptor` API reference](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx).
+
+### Saving messages and connections
+
+[`handler.messages`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlermessages) and [`handler.connections`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerconnections) are available only when [`messageSaving.enabled`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptormessagesaving) and [`connectionSaving.enabled`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorconnectionsaving) are `true`, respectively. Otherwise, accessing them throws a `DisabledMessageSavingError` or a `DisabledConnectionSavingError`. When enabled, the `WebSocketTimesCheckError` errors thrown by `checkTimes()` also list each unmatched message or connection with a diff of the expected and received data.
+
+Both options are enabled by default when `process.env.NODE_ENV` is `test` in Node.js, and disabled by default in browsers. To configure them explicitly, use the `messageSaving` and `connectionSaving` options of [`createWebSocketInterceptor`](/docs/zimic-interceptor/api/6-create-websocket-interceptor.mdx).
+
+```ts
+import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
+
+const interceptor = createWebSocketInterceptor<Schema>({
+  baseURL: 'ws://localhost:3000',
+  // highlight-start
+  messageSaving: { enabled: true },
+  connectionSaving: { enabled: true },
+  // highlight-end
+});
+```
+
+Saved messages and connections stay in memory until the interceptor or the handler is cleared. Make sure to clear the interceptor between tests, as in the [lifecycle example](#interceptor-lifecycle), to keep them from accumulating. If the number of saved messages or connections exceeds `safeLimit`, the interceptor logs a warning in the console.
+
+### Managing concurrency
+
+Running tests in parallel may cause your interceptors to start interfering with each other and result in flaky tests. How to avoid this depends on the type of interceptor you are using.
+
+#### Local interceptors
+
+With [local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md), racing conditions between test workers are unlikely, because each interceptor affects only the thread it was created in (hence, the name _local_).
+
+However, running more than one test at the same time in the same thread **can** lead to concurrency problems. `@zimic/interceptor` does not currently support this, so we recommend avoiding concurrent features like [`test.concurrent`](https://vitest.dev/api/#test-concurrent).
+
+Instead, consider splitting your tests into smaller files. By doing this, your test framework can run them in parallel in separate threads, each with their own interceptors and without racing conditions.
+
+#### Remote interceptors
+
+[Remote interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md) use an [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle connections and messages. They are especially useful when your application and your test runner run in _separate_ processes, such as in end-to-end tests. If you are sharing the same interceptor server between multiple parallel test workers, you may run into racing conditions. The interceptor server gives each connection to the most recently connected process with a running interceptor whose base URL matches the connection, so a worker can receive the connections opened for another one. In this case, some solutions include:
+
+1. **Using a [path discriminator](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md#path-discriminators)**:
+
+   This is a way to make sure that each test worker uses a different path in the interceptor server, usually a worker index or identifier. In this strategy, each worker can declare its own mocks without risk of interfering with the others. Make sure that the application also uses the same path discriminator when opening connections, so that they are handled by the correct interceptor.
+
+2. **Applying default mocks before your tests start**:
+
+   In this approach, you can start your interceptor server and run a script that populates a set of default mocks. When your tests start, the mocks will already be loaded and no racing conditions will occur. It's important that individual tests do not create new mocks that may override the default ones and affect others. Instead, declare the default mocks in such a way that they can be reused by all tests, such as with [computed restrictions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#computed-restrictions) and [computed responses](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerrespond).

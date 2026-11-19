@@ -12,8 +12,18 @@ import ClosedWebSocketServerError from './errors/ClosedWebSocketServerError';
 import { openWebSocketServer, WebSocketServerCloseOptions, WebSocketServerOpenOptions } from './utils/lifecycle';
 
 export namespace WebSocketServer {
+  /**
+   * The types of the events emitted by a {@link WebSocketServer}.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serveraddeventlistener `server.addEventListener()` API reference}
+   */
   export type EventType = 'listening' | 'connection' | 'error' | 'close';
 
+  /**
+   * The parameters of the listeners of a {@link WebSocketServer}, by event type.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serveraddeventlistener `server.addEventListener()` API reference}
+   */
   export interface EventListenerParameters<Schema extends WebSocketSchema> {
     // A server accepts connections to any path of its schema, so its clients can exchange the messages of any of them.
     connection: [client: WebSocketClient<Schema, WebSocketSchemaPath.Literal<Schema>>, request: IncomingMessage];
@@ -22,13 +32,28 @@ export namespace WebSocketServer {
     listening: [];
   }
 
+  /**
+   * A listener of the events emitted by a {@link WebSocketServer}, by event type.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serveraddeventlistener `server.addEventListener()` API reference}
+   */
   export type EventListener<Schema extends WebSocketSchema, Type extends EventType> = (
     this: WebSocketServer<Schema>,
     ...parameters: EventListenerParameters<Schema>[Type]
   ) => PossiblePromise<void>;
 }
 
+/**
+ * The options to create a {@link WebSocketServer}.
+ *
+ * @see {@link https://zimic.dev/docs/ws/api/websocket-server#constructor `WebSocketServer` constructor API reference}
+ */
 export interface WebSocketServerOptions {
+  /**
+   * The HTTP or HTTPS server whose WebSocket upgrades the server handles.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#constructor `WebSocketServer` constructor API reference}
+   */
   httpServer: HttpServer | HttpsServer;
 }
 
@@ -43,6 +68,11 @@ type WebSocketServerRawEventListener<Type extends WebSocketServer.EventType> = (
   ...parameters: WebSocketServerRawEventListenerParameters[Type]
 ) => void;
 
+/**
+ * A WebSocket server typed with a {@link WebSocketSchema}, attached to a Node.js HTTP or HTTPS server.
+ *
+ * @see {@link https://zimic.dev/docs/ws/api/websocket-server `WebSocketServer` API reference}
+ */
 export class WebSocketServer<Schema extends WebSocketSchema> {
   #httpServer: HttpServer | HttpsServer;
   #webSocketServer?: NodeWebSocketServer;
@@ -59,10 +89,20 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
     error: new Map(),
   };
 
+  /**
+   * Creates a server that handles the WebSocket upgrades of an HTTP or HTTPS server once opened.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#constructor `WebSocketServer` constructor API reference}
+   */
   constructor(options: WebSocketServerOptions) {
     this.#httpServer = options.httpServer;
   }
 
+  /**
+   * The base URL of the server, such as `ws://127.0.0.1:3000`.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serverbaseurl `server.baseURL` API reference}
+   */
   get baseURL() {
     if (!this.isOpen) {
       throw new ClosedWebSocketServerError();
@@ -70,10 +110,20 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
     return `${this.protocol}://${this.hostname}:${this.port}`;
   }
 
+  /**
+   * The protocol of the server: `wss` for HTTPS servers and `ws` for HTTP servers.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serverprotocol `server.protocol` API reference}
+   */
   get protocol() {
     return this.#httpServer instanceof HttpsServer ? 'wss' : 'ws';
   }
 
+  /**
+   * The hostname of the HTTP or HTTPS server.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serverhostname `server.hostname` API reference}
+   */
   get hostname() {
     if (!this.isOpen) {
       throw new ClosedWebSocketServerError();
@@ -81,6 +131,11 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
     return getHttpServerHostname(this.#httpServer);
   }
 
+  /**
+   * The port of the HTTP or HTTPS server.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serverport `server.port` API reference}
+   */
   get port() {
     if (!this.isOpen) {
       throw new ClosedWebSocketServerError();
@@ -88,10 +143,20 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
     return getHttpServerPort(this.#httpServer);
   }
 
+  /**
+   * Whether the WebSocket server is open and its HTTP or HTTPS server is listening.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serverisopen `server.isOpen` API reference}
+   */
   get isOpen() {
     return this.#httpServer.listening && this.#webSocketServer !== undefined;
   }
 
+  /**
+   * Starts handling WebSocket connections, waiting for the HTTP or HTTPS server to listen if needed.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serveropen `server.open()` API reference}
+   */
   async open(options?: WebSocketServerOpenOptions) {
     if (this.isOpen) {
       return;
@@ -115,6 +180,11 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
     this.#webSocketServer = webSocketServer;
   }
 
+  /**
+   * Closes the connected clients and stops handling WebSocket connections, keeping the HTTP or HTTPS server open.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serverclose `server.close()` API reference}
+   */
   async close(options?: WebSocketServerCloseOptions) {
     if (!this.#webSocketServer) {
       return;
@@ -125,8 +195,23 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
     this.#webSocketServer = undefined;
   }
 
+  /**
+   * Adds a listener for connections, called with each connected client and its upgrade request.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serveraddeventlistener `server.addEventListener()` API reference}
+   */
   addEventListener(type: 'connection', listener: WebSocketServer.EventListener<Schema, 'connection'>): void;
+  /**
+   * Adds a listener for server errors.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serveraddeventlistener `server.addEventListener()` API reference}
+   */
   addEventListener(type: 'error', listener: WebSocketServer.EventListener<Schema, 'error'>): void;
+  /**
+   * Adds a listener for when the server starts listening or closes.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serveraddeventlistener `server.addEventListener()` API reference}
+   */
   addEventListener(
     type: 'listening' | 'close',
     listener: WebSocketServer.EventListener<Schema, 'listening' | 'close'>,
@@ -169,8 +254,23 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
     }
   }
 
+  /**
+   * Removes a connection listener added with `addEventListener()`.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serverremoveeventlistener `server.removeEventListener()` API reference}
+   */
   removeEventListener(type: 'connection', listener: WebSocketServer.EventListener<Schema, 'connection'>): void;
+  /**
+   * Removes an error listener added with `addEventListener()`.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serverremoveeventlistener `server.removeEventListener()` API reference}
+   */
   removeEventListener(type: 'error', listener: WebSocketServer.EventListener<Schema, 'error'>): void;
+  /**
+   * Removes a listening or close listener added with `addEventListener()`.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serverremoveeventlistener `server.removeEventListener()` API reference}
+   */
   removeEventListener(
     type: 'listening' | 'close',
     listener: WebSocketServer.EventListener<Schema, 'listening' | 'close'>,
@@ -187,6 +287,11 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
     }
   }
 
+  /**
+   * Emits a server event, calling its listeners with the given parameters.
+   *
+   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serveremit `server.emit()` API reference}
+   */
   emit<Type extends WebSocketServer.EventType>(
     type: Type,
     ...parameters: WebSocketServer.EventListenerParameters<Schema>[Type]
