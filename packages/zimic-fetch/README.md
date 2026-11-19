@@ -34,11 +34,19 @@
 
 `@zimic/fetch` is a minimal (~2 kB minified gzipped) and type-safe `fetch`-like API client.
 
+[`createFetch`](https://zimic.dev/docs/fetch/api/create-fetch) takes your [`@zimic/http` schema](https://zimic.dev/docs/http/guides/schemas) and returns a thin wrapper around the native [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). It accepts the same arguments as `fetch` and returns native requests and responses, so there is no new API to learn. Paths, parameters, bodies, and responses are typed by default.
+
+## When to use
+
+- You already use `fetch` and want type safety without adopting a larger HTTP client.
+- You want response bodies typed by status code, without casting the result of `response.json()`.
+- You need shared defaults, authentication, or retries across your requests.
+
 ## Highlights
 
 - :zap: **Type-safe `fetch`**
 
-  Use your [`@zimic/http` schema](https://zimic.dev/docs/http/guides/schemas) to create a type-safe [`fetch`-like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client and have your requests and responses fully typed by default.
+  Use your [`@zimic/http` schema](https://zimic.dev/docs/http/guides/schemas) to create a type-safe [`fetch`-like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client and have your requests and responses fully typed by default. Checking `response.status` narrows the type of the response body, which makes [handling errors](https://zimic.dev/docs/fetch/guides/errors) explicit.
 
 - :sparkles: **Zero dependencies**
 
@@ -46,7 +54,11 @@
 
 - :muscle: **Developer experience**
 
-  Define default options to apply to your requests, such as a base URL, headers, search parameters, and more. Inspect and modify requests and responses using [`onRequest`](https://zimic.dev/docs/fetch/api/fetch#fetchonrequest) and [`onResponse`](https://zimic.dev/docs/fetch/api/fetch#fetchonresponse) listeners.
+  Define default options to apply to your requests, such as a base URL, headers, search parameters, and more. Inspect and modify requests and responses using [`onRequest`](https://zimic.dev/docs/fetch/api/fetch#fetchonrequest) and [`onResponse`](https://zimic.dev/docs/fetch/api/fetch#fetchonresponse) listeners, for example to [authenticate requests](https://zimic.dev/docs/fetch/guides/authentication).
+
+- :test_tube: **Testing**
+
+  Mock the requests of your client with [`@zimic/interceptor`](https://zimic.dev/docs/interceptor), typed by the same schema. See our [testing guide](https://zimic.dev/docs/fetch/guides/testing) for more information.
 
 **Learn more**:
 
