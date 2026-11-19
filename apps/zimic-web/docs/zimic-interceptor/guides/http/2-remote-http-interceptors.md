@@ -1,10 +1,10 @@
 ---
-title: Using remote interceptors | @zimic/interceptor
+title: Using remote HTTP interceptors | @zimic/interceptor
 sidebar_label: Using remote interceptors
 slug: /interceptor/guides/http/remote-interceptors
 ---
 
-# Using remote interceptors
+# Using remote HTTP interceptors
 
 HTTP interceptors allow you to handle requests and return custom responses. Their primary use is to mock HTTP requests in development or testing environments, especially when the backend is unavailable or when you want to have more control over the responses.
 

@@ -1,10 +1,10 @@
 ---
-title: Using local interceptors | @zimic/interceptor
+title: Using local HTTP interceptors | @zimic/interceptor
 sidebar_label: Using local interceptors
 slug: /interceptor/guides/http/local-interceptors
 ---
 
-# Using local interceptors
+# Using local HTTP interceptors
 
 HTTP interceptors allow you to handle requests and return custom responses. Their primary use is to mock HTTP requests in development or testing environments, especially when the backend is unavailable or when you want to have more control over the responses.
 
