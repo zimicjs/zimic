@@ -212,7 +212,11 @@ export interface WebSocketInterceptorClient<
   close: (code?: number, reason?: string) => void;
 }
 
-/** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorserver `interceptor.server` API reference} */
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorserver `interceptor.server` API reference}
+ */
 export interface WebSocketInterceptorServerSendOptions<Schema extends WebSocketSchema> {
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorserver `interceptor.server` API reference} */
   to?: WebSocketInterceptorClient<Schema> | readonly WebSocketInterceptorClient<Schema>[];
