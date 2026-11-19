@@ -369,7 +369,7 @@ type RoomProtocol = WebSocketConnectionProtocolSchema<Schema['/rooms/:roomId']>;
 
 ## `WebSocketMessageData`
 
-Converts a message schema to the data sent and received through a socket. JSON-compatible messages become their stringified representation. `string`, `Blob`, and `BufferSource` messages keep their original type. To get the messages of a path in a schema, use [`WebSocketSchemaMessage`](#websocketschemamessage).
+Converts a message schema to the data sent and received through a socket. JSON-compatible messages become their stringified representation. `string`, `Blob`, and `BufferSource` messages keep their original type. To get the messages of a path in a schema, use [`WebSocketSchemaMessage`](#websocketschemamessage-1).
 
 ```ts
 type WebSocketMessageData<MessageSchema>
@@ -396,4 +396,20 @@ type Schema = WebSocketSchema<{
 }>;
 
 type RoomMessageData = WebSocketMessageData<WebSocketSchemaMessage<Schema, '/rooms/:roomId'>>;
+```
+
+## `JSONStringified`
+
+Represents a value stringified with `JSON.stringify`, keeping a reference to the type of the original value. [`WebSocketMessageData`](#websocketmessagedata) uses it for JSON-compatible messages, so only strings created with `JSON.stringify` from a value of the expected type are accepted.
+
+```ts
+type JSONStringified<Value>
+```
+
+```ts
+import { JSONStringified } from '@zimic/ws';
+
+type Ping = { type: 'ping'; data: { id: string } };
+
+const ping: JSONStringified<Ping> = JSON.stringify({ type: 'ping', data: { id: '1' } });
 ```

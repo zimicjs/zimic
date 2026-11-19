@@ -133,7 +133,7 @@ type Schema = WebSocketSchema<{
 
 ### `WebSocketMessageData`
 
-[`WebSocketMessageData`](/docs/zimic-ws/api/1-websocket-schema.md#websocketmessagedata) represents the data passed to `send()` and received in message events for a message type. To get the messages of a path, use [`WebSocketSchemaMessage`](/docs/zimic-ws/api/1-websocket-schema.md#websocketschemamessage).
+[`WebSocketMessageData`](/docs/zimic-ws/api/1-websocket-schema.md#websocketmessagedata) represents the data passed to `send()` and received in message events for a message type. To get the messages of a path, use [`WebSocketSchemaMessage`](/docs/zimic-ws/api/1-websocket-schema.md#websocketschemamessage-1).
 
 JSON-compatible messages become their stringified representation. `string`, `Blob`, and `BufferSource` messages keep the same type.
 
