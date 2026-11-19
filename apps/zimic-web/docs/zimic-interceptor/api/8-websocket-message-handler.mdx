@@ -326,9 +326,9 @@ await handler.checkTimes();
 
 ## `handler.clear()`
 
-Clears responses declared with [`handler.respond()`](#handlerrespond), effects declared with [`handler.effect()`](#handlereffect), restrictions declared with [`handler.with()`](#handlerwith) or [`handler.from()`](#handlerfrom), message count limits, and saved messages.
+Clears any response declared with [`handler.respond()`](#handlerrespond), effect declared with [`handler.effect()`](#handlereffect), restrictions declared with [`handler.with()`](#handlerwith) or [`handler.from()`](#handlerfrom), delay declared with [`handler.delay()`](#handlerdelay), message limits declared with [`handler.times()`](#handlertimes), and saved messages, making the handler stop matching messages. The next handler, created before this one, that matches the message will be used if present. If not, the message will be unhandled.
 
-After being cleared, the handler remains registered as a passive handler and can match future messages without sending a response or running an effect.
+To make the handler match messages again, declare it again with [`handler.with()`](#handlerwith), [`handler.from()`](#handlerfrom), [`handler.respond()`](#handlerrespond), [`handler.effect()`](#handlereffect), [`handler.delay()`](#handlerdelay), or [`handler.times()`](#handlertimes).
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -366,7 +366,7 @@ This property can only be used if [`messageSaving.enabled`](/docs/interceptor/ap
 
 ## Passive handlers
 
-Handlers without [`handler.respond()`](#handlerrespond) or [`handler.effect()`](#handlereffect) are valid passive handlers. They accept connections, observe matching messages, save them when message saving is enabled, and count toward [`handler.times()`](#handlertimes) without sending a response or running an effect.
+Handlers without [`handler.respond()`](#handlerrespond) or [`handler.effect()`](#handlereffect) are valid passive handlers. They observe matching messages, save them when message saving is enabled, and count toward [`handler.times()`](#handlertimes) without sending a response or running an effect.
 
 ```ts
 const handler = interceptor.message().with({ type: 'typing' }).times(1);
