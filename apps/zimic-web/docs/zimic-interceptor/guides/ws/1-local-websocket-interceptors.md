@@ -14,9 +14,15 @@ WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. 
 
 WebSocket interceptors allow you to handle client messages and send custom server messages. Their primary use is to mock WebSocket flows in development or testing environments, especially when the backend is unavailable or when you want to control connection and message scenarios.
 
-In `@zimic/interceptor`, WebSocket interceptors are available in two types: `local` (default) and `remote`. When an interceptor is `local`, Zimic intercepts WebSocket connections _in the same process_ as your application. This is the simplest way to start mocking WebSocket messages and does not require any interceptor server setup.
+In `@zimic/interceptor`, WebSocket interceptors are available in two types: `local` (default) and `remote`. When an interceptor is `local`, Zimic uses [MSW](https://github.com/mswjs/msw) to intercept WebSocket connections _in the same process_ as your application. This is the simplest way to start mocking WebSocket messages and does not require any server setup.
 
-WebSocket clients must provide a native or polyfilled [WebSocket API](https://developer.mozilla.org/docs/Web/API/WebSocket). Browsers normally provide it natively; Node.js interception requires Node.js 22.4 or later, and the client must expose the native `WebSocket` or a compatible polyfill. Local browser interception also requires an initialized mock service worker, as described in [Starting an interceptor](#starting-an-interceptor).
+Local interceptors intercept only connections opened with `globalThis.WebSocket`, the global [WebSocket API](https://developer.mozilla.org/docs/Web/API/WebSocket), either native or polyfilled. Browsers provide it natively, and Node.js provides it from Node.js 22.4. Local browser interception additionally requires an initialized mock service worker, as described in [Starting an interceptor](#starting-an-interceptor).
+
+:::info INFO: <span>WebSocket libraries in Node.js</span>
+
+Libraries that open their own sockets in Node.js, such as [`ws`](https://github.com/websockets/ws) and [`isomorphic-ws`](https://github.com/heineiuo/isomorphic-ws), connect directly to the network and are not intercepted by local interceptors. Use [remote interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md) to mock connections opened by these libraries.
+
+:::
 
 ## When to use local WebSocket interceptors
 
@@ -26,11 +32,11 @@ WebSocket clients must provide a native or polyfilled [WebSocket API](https://de
 
 - **Testing**
 
-  If you run your application in the same process as your tests, local interceptors are a good way to mock WebSocket messages and verify how your application handles server responses, broadcasts, and connection state. This is common when using unit and integration test runners such as [Jest](https://jestjs.io) and [Vitest](https://vitest.dev).
+  If you run your application in the same process as your tests, local interceptors are a good way to mock WebSocket messages and verify how your application handles server messages, broadcasts, and connection state. This is common when using unit and integration test runners such as [Jest](https://jestjs.io) and [Vitest](https://vitest.dev).
 
 ## Creating a local WebSocket interceptor
 
-To start using a WebSocket interceptor, declare a WebSocket schema using [`@zimic/ws`](/docs/ws/guides/schemas). The schema represents the message data sent and received by your WebSocket clients and servers.
+To start using a WebSocket interceptor, declare a WebSocket schema using [`@zimic/ws`](/docs/zimic-ws/guides/1-schemas.md). The schema represents the structure of your WebSocket service, including the paths and the messages exchanged by clients and servers.
 
 ```ts title='schema.ts'
 import { WebSocketSchema } from '@zimic/ws';
@@ -40,10 +46,14 @@ type ChatMessage =
   | { type: 'typing'; data: { username: string } }
   | { type: 'presence'; data: { online: boolean } };
 
-type Schema = WebSocketSchema<ChatMessage>;
+type Schema = WebSocketSchema<{
+  '/chat': {
+    message: ChatMessage;
+  };
+}>;
 ```
 
-With the schema defined, you can now create your interceptor with `createWebSocketInterceptor`. It takes the schema as a type parameter and returns an interceptor instance. The `baseURL` option represents the scope of the interceptor and points to the URL that your application will use to open WebSocket connections. Local WebSocket interceptors are the default, so `type: 'local'` is optional.
+With the schema defined, you can now create your interceptor with [`createWebSocketInterceptor`](/docs/zimic-interceptor/api/6-create-websocket-interceptor.mdx). It takes the schema as a type parameter and returns an interceptor instance. The `baseURL` option represents the scope of the interceptor and points to the URL that your application will use to open WebSocket connections.
 
 ```ts
 import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
@@ -51,24 +61,17 @@ import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
 const interceptor = createWebSocketInterceptor<Schema>({
   // highlight-next-line
   type: 'local', // optional
-  baseURL: 'ws://localhost:3000/chat',
-  messageSaving: { enabled: true },
+  baseURL: 'ws://localhost:3000',
 });
 ```
 
-You can also set other options, such as the interceptor type and message saving.
-
-:::info INFO: <span>WebSocket interceptor scope</span>
-
-WebSocket interceptors are designed for typed test and development mocks. They do not proxy unmatched WebSocket traffic to an upstream server, and they do not provide a general-purpose WebSocket gateway. Declare handlers for the messages your test expects to observe or mock.
-
-:::
+You can also set other options, such as the interceptor type and how unhandled messages should be treated. Refer to the [`createWebSocketInterceptor` API reference](/docs/zimic-interceptor/api/6-create-websocket-interceptor.mdx) for more details.
 
 ## WebSocket interceptor lifecycle
 
 ### Starting an interceptor
 
-To intercept connections and messages, an interceptor must be started with `interceptor.start()`. This is usually done in a `beforeAll` hook in your test suite.
+To intercept connections and messages, an interceptor must be started with [`interceptor.start()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorstart). This is usually done in a `beforeAll` hook in your test suite.
 
 ```ts
 beforeAll(async () => {
@@ -77,17 +80,15 @@ beforeAll(async () => {
 });
 ```
 
-Starting the interceptor activates interception for its `baseURL`. Start it before declaring handlers or opening clients. Calling `message()` creates and registers a message handler.
-
 :::info INFO: <span>Local interceptors in browsers</span>
 
-If you are using a local WebSocket interceptor in a **browser** environment, you must first [initialize a mock service worker](/docs/interceptor/cli/browser#zimic-interceptor-browser-init) in your public directory before starting the interceptor.
+If you are using a local interceptor in a **browser** environment, you must first [initialize a mock service worker](/docs/zimic-interceptor/cli/2-browser.md#zimic-interceptor-browser-init) in your public directory before starting the interceptor.
 
 :::
 
 ### Clearing an interceptor
 
-When using an interceptor in tests, it's important to clear it between tests to avoid one test affecting another. This is done with `interceptor.clear()`, which resets handlers, saved messages, connected clients, and server messages to their initial states.
+When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another. This is done with [`interceptor.clear()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclear), which resets the interceptor and handlers to their initial states.
 
 ```ts
 beforeEach(() => {
@@ -98,7 +99,7 @@ beforeEach(() => {
 
 ### Checking expectations
 
-After each test, you can check if your application has sent all of the expected messages with `interceptor.checkTimes()`.
+After each test, you can check if your application has sent all of the expected messages and opened all of the expected connections with [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes).
 
 ```ts
 afterEach(() => {
@@ -109,7 +110,7 @@ afterEach(() => {
 
 ### Stopping an interceptor
 
-After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with `interceptor.stop()`.
+After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with [`interceptor.stop()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorstop).
 
 ```ts
 afterAll(async () => {
@@ -120,15 +121,15 @@ afterAll(async () => {
 
 ### Mocking messages
 
-You can now use the interceptor to handle client-to-server messages and send mock server responses. Message data, restrictions, responses, saved messages, connected clients, and server sends are typed by default based on the schema.
+You can now use the interceptor to handle client messages and send mock server messages. All paths, messages, restrictions, and responses are typed by default based on the schema.
 
-Use `interceptor.message()` to create a message handler. Handlers can restrict matching messages with `.with(...)`, restrict messages to a known client with `.from(...)`, delay matching with `.delay(...)`, run side effects with `.effect(...)`, send server responses with `.respond(...)`, and declare expected message counts with `.times(...)`.
+Use [`interceptor.message()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptormessage) to create a [message handler](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx). To handle connections, use [`interceptor.connection()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorconnection), as described in [Using connections and server sends](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx).
 
 ```ts
 test('example', () => {
   // highlight-start
   interceptor
-    .message()
+    .message('/chat')
     .with({ type: 'message' })
     .respond((message) => ({
       type: 'presence',
@@ -137,102 +138,32 @@ test('example', () => {
     .times(1);
   // highlight-end
 
-  // Run the application and send WebSocket messages...
+  // Run the application and send messages...
 });
 ```
 
-:::info INFO: <span>Local WebSocket interceptors are synchronous</span>
+:::info INFO: <span>Local interceptors are synchronous</span>
 
-Many operations in local WebSocket interceptors are **synchronous** because they do not involve communication with an external server. This is different from [remote interceptors](/docs/interceptor/guides/ws/remote-interceptors), which communicate with an [interceptor server](/docs/interceptor/cli/server) to handle messages and return responses.
+Many operations in local interceptors are **synchronous** because they do not involve communication with an external server. This is different from [remote interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md), which communicate with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle connections and messages.
 
-WebSocket frames arrive in transport order, but Zimic handles messages independently. Asynchronous restrictions, effects, delays, and responses can overlap and complete in any order. Do not rely on handler-completion or response order.
+Messages arrive in the order the client sent them, but Zimic handles each one independently. Asynchronous restrictions, delays, effects, and responses can overlap and complete in any order.
 
 :::
 
-If you need to access the messages processed by the interceptor, enable message saving and use `handler.messages`. Message saving is enabled by default in Node.js when `process.env.NODE_ENV === 'test'` and disabled by default in browsers. Configure `messageSaving: { enabled: true }` when you need saved messages in every environment. Saved message arrays are readonly and keep stable references. Calling `handler.clear()` removes that handler's saved messages from the handler, sender client, and server arrays in place; calling `interceptor.clear()` clears all saved message arrays and resets safe-limit accounting.
-
-`handler.clear()` returns the same handler reset to the root message schema. Continue configuration from that returned handler when a previous `.with(...)` narrowed its message type. An older narrowed alias does not retain sound narrowing after either the handler or interceptor is cleared.
+If you need to access the messages processed by the interceptor, use [`handler.messages`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlermessages).
 
 ```ts
-const narrowedHandler = interceptor.message().with({ type: 'typing' });
-const rootHandler = narrowedHandler.clear();
-
-rootHandler.respond({ type: 'presence', data: { online: true } });
-```
-
-```ts
+// highlight-next-line
 const handler = interceptor
-  .message()
+  .message('/chat')
   .with({ type: 'message' })
   .respond({ type: 'presence', data: { online: true } })
   .times(1);
 
-// Run the application and send WebSocket messages...
+// Run the application and send messages...
 
 console.log(handler.messages.length); // 1
+
 console.log(handler.messages[0].data); // { type: 'message', data: { text: 'Hello!' } }
 console.log(handler.messages[0].sender.url); // 'ws://localhost:3000/chat'
 ```
-
-### Passive handlers
-
-Handlers without `.respond(...)` or `.effect(...)` are valid passive handlers. They accept connections, observe matching messages, save them when message saving is enabled, and count toward `.times()` without sending a response or running an effect.
-
-```ts
-const handler = interceptor.message().with({ type: 'typing' }).times(1);
-
-// Run the application and send WebSocket messages...
-
-console.log(handler.messages.length); // 1
-```
-
-### Connected clients
-
-Use a [connection handler](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx) effect, declared with [`interceptor.connection()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorconnection), to run code when a client connects, before it sends any messages. The callback receives the typed client handle:
-
-```ts
-interceptor.connection().effect((client) => {
-  client.send(JSON.stringify({ type: 'presence', data: { online: true } }));
-});
-```
-
-Declare the handler before opening application clients. Existing connections are not replayed. `interceptor.clear()` and `interceptor.stop()` also remove connection handlers, so declare them again after clearing or restarting the interceptor.
-
-The interceptor tracks currently connected clients in `interceptor.clients`. Each client is a public handle that can send messages back to the real WebSocket connection. You can use these handles in `.from(...)` restrictions or inside effects.
-
-```ts
-interceptor.message().effect((message) => {
-  const [firstClient] = interceptor.clients;
-
-  firstClient.send(
-    JSON.stringify({
-      type: 'presence',
-      data: { online: message.type === 'message' },
-    }),
-  );
-});
-```
-
-### Server sends
-
-The interceptor also exposes a synthetic server handle. Calling `interceptor.server.send(...)` broadcasts to currently connected clients.
-
-```ts
-interceptor.server.send(JSON.stringify({ type: 'presence', data: { online: true } }));
-```
-
-To send to a selected subset of connected clients, pass their handles in `options.to`. Omitting `to` retains broadcast behavior.
-
-```ts
-interceptor.server.send(JSON.stringify({ type: 'presence', data: { online: true } }), {
-  to: interceptor.clients.slice(0, 2),
-});
-```
-
-Server-originated sends are delivered to connected clients, but they are not added to handler or client saved message lists. Saved messages are produced by matched client-to-server messages.
-
-### Incoming message parsing
-
-Message handlers automatically parse text frames containing a valid JSON object or array before matching restrictions, running callbacks, or saving messages. Other text frames stay strings, including top-level JSON numbers, booleans, `null`, and strings. Binary frames retain their original data. Unlike HTTP bodies without a `content-type`, which are parsed as any JSON value, WebSocket frames have no content type to declare JSON, and string messages are sent as raw text.
-
-For string-based schemas, text such as `'{"type":"message"}'` is therefore exposed as parsed JSON rather than as a string. Avoid JSON object or array text when the message must remain a string. A frame such as `'42'` stays a string, even when the schema declares a number, so restrict it by its text, such as `handler.with('42')`.
