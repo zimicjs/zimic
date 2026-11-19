@@ -151,7 +151,9 @@ await client.close(1000, 'Done');
 
 ## `client.send()`
 
-Sends a message through the socket. The data is typed with [`WebSocketMessageData`](/docs/zimic-ws/api/1-websocket-schema.md#websocketmessagedata) for the messages of the client path. If the client has no socket, such as before [`client.open()`](#clientopen), the message is not sent.
+Sends a message through the socket. The data is typed with [`WebSocketMessageData`](/docs/zimic-ws/api/1-websocket-schema.md#websocketmessagedata) for the messages of the client path.
+
+Like the native `WebSocket.send()`, the method throws a `DOMException` named `InvalidStateError` if the client is [connecting](#clientconnecting), including before [`client.open()`](#clientopen) is called. If the client is closing or closed, the message is discarded without an error.
 
 ```ts
 client.send(data);
@@ -338,7 +340,7 @@ The extensions selected by the server, or an empty string if the client has no s
 
 ## `client.readyState`
 
-The state of the socket, or [`client.CLOSED`](#clientclosed) if the client has no socket. While [`client.open()`](#clientopen) is connecting, the state is `client.CLOSED`.
+The state of the socket. Before [`client.open()`](#clientopen) is called, the state is [`client.CONNECTING`](#clientconnecting). After the client is closed or fails to open, the state is [`client.CLOSED`](#clientclosed).
 
 **Type**: `WebSocketClient.ReadyState`
 

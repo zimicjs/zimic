@@ -133,6 +133,10 @@ export class WebSocketClient<
   private socket?: WebSocket;
   private openingSocket?: WebSocket;
 
+  // A client created with a URL has not connected yet, which matches a native socket that is still connecting. After
+  // an open attempt or a close, a client without a socket is closed.
+  #readyStateWithoutSocket: WebSocketClient.ReadyState = WebSocketClient.CONNECTING;
+
   #url: string;
   #protocols?: string | string[];
   #binaryType: BinaryType = 'blob';
@@ -302,13 +306,13 @@ export class WebSocketClient<
   }
 
   /**
-   * The state of the socket, or `CLOSED` if the client has no socket.
+   * The state of the socket, `CONNECTING` before the client is opened, or `CLOSED` if the client was closed.
    *
    * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientreadystate `client.readyState` API reference}
    */
   get readyState(): WebSocketClient.ReadyState {
-    const readyState = this.socket?.readyState ?? WebSocket.CLOSED;
-    return readyState;
+    const socket = this.socket ?? this.openingSocket;
+    return socket ? socket.readyState : this.#readyStateWithoutSocket;
   }
 
   /**
@@ -334,6 +338,7 @@ export class WebSocketClient<
 
     const socket = new WebSocket(this.#url, this.#protocols);
     this.openingSocket = socket;
+    this.#readyStateWithoutSocket = WebSocketClient.CLOSED;
 
     try {
       if (socket.binaryType !== this.binaryType) {
@@ -386,16 +391,25 @@ export class WebSocketClient<
       await closeWebSocketClient(this.socket, { ...options, code, reason });
     } finally {
       this.socket = undefined;
+      this.#readyStateWithoutSocket = WebSocketClient.CLOSED;
     }
   }
 
   /**
-   * Sends a message through the socket, typed with the messages of the client path.
+   * Sends a message through the socket, typed with the messages of the client path. Throws an `InvalidStateError` if
+   * the client is connecting or was not opened.
    *
    * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientsend `client.send()` API reference}
    */
   send(data: WebSocketMessageData<WebSocketSchemaMessage<Schema, Path>>) {
-    this.socket?.send(data);
+    const socket = this.socket ?? this.openingSocket;
+
+    // Like a native socket, a client without a socket throws while connecting and discards the data once closed.
+    if (socket) {
+      socket.send(data);
+    } else if (this.readyState === WebSocketClient.CONNECTING) {
+      throw new DOMException('Still in CONNECTING state.', 'InvalidStateError');
+    }
   }
 
   /**
