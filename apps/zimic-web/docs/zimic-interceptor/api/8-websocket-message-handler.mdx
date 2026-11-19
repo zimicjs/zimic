@@ -15,7 +15,7 @@ WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. 
 
 :::
 
-A WebSocket message handler to observe client-to-server messages, run effects, and declare server responses. When multiple handlers of the same interceptor match the same message, the _last_ handler created with [`interceptor.message(path)`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptormessage) will be used, even if the handlers were declared with different paths.
+A WebSocket message handler to observe client-to-server messages, run effects, and declare server responses. When multiple handlers match the same message, the _last_ handler created with [`interceptor.message(path)`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#declaring-message-handlers) will be used, even if the handlers belong to different interceptors holding the connection or were declared with different paths.
 
 The examples on this page use the following [schema](/docs/zimic-ws/guides/1-schemas.md):
 
