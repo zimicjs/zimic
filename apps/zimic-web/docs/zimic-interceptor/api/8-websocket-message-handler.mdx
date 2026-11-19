@@ -47,41 +47,17 @@ The type of the handler, either `local` or `remote`.
 
 **Type**: `'local' | 'remote'` (readonly)
 
-## `handler.from()`
+## `handler.path`
 
-Restricts the handler to messages sent by a specific connected client.
+The path declared in [`interceptor.message(path)`](/docs/interceptor/api/websocket-interceptor#interceptormessage), relative to the base URL of the interceptor. The handler matches only messages of connections to this path. If no path was declared, `handler.path` is `undefined` and the handler matches messages of every connection to the interceptor.
 
-<Tabs groupId="zimic-websocket-interceptor-type">
-  <TabItem value="local" label="Local interceptor">
-
-```ts
-handler.from(client);
-```
-
-  </TabItem>
-
-  <TabItem value="remote" label="Remote interceptor">
-
-```ts
-await handler.from(client);
-```
-
-  </TabItem>
-</Tabs>
-
-**Arguments**:
-
-1. **client**: `WebSocketInterceptorClient<Schema>`
-
-   The connected client that must send the message for this handler to match.
-
-**Returns**: `WebSocketMessageHandler<Schema>`
+**Type**: `string | undefined` (readonly)
 
 ## `handler.with()`
 
-Declares a restriction to intercepted message matches. If multiple restrictions are declared, all of them must be met, creating an AND condition.
+Declares a restriction to intercepted message matches. If multiple restrictions are declared with multiple calls to `handler.with()`, all of them must be met, creating an AND condition.
 
-By default, static restrictions use `exact: false`, meaning that any JSON message **containing** the declared data will match the handler, regardless of having more properties or values. If you want to match only messages equal to the declared data, use `exact: true`.
+By default, static restrictions use `exact: false`, meaning that any message **containing** the declared data will match the handler. JSON messages match if they contain the declared properties and values, regardless of having more, and text messages match if they include the declared text. If you want to match only messages equal to the declared data, use `exact: true`. Binary restrictions always compare whole bytes.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -107,16 +83,32 @@ await handler.with((message) => matchesMessage);
 
 **Arguments**:
 
-1. **restriction**: `WebSocketMessageHandlerRestriction<Schema>`
+1. **restriction**: `WebSocketMessageHandlerRestriction<RestrictedMessage>`
 
-   The restriction to match intercepted messages. It can be static, declared as a partial message object, or computed, declared as a boolean predicate or type guard returning whether the message matches. Static restrictions match messages that contain the declared data. Top-level number and boolean schema members arrive as text, so their static restrictions accept only the whole text, such as `'42'` or `'true'`.
+   The restriction to match intercepted messages. It can be static, declared as one of the following:
+   - A partial JSON object or array, matching JSON messages that contain it.
+   - A text, matching text messages that include it. Top-level number and boolean schema members arrive as text, so their restrictions are also text, such as `'42'` or `'true'`.
+   - Binary data, as a `Blob`, an `ArrayBuffer`, or an `ArrayBufferView`, matching binary messages with the same bytes.
+
+   A text restriction must fit a text member of the schema. For example, if the schema declares the literal members `'ping'` and `'pong'`, `handler.with('pi')` is a type error, even though it would match `'ping'` at runtime. To match part of a literal member, use a computed restriction, such as `handler.with((message) => message.includes('pi'))`.
+
+   Restrictions can also be computed, declared as a function to dynamically decide whether the message matches:
+
+   **Arguments**:
+   1. **message**: `ReceivedWebSocketMessageData<RestrictedMessage>`
+
+      The intercepted message data to check against the restriction.
+
+   **Returns**: `Promise<boolean> | boolean`
+
+   A boolean indicating whether the intercepted message matches the restriction. If the function is a type guard, such as `(message) => message is Message`, the handler message type is narrowed to the guarded type.
 
 2. **options**: `WebSocketMessageHandlerStaticRestrictionOptions | undefined`
 
    The options of a static restriction. Computed restrictions do not accept options.
    - **exact**: `boolean | undefined` (default: `false`)
 
-     Whether JSON messages must be equal to the restriction instead of containing it. Binary restrictions always require messages with the same bytes.
+     If `true`, JSON messages must be equal to the restriction and text messages must be identical to it. Otherwise, JSON messages must contain the restriction and text messages must include it. Binary restrictions always require messages with the same bytes.
 
    Unlike HTTP, where `exact` is a field of the restriction, `exact` is a separate argument in WebSocket handlers. A WebSocket static restriction is the partial message itself, so an `exact` field would be ambiguous with the message data.
 
@@ -146,9 +138,43 @@ await interceptor.message().with({ type: 'message', text: 'hello' }, { exact: tr
   </TabItem>
 </Tabs>
 
-**Returns**: `WebSocketMessageHandler<Schema, RestrictedSchema>`
+**Returns**: `WebSocketMessageHandler<Schema, Path, RestrictedMessage>`
 
-The same handler, now considering the specified restriction. Static restrictions and computed type-guard restrictions can narrow the handler's message type for later operations. Chained restrictions continue narrowing the matched message without narrowing the interceptor schema used by responses or callback client handles. Boolean predicate restrictions keep the current message type.
+The same handler, now considering the specified restriction. JSON and binary static restrictions narrow the message type of the handler to the schema members compatible with them. Text restrictions keep every text member of the schema, even with `exact: true`. Type-guard restrictions narrow the message type to the guarded type, and boolean predicates keep the current message type. Chained restrictions continue narrowing the matched message without narrowing the schema used by responses or callback client handles.
+
+If the interceptor is local, the restriction is immediately applied to the handler. If the interceptor is remote, the restriction is asynchronously sent to the [interceptor server](/docs/interceptor/cli/server). Because of the asynchronous nature of remote interceptors, make sure to await the handler before sending messages.
+
+## `handler.from()`
+
+Restricts the handler to messages sent by a specific connected client.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+handler.from(client);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await handler.from(client);
+```
+
+  </TabItem>
+</Tabs>
+
+**Arguments**:
+
+1. **client**: `WebSocketInterceptorClient<Schema>`
+
+   The connected client that must send the message for this handler to match.
+
+**Returns**: `WebSocketMessageHandler<Schema, Path, RestrictedMessage>`
+
+The same handler, now considering only messages sent by the client.
 
 ## `handler.delay()`
 
