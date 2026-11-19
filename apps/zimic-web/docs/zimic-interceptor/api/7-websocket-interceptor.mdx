@@ -102,7 +102,7 @@ Configures if intercepted connections are saved and how they are handled.
 
 ## `interceptor.onUnhandledMessage`
 
-The strategy to use for [unhandled messages](/docs/zimic-interceptor/guides/ws/3-unhandled-messages.md). If a client message reaches the interceptor, but no matching handler exists, this strategy will be used. If a function is provided, it will be called with the unhandled message.
+The strategy to use for [unhandled messages](/docs/zimic-interceptor/guides/ws/7-unhandled-messages.md). If a client message reaches the interceptor, but no matching handler exists, this strategy will be used. If a function is provided, it will be called with the unhandled message.
 
 **Type**: `UnhandledMessageStrategy<Schema> | undefined`
 
@@ -112,7 +112,7 @@ The strategy to use for [unhandled messages](/docs/zimic-interceptor/guides/ws/3
 
 **Related**:
 
-- [Unhandled messages](/docs/zimic-interceptor/guides/ws/3-unhandled-messages.md)
+- [Unhandled messages](/docs/zimic-interceptor/guides/ws/7-unhandled-messages.md)
 
 ## `interceptor.auth`
 
@@ -186,7 +186,7 @@ After a client message is intercepted, Zimic tries to find a handler that matche
 
 The handlers are checked from the **last** one created to the first one, so new handlers have preference over older ones. This allows you to declare generic and specific handlers based on their order of creation. For example, a generic handler for `/rooms/:roomId` can respond to every message, while a specific handler in a test case can respond only to messages of type `message`. In this case, the specific handler will be considered first as long as it is created **after** the generic one.
 
-This order spans the handlers of all interceptors holding the connection, regardless of the order in which they started or the paths of the handlers. A handler whose restrictions are not met or whose [`handler.times()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlertimes) limit is exhausted is skipped in favor of older handlers. If no handler matches, the message is [unhandled](/docs/zimic-interceptor/guides/ws/3-unhandled-messages.md). A handler created after [`interceptor.clear()`](#interceptorclear) is the newest one.
+This order spans the handlers of all interceptors holding the connection, regardless of the order in which they started or the paths of the handlers. A handler whose restrictions are not met or whose [`handler.times()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlertimes) limit is exhausted is skipped in favor of older handlers. If no handler matches, the message is [unhandled](/docs/zimic-interceptor/guides/ws/7-unhandled-messages.md). A handler created after [`interceptor.clear()`](#interceptorclear) is the newest one.
 
 **Related**:
 

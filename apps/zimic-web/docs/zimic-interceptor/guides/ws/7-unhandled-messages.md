@@ -10,6 +10,8 @@ When a client message reaches a WebSocket interceptor and no [message handler](/
 
 Unlike [unhandled HTTP requests](/docs/interceptor/guides/http/unhandled-requests), unhandled messages cannot be bypassed or rejected. WebSocket is not a request-response protocol, so a client message does not need a reply. The message is dropped and the connection stays open, in both [local](/docs/interceptor/guides/ws/local-interceptors) and [remote](/docs/interceptor/guides/ws/remote-interceptors) interceptors.
 
+The strategies on this page apply only to messages. Connections have no unhandled state: a connection that matches no [connection handler](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx) is accepted. Learn more about [handling connections](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#handling-connections).
+
 You can override the logging behavior per interceptor with `onUnhandledMessage` in [`createWebSocketInterceptor()`](/docs/interceptor/api/create-websocket-interceptor), or by setting [`interceptor.onUnhandledMessage`](/docs/interceptor/api/websocket-interceptor#interceptoronunhandledmessage). `onUnhandledMessage` also accepts a function to dynamically determine which strategy to use for each unhandled message.
 
 :::info INFO: <span>How `@zimic/interceptor` treats unhandled messages</span>

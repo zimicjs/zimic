@@ -74,7 +74,7 @@ createWebSocketInterceptor<Schema>(options);
 
    - **onUnhandledMessage**: `UnhandledMessageStrategy<Schema> | undefined`
 
-     The strategy to use for [unhandled messages](/docs/zimic-interceptor/guides/ws/3-unhandled-messages.md). If a client message reaches the interceptor, but no matching handler exists, this strategy will be used. If a function is provided, it will be called with the unhandled message. Unhandled messages have no bypass or reject action, since WebSocket is not a request-response protocol: the message is dropped and the connection stays open.
+     The strategy to use for [unhandled messages](/docs/zimic-interceptor/guides/ws/7-unhandled-messages.md). If a client message reaches the interceptor, but no matching handler exists, this strategy will be used. If a function is provided, it will be called with the unhandled message. Unhandled messages have no bypass or reject action, since WebSocket is not a request-response protocol: the message is dropped and the connection stays open.
      - **log**: `boolean | undefined` (default: `true`)
 
        Whether to log unhandled messages to the console.
@@ -156,5 +156,5 @@ WebSocket interceptors are designed for typed test and development mocks. They d
 
 - [Using local WebSocket interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md)
 - [Using remote WebSocket interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md)
-- [Unhandled messages](/docs/zimic-interceptor/guides/ws/3-unhandled-messages.md)
+- [Unhandled messages](/docs/zimic-interceptor/guides/ws/7-unhandled-messages.md)
 - [WebSocket schemas](/docs/zimic-ws/guides/1-schemas.md)
