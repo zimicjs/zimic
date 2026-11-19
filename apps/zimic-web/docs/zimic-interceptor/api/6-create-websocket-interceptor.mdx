@@ -81,7 +81,7 @@ createWebSocketInterceptor<Schema>(options);
 
    - **protocol**: `WebSocketInterceptorProtocol | undefined`
 
-     A protocol served by the interceptor on top of WebSocket, such as Socket.IO. Use `createSocketIOProtocol()`, from `@zimic/interceptor/experimental/ws/socket.io`, to mock Socket.IO servers. With a protocol, the interceptor holds only the connections its protocol claims, and handlers receive the messages decoded by the protocol.
+     A protocol served by the interceptor on top of WebSocket, such as Socket.IO. Use `createSocketIOProtocol()`, from `@zimic/interceptor/experimental/ws/socket.io`, to mock Socket.IO servers, as described in [Mocking Socket.IO servers](/docs/zimic-interceptor/guides/ws/9-socket-io.mdx). With a protocol, the interceptor holds only the connections its protocol claims, and handlers receive the messages decoded by the protocol.
 
    - **auth**: `WebSocketInterceptorAuthOptions | undefined`
 
