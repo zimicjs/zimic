@@ -37,10 +37,18 @@ export interface InternalWebSocketMessageHandler<
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerrespond `handler.respond()` API reference}
  */
 export interface WebSocketMessageHandlerMessageContext<Schema extends WebSocketSchema, Path extends string = string> {
-  /** The client that sent the matched message. */
+  /**
+   * The client that sent the matched message.
+   *
+   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor-client `WebSocketInterceptorClient` API reference}
+   */
   sender: WebSocketInterceptorClient<Schema, Path>;
 
-  /** The interceptor server that received the matched message. */
+  /**
+   * The interceptor server that received the matched message.
+   *
+   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorserver `interceptor.server` API reference}
+   */
   receiver: WebSocketInterceptorServer<Schema>;
 }
 
@@ -178,6 +186,7 @@ export interface LocalWebSocketMessageHandler<
    * matches the messages of every connection to its interceptor.
    *
    * @readonly
+   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerpath `handler.path` API reference}
    */
   get path(): Path | undefined;
 
@@ -247,6 +256,7 @@ export interface SyncedRemoteWebSocketMessageHandler<
    * matches the messages of every connection to its interceptor.
    *
    * @readonly
+   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerpath `handler.path` API reference}
    */
   get path(): Path | undefined;
 
