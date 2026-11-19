@@ -149,14 +149,14 @@ function createTimesCheckUnmatchedDiffs(options: WebSocketTimesCheckErrorOptions
   return diffs.join('\n\n');
 }
 
-function createTimesCheckErrorFooter() {
-  return 'Learn more: https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertimes';
+function createTimesCheckErrorFooter({ subject }: WebSocketTimesCheckErrorOptions) {
+  return `Learn more: https://zimic.dev/docs/interceptor/api/websocket-${subject}-handler#handlertimes`;
 }
 
 function createTimesCheckErrorMessage(options: WebSocketTimesCheckErrorOptions) {
   const errorHeader = createTimesCheckErrorHeader(options);
   const unmatchedDiffs = createTimesCheckUnmatchedDiffs(options);
-  const errorFooter = createTimesCheckErrorFooter();
+  const errorFooter = createTimesCheckErrorFooter(options);
 
   return [errorHeader, unmatchedDiffs, errorFooter].filter(isNonEmpty).join('\n\n');
 }

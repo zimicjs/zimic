@@ -167,10 +167,14 @@ export async function expectWebSocketTimesCheckError(
   expect(timesCheckError).toBeDefined();
   expect(timesCheckError!.name).toBe('WebSocketTimesCheckError');
 
+  // The expected header names the subject of the handler, which selects the page linked by the footer.
+  const isConnectionTimesCheck = /^Expected .* connections?, but got/.test(options.message);
+  const expectedHandlerPage = isConnectionTimesCheck ? 'websocket-connection-handler' : 'websocket-message-handler';
+
   const expectedMessage = [
     options.message,
     '',
-    'Learn more: https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertimes',
+    `Learn more: https://zimic.dev/docs/interceptor/api/${expectedHandlerPage}#handlertimes`,
   ].join('\n');
 
   expect(timesCheckError!.message).toEqual(expectedMessage);
