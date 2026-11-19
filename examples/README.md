@@ -5,6 +5,7 @@
 ## Vitest
 
 - [Zimic with Vitest + Node.js](./zimic-with-vitest-node)
+- [Zimic with Vitest + Node.js + WebSocket](./zimic-with-vitest-node-websocket)
 - [Zimic with Vitest + Browser Mode](./zimic-with-vitest-browser)
 - [Zimic with Vitest + JSDOM](./zimic-with-vitest-jsdom)
 
