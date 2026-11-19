@@ -1,0 +1,313 @@
+---
+title: Using messages | @zimic/interceptor
+sidebar_label: Using messages
+slug: /interceptor/guides/ws/messages
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Using messages
+
+:::warning EXPERIMENTAL
+
+WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. Their API may change before becoming stable.
+
+:::
+
+[Messages](https://developer.mozilla.org/docs/Web/API/WebSocket/message_event) are the data exchanged by clients and servers over a WebSocket connection. Each message is sent as a text frame or a binary frame. Text frames commonly carry JSON, whereas binary frames carry raw bytes, such as images and files.
+
+## Default message parsing
+
+WebSocket frames have no `content-type` header, so `@zimic/interceptor` parses client messages based on their frame type and content:
+
+| Frame | Parsed as |
+| --- | --- |
+| Text with a JSON object or array | `JSON` (object or array) |
+| Text (others) | `string` |
+| Binary | [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) |
+
+Messages are parsed before matching restrictions, running callbacks, or saving them. Unlike HTTP bodies without a `content-type`, which are parsed as any JSON value, text frames are parsed only if they contain a JSON object or array. Other text frames stay strings, including top-level JSON numbers, booleans, `null`, and strings. Binary frames arrive as `ArrayBuffer`, whether the client sent a `Blob`, an `ArrayBuffer`, or an `ArrayBufferView`.
+
+Local and remote interceptors parse messages in the same way. In remote interceptors, each message keeps its frame type through the [interceptor server](/docs/zimic-interceptor/cli/1-server.md).
+
+:::info INFO: <span>JSON text in string messages</span>
+
+A text frame such as `'{"type":"message"}'` reaches handlers as `{ type: 'message' }`, even if the schema declares the message as a string. Avoid JSON object or array text in messages that must remain strings.
+
+:::
+
+## Using client messages
+
+Client messages are declared in your [schema](/docs/zimic-ws/guides/1-schemas.md#declaring-messages) using the `message` property of each path. Then, they will be available as the parsed message data, such as in [`handler.with()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerwith), [`handler.effect()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlereffect), [computed responses](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerrespond), and [`handler.messages`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlermessages).
+
+### JSON client message
+
+JSON messages are one of the most common ways to send data over WebSocket. To use JSON messages, declare their type in your [schema](/docs/zimic-ws/guides/1-schemas.md#declaring-messages).
+
+```ts title='schema.ts'
+import { WebSocketSchema } from '@zimic/ws';
+
+type ChatMessage = { type: 'message'; data: { text: string } } | { type: 'presence'; data: { online: boolean } };
+
+type Schema = WebSocketSchema<{
+  '/chat': {
+    // highlight-next-line
+    message: ChatMessage;
+  };
+}>;
+```
+
+Static restrictions match JSON messages containing the declared properties and values, or only equal messages with `exact: true`.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .message('/chat')
+  // highlight-next-line
+  .with({ type: 'message', data: { text: 'Hello!' } })
+  .respond({ type: 'presence', data: { online: true } })
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .message('/chat')
+  // highlight-next-line
+  .with({ type: 'message', data: { text: 'Hello!' } })
+  .respond({ type: 'presence', data: { online: true } })
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+### Binary client message
+
+Binary messages are used to send raw bytes over WebSocket. To use binary messages, declare their type in your [schema](/docs/zimic-ws/guides/1-schemas.md#supported-message-data). [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob) and [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) are common types for binary data.
+
+```ts title='schema.ts'
+import { WebSocketSchema } from '@zimic/ws';
+
+type Schema = WebSocketSchema<{
+  '/files': {
+    // highlight-next-line
+    message: { type: 'uploaded'; data: { size: number } } | Blob;
+  };
+}>;
+```
+
+Handlers receive binary messages as `ArrayBuffer`. Binary restrictions, declared as a `Blob`, an `ArrayBuffer`, or an `ArrayBufferView`, match messages with the same bytes.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+const file = new Uint8Array([1, 2, 3]);
+
+interceptor
+  .message('/files')
+  // highlight-next-line
+  .with(file)
+  .respond((message) => ({
+    type: 'uploaded',
+    data: { size: message.byteLength },
+  }))
+  .times(1);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+const file = new Uint8Array([1, 2, 3]);
+
+await interceptor
+  .message('/files')
+  // highlight-next-line
+  .with(file)
+  .respond((message) => ({
+    type: 'uploaded',
+    data: { size: message.byteLength },
+  }))
+  .times(1);
+```
+
+  </TabItem>
+</Tabs>
+
+### Plain-text client message
+
+Plain-text messages can be declared as a string.
+
+```ts title='schema.ts'
+import { WebSocketSchema } from '@zimic/ws';
+
+type Schema = WebSocketSchema<{
+  '/heartbeat': {
+    // highlight-next-line
+    message: 'ping' | 'pong';
+  };
+}>;
+```
+
+Static restrictions match text messages including the declared text, or only identical messages with `exact: true`.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .message('/heartbeat')
+  // highlight-next-line
+  .with('ping', { exact: true })
+  .respond('pong');
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .message('/heartbeat')
+  // highlight-next-line
+  .with('ping', { exact: true })
+  .respond('pong');
+```
+
+  </TabItem>
+</Tabs>
+
+:::info INFO: <span>Numbers and booleans in client messages</span>
+
+Clients send numbers and booleans as text, such as `'42'` or `'true'`, and handlers receive them as strings, even when the schema declares a number or a boolean. Restrict them by their text, such as `handler.with('42')`.
+
+:::
+
+## Using server messages
+
+Server messages are declared in your [schema](/docs/zimic-ws/guides/1-schemas.md#declaring-messages) in the same `message` property as client messages. They can be sent with [`handler.respond()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerrespond), [`client.send()`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientsend), and [`interceptor.server.send()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorserver), each typed with the messages of the schema.
+
+Server messages are sent as follows:
+
+- Strings are sent as text frames, as they are.
+- Binary data, as a `Blob`, an `ArrayBuffer`, or an `ArrayBufferView`, is sent as binary frames.
+- Other values, such as objects, arrays, numbers, and booleans, are serialized with `JSON.stringify` and sent as text frames.
+
+### JSON server message
+
+To send a JSON message, pass it as an object. `client.send()` and `interceptor.server.send()` also accept the message already serialized, typed with [`WebSocketMessageData`](/docs/zimic-ws/guides/1-schemas.md#websocketmessagedata), which is sent as the same text frame.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .message('/chat')
+  .with({ type: 'message' })
+  // highlight-next-line
+  .respond({ type: 'presence', data: { online: true } });
+
+interceptor.connection('/chat').effect((client) => {
+  // highlight-next-line
+  client.send({ type: 'presence', data: { online: true } });
+
+  // Equivalent to the message above, serialized beforehand
+  client.send(JSON.stringify({ type: 'presence', data: { online: true } }));
+});
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .message('/chat')
+  .with({ type: 'message' })
+  // highlight-next-line
+  .respond({ type: 'presence', data: { online: true } });
+
+await interceptor.connection('/chat').effect((client) => {
+  // highlight-next-line
+  client.send({ type: 'presence', data: { online: true } });
+
+  // Equivalent to the message above, serialized beforehand
+  client.send(JSON.stringify({ type: 'presence', data: { online: true } }));
+});
+```
+
+  </TabItem>
+</Tabs>
+
+### Binary server message
+
+To send a binary message, pass it as a `Blob`, an `ArrayBuffer`, or an `ArrayBufferView`. Clients receive it according to their [`binaryType`](https://developer.mozilla.org/docs/Web/API/WebSocket/binaryType).
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+const file = new Blob([new Uint8Array([1, 2, 3])]);
+
+interceptor
+  .message('/files')
+  .with({ type: 'uploaded' })
+  // highlight-next-line
+  .respond(file);
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+const file = new Blob([new Uint8Array([1, 2, 3])]);
+
+await interceptor
+  .message('/files')
+  .with({ type: 'uploaded' })
+  // highlight-next-line
+  .respond(file);
+```
+
+  </TabItem>
+</Tabs>
+
+### Plain-text server message
+
+To send a plain-text message, pass it as a string. Strings are sent as they are, without JSON serialization.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .message('/heartbeat')
+  .with('ping', { exact: true })
+  // highlight-next-line
+  .respond('pong');
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .message('/heartbeat')
+  .with('ping', { exact: true })
+  // highlight-next-line
+  .respond('pong');
+```
+
+  </TabItem>
+</Tabs>
