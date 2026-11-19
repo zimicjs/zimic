@@ -153,7 +153,7 @@ await webSocketServer.open();
 console.log(webSocketServer.baseURL);
 ```
 
-The underlying HTTP or HTTPS server should be listening before calling `webSocketServer.open()`.
+If the HTTP or HTTPS server is not listening yet, [`webSocketServer.open()`](/docs/ws/api/websocket-server#serveropen) waits until it starts listening, up to its `timeout` option.
 
 ## Next steps
 
