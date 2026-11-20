@@ -3,8 +3,6 @@ import { createInterceptorSavingSafeLimitExceededMessage } from '@/interceptor/e
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * Error thrown when the safe limit of saved intercepted connections is exceeded.
- *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorconnectionsaving `interceptor.connectionSaving` API reference}
  */
 class ConnectionSavingSafeLimitExceededError extends TypeError {

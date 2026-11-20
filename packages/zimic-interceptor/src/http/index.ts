@@ -63,9 +63,7 @@ export type { LocalHttpInterceptor, RemoteHttpInterceptor, HttpInterceptor } fro
 export { createHttpInterceptor } from './interceptor/factory';
 
 /**
- * Error thrown when a value is not valid {@link https://developer.mozilla.org/docs/Web/API/FormData FormData}. HTTP
- * interceptors might throw this error when trying to parse the body of a request or response with the header
- * `'content-type': 'multipart/form-data'`, if the content cannot be parsed to form data.
+ * Error thrown when a value is not valid {@link https://developer.mozilla.org/docs/Web/API/FormData FormData}.
  *
  * @deprecated This type has been moved to {@link https://zimic.dev/docs/http `@zimic/http`}. Please import
  *   `InvalidFormDataError` from `@zimic/http` instead.
@@ -77,9 +75,7 @@ export { createHttpInterceptor } from './interceptor/factory';
 export class InvalidFormDataError extends HttpInvalidFormDataError {}
 
 /**
- * Error thrown when a value is not valid JSON. HTTP interceptors might throw this error when trying to parse the body
- * of a request or response with the header `'content-type': 'application/json'`, if the content cannot be parsed to
- * JSON.
+ * Error thrown when a value is not valid JSON.
  *
  * @deprecated This type has been moved to {@link https://zimic.dev/docs/http `@zimic/http`}. Please import
  *   `InvalidJSONError` from `@zimic/http` instead.

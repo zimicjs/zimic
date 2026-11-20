@@ -12,6 +12,7 @@ export type UnhandledHttpInterceptorRequestMethodSchema = HttpSchema.Method<{
   };
 }>;
 
+/** @see {@link https://zimic.dev/docs/interceptor/guides/http/unhandled-requests Unhandled requests} */
 export type UnhandledHttpInterceptorRequest = Omit<
   HttpInterceptorRequest<string, UnhandledHttpInterceptorRequestMethodSchema>,
   'response'

@@ -17,8 +17,6 @@ type PartialHttpSearchParamsOrSchema<Schema extends HttpSearchParamsSchema.Loose
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A static restriction declared with `handler.with()`. Each declared field must be met.
- *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
  */
 export interface WebSocketConnectionHandlerStaticRestriction<
@@ -38,8 +36,6 @@ export interface WebSocketConnectionHandlerStaticRestriction<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A computed restriction declared with `handler.with()`, returning whether a connection attempt matches.
- *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
  */
 export type WebSocketConnectionHandlerComputedRestriction<
@@ -49,8 +45,6 @@ export type WebSocketConnectionHandlerComputedRestriction<
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
- *
- * A restriction declared with `handler.with()`, either static or computed.
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
  */
