@@ -6,17 +6,23 @@ slug: /interceptor/guides/ws/unhandled-messages
 
 # Unhandled messages
 
+:::warning EXPERIMENTAL
+
+WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. Their API may change before becoming stable.
+
+:::
+
 When a client message reaches a WebSocket interceptor and no [message handler](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx) matches it, the message is considered **unhandled** and is logged to the console by default.
 
 Unlike [unhandled HTTP requests](/docs/zimic-interceptor/guides/http/9-unhandled-requests.md), unhandled messages cannot be bypassed or rejected. WebSocket is not a request-response protocol, so a client message does not need a reply. The message is dropped and the connection stays open, in both [local](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md) and [remote](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md) interceptors.
 
-The strategies on this page apply only to messages. Connections have no unhandled state: a connection that matches no [connection handler](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx) is accepted. Learn more about [handling connections](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#handling-connections).
+The strategies on this page apply only to messages. Connections have no unhandled state. A connection that matches no [connection handler](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx) is accepted. Learn more about [handling connections](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#handling-connections).
 
 You can override the logging behavior per interceptor with `onUnhandledMessage` in [`createWebSocketInterceptor()`](/docs/zimic-interceptor/api/ws/1-create-websocket-interceptor.mdx), or by setting [`interceptor.onUnhandledMessage`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptoronunhandledmessage). `onUnhandledMessage` also accepts a function to dynamically determine which strategy to use for each unhandled message.
 
 :::info INFO: <span>How `@zimic/interceptor` treats unhandled messages</span>
 
-A client message is tried by the running interceptors [sharing its connection](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorbaseurl), from the **last** one started to the first, until one of them handles it. If none handles it, the strategy of the last started interceptor still sharing the connection is used, or the default strategy if none was defined.
+A client message is tried against the handlers of every running interceptor [sharing its connection](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorbaseurl), from the last handler created to the first. If none handles it, the strategy of the last started interceptor still sharing the connection is used, or the default strategy if none was defined.
 
 If the strategy is a function and it throws, the error is logged and the default strategy is used.
 
@@ -56,6 +62,13 @@ You can also provide a function to `onUnhandledMessage` that receives the unhand
 
 ```ts
 import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
+import { WebSocketSchema } from '@zimic/ws';
+
+type Schema = WebSocketSchema<{
+  '/chat': {
+    message: { type: 'ping' } | { type: 'message'; data: { text: string } };
+  };
+}>;
 
 const interceptor = createWebSocketInterceptor<Schema>({
   baseURL: 'ws://localhost:3000',
