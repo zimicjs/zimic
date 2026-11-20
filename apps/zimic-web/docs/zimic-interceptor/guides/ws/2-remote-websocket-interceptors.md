@@ -14,9 +14,9 @@ WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. 
 
 WebSocket interceptors allow you to handle client messages and send custom server messages. Their primary use is to mock WebSocket flows in development or testing environments, especially when the backend is unavailable or when you want to control connection and message scenarios.
 
-In `@zimic/interceptor`, WebSocket interceptors are available in two types: `local` (default) and `remote`. Interceptors with type `remote` use a dedicated [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle WebSocket connections and messages. This opens up more possibilities for mocking than [local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md), such as handling connections from multiple applications. It is also more robust because it uses a regular WebSocket server and does not depend on local interception algorithms.
+In `@zimic/interceptor`, WebSocket interceptors are available in two types: `local` (default) and `remote`. Interceptors with type `remote` use a dedicated [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle WebSocket connections and messages. This opens up more possibilities for mocking than [local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md), such as handling connections from multiple applications.
 
-Because application clients connect to a real WebSocket server, they can use any WebSocket implementation, including libraries such as [`ws`](https://github.com/websockets/ws), and run in a browser or Node.js. The process declaring the remote interceptor communicates with a separately running interceptor server, which requires Node.js 22 or later.
+Remote interceptors work with any WebSocket client, including libraries such as [`ws`](https://github.com/websockets/ws), because clients connect to a real WebSocket server.
 
 ## When to use remote WebSocket interceptors
 
@@ -229,7 +229,7 @@ console.log(handler.messages[0].sender.url); // 'ws://localhost:3000/chat'
 
 ## Interceptor server authentication
 
-While authentication is optional for private development servers, we strongly recommend enabling authentication when the server is not bound to one of those loopback hostnames or is shared over a network. Authentication prevents unauthorized remote interceptors from connecting to the server.
+While authentication is optional for private development servers, we strongly recommend enabling authentication when the server is bound to a hostname other than `localhost`, `127.0.0.1`, or `::1`, or is shared over a network. Authentication prevents unauthorized remote interceptors from connecting to the server.
 
 Without authentication, browser remote interceptors can connect only when both the interceptor server and the web application use a loopback hostname: `localhost`, `127.0.0.1`, or `::1`. Configure authentication if either one uses another hostname. This restriction does not apply to remote interceptors running outside a browser.
 

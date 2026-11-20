@@ -16,7 +16,7 @@ WebSocket interceptors allow you to handle client messages and send custom serve
 
 In `@zimic/interceptor`, WebSocket interceptors are available in two types: `local` (default) and `remote`. When an interceptor is `local`, Zimic uses [MSW](https://github.com/mswjs/msw) to intercept WebSocket connections _in the same process_ as your application. This is the simplest way to start mocking WebSocket messages and does not require any server setup.
 
-Local interceptors intercept only connections opened with `globalThis.WebSocket`, the global [WebSocket API](https://developer.mozilla.org/docs/Web/API/WebSocket), either native or polyfilled. Browsers provide it natively, and Node.js provides it from Node.js 22.4. Local browser interception additionally requires an initialized mock service worker, as described in [Starting an interceptor](#starting-an-interceptor).
+Local interceptors intercept only connections opened with `globalThis.WebSocket`.
 
 :::info INFO: <span>WebSocket libraries in Node.js</span>
 

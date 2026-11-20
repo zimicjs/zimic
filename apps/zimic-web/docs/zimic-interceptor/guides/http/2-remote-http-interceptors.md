@@ -10,8 +10,6 @@ HTTP interceptors allow you to handle requests and return custom responses. Thei
 
 In `@zimic/interceptor`, HTTP interceptors are available in two types: `local` (default) and `remote`. Interceptors with type `remote` use a dedicated [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle requests. This opens up more possibilities for mocking than [local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md), such as handling requests from multiple applications. It is also more robust because it uses a regular HTTP server and does not depend on local interception algorithms.
 
-Application clients must provide the [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API), either natively or through a polyfill. The process declaring the remote interceptor communicates with a separately running interceptor server. The interceptor server accepts application requests and requires Node.js 22 or later; application clients may run in a browser or Node.js.
-
 ## When to use remote HTTP interceptors
 
 - **Development**
@@ -244,7 +242,7 @@ console.log(handler.requests[0].body); // null
 
 ## Interceptor server authentication
 
-While authentication is optional for private development servers, we strongly recommend enabling authentication when the server is not bound to one of those loopback hostnames or is shared over a network. Authentication prevents unauthorized remote interceptors from connecting to the server.
+While authentication is optional for private development servers, we strongly recommend enabling authentication when the server is bound to a hostname other than `localhost`, `127.0.0.1`, or `::1`, or is shared over a network. Authentication prevents unauthorized remote interceptors from connecting to the server.
 
 Without authentication, browser remote interceptors can connect only when both the interceptor server and the web application use a loopback hostname: `localhost`, `127.0.0.1`, or `::1`. Configure authentication if either one uses another hostname. This restriction does not apply to remote interceptors running outside a browser.
 
