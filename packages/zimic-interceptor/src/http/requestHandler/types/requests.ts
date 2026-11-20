@@ -23,6 +23,7 @@ type HttpRequestHandlerResponseBody<
   StatusCode extends HttpStatusCode,
 > = HttpResponseBodySchema<{ response: { [Code in StatusCode]: ResponseSchema } }, StatusCode>;
 
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
 export type HttpRequestHandlerResponseWithBody<
   ResponseSchema extends HttpResponseSchema,
   StatusCode extends HttpStatusCode,
@@ -36,6 +37,7 @@ type HttpRequestHandlerResponseDeclarationHeaders<ResponseSchema extends HttpRes
   PartialByKey<Default<ResponseSchema['headers']>, 'content-type'>
 >;
 
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
 export type HttpRequestHandlerResponseDeclarationWithHeaders<ResponseSchema extends HttpResponseSchema> =
   undefined extends ResponseSchema['headers']
     ? { headers?: HttpRequestHandlerResponseDeclarationHeaders<ResponseSchema> }
@@ -57,7 +59,9 @@ export type HttpRequestHandlerStatusResponseDeclaration<
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
 export interface HttpRequestHandlerActionResponseDeclaration {
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
   status?: never;
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrespond `handler.respond()` API reference} */
   action: UnhandledRequestStrategy.Action;
 }
 
@@ -114,33 +118,16 @@ export interface HttpInterceptorRequest<Path extends string, MethodSchema extend
   HttpRequest,
   keyof Body | 'headers' | 'clone'
 > {
-  /**
-   * The headers of the request.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/guides/http/headers#using-request-headers Using request headers}
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/guides/http/headers#using-request-headers Using request headers} */
   headers: HttpHeaders<Default<HttpRequestHeadersSchema<MethodSchema>>>;
 
-  /**
-   * The path parameters of the request. They are parsed from the path string when using dynamic paths.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/guides/http/path-params#using-request-path-params Using request path parameters}
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/guides/http/path-params#using-request-path-params Using request path parameters} */
   pathParams: InferPathParams<Path>;
 
-  /**
-   * The search parameters of the request.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/guides/http/search-params#using-request-search-params Using request search parameters}
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/guides/http/search-params#using-request-search-params Using request search parameters} */
   searchParams: HttpSearchParams<Default<HttpRequestSearchParamsSchema<MethodSchema>>>;
 
-  /**
-   * The body of the request. It is already parsed by default as detailed in
-   * {@link https://zimic.dev/docs/interceptor/guides/http/bodies#default-body-parsing Default body parsing}.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/guides/http/bodies#using-request-bodies Using request bodies}
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/guides/http/bodies#using-request-bodies Using request bodies} */
   body: Replace<HttpRequestBodySchema<MethodSchema>, ArrayBuffer | ReadableStream, Blob>;
 
   /** The raw request object. */
@@ -152,22 +139,13 @@ export interface HttpInterceptorResponse<
   MethodSchema extends HttpMethodSchema,
   StatusCode extends HttpStatusCode,
 > extends Omit<HttpResponse, keyof Body | 'headers' | 'clone'> {
-  /**
-   * The headers of the response.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/guides/http/headers#using-response-headers Using response headers}
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/guides/http/headers#using-response-headers Using response headers} */
   headers: HttpHeaders<Default<HttpResponseHeadersSchema<MethodSchema, StatusCode>>>;
 
   /** The status code of the response. */
   status: StatusCode;
 
-  /**
-   * The body of the response. It is already parsed by default as detailed in
-   * {@link https://zimic.dev/docs/interceptor/guides/http/bodies#default-body-parsing Default body parsing}.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/guides/http/bodies#using-response-bodies Using response bodies}
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/guides/http/bodies#using-response-bodies Using response bodies} */
   body: Replace<HttpResponseBodySchema<MethodSchema, StatusCode>, ArrayBuffer | ReadableStream, Blob>;
 
   /** The raw response object. */
@@ -202,6 +180,6 @@ export interface InterceptedHttpInterceptorRequest<
   MethodSchema extends HttpMethodSchema,
   StatusCode extends HttpStatusCode = never,
 > extends HttpInterceptorRequest<Path, MethodSchema> {
-  /** The response that was returned for the intercepted request. */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlerrequests `handler.requests` API reference} */
   response: StatusCode extends [never] ? never : HttpInterceptorResponse<MethodSchema, StatusCode>;
 }

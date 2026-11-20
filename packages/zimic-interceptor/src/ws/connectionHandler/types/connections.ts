@@ -6,8 +6,7 @@ import { WebSocketInterceptorConnectionRequest } from '@/ws/interceptor/types/me
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A function declared with `handler.delay()` that computes the delay in milliseconds for each matched connection
- * attempt, before the handshake is answered.
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerdelay `handler.delay()` API reference}
  */
 export type WebSocketConnectionHandlerDelayFactory<
   Schema extends WebSocketSchema = WebSocketSchema,

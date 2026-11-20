@@ -15,7 +15,7 @@ interface SocketIOPollingErrorBody {
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The HTTP schema of the interceptor passed as the `polling` option of {@link createSocketIOProtocol}.
+ * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#polling Socket.IO polling}
  */
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- HTTP schemas need the implicit index signature of type aliases.
 export type SocketIOPollingSchema = {
@@ -66,22 +66,23 @@ interface SocketIOPollingHandler<Method extends keyof SocketIOPollingSchema['/']
 }
 
 /**
- * An HTTP interceptor of {@link SocketIOPollingSchema}, created with `createHttpInterceptor` from
- * `@zimic/interceptor/http`.
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#polling Socket.IO polling}
  */
 export interface SocketIOPollingInterceptor {
-  /** The type of the interceptor, the same as the WebSocket interceptor. */
+  /** @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#polling Socket.IO polling} */
   readonly type: 'local' | 'remote';
-  /** The base URL of the interceptor, the WebSocket base URL with `http` instead of `ws`. */
+  /** @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#polling Socket.IO polling} */
   readonly baseURL: string;
-  /** Whether the interceptor is running. The protocol starts and stops it. */
+  /** @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#polling Socket.IO polling} */
   readonly isRunning: boolean;
-  /** Starts the interceptor. */
+  /** @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#polling Socket.IO polling} */
   start: () => Promise<void>;
-  /** Stops the interceptor. */
+  /** @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#polling Socket.IO polling} */
   stop: () => Promise<void>;
-  /** Declares a handler of the long-polling requests. */
+  /** @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#polling Socket.IO polling} */
   get: (path: '/') => SocketIOPollingHandler<'GET'>;
-  /** Declares a handler of the packets sent by polling clients. */
+  /** @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#polling Socket.IO polling} */
   post: (path: '/') => SocketIOPollingHandler<'POST'>;
 }

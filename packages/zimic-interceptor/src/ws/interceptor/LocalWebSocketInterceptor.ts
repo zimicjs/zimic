@@ -78,7 +78,7 @@ class LocalWebSocketInterceptor<Schema extends WebSocketSchema> implements Publi
     return this.implementation.onUnhandledMessage;
   }
 
-  set onUnhandledMessage(onUnhandledMessage: UnhandledMessageStrategy | undefined) {
+  set onUnhandledMessage(onUnhandledMessage: UnhandledMessageStrategy<Schema> | undefined) {
     this.implementation.onUnhandledMessage = onUnhandledMessage;
   }
 

@@ -1,6 +1,8 @@
 import { DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT, WebSocketOpenTimeoutError } from '@zimic/utils/ws';
 
+/** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientopen `client.open()` API reference} */
 export interface WebSocketClientOpenOptions {
+  /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientopen `client.open()` API reference} */
   timeout?: number;
 }
 
@@ -43,4 +45,5 @@ export async function openWebSocketClient(socket: WebSocket, options: WebSocketC
   });
 }
 
+/** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientclose `client.close()` API reference} */
 export type WebSocketClientCloseOptions = WebSocketClientOpenOptions;

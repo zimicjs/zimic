@@ -6,7 +6,7 @@ slug: /interceptor/cli/server
 
 # `zimic-interceptor server`
 
-`zimic-interceptor server` contains commands to manage [interceptor servers](/docs/zimic-interceptor/api/5-interceptor-server.md).
+`zimic-interceptor server` contains commands to manage [interceptor servers](/docs/zimic-interceptor/api/server/2-interceptor-server.md), which handle HTTP requests and WebSocket connections for remote interceptors.
 
 ```
 zimic-interceptor server
@@ -19,8 +19,9 @@ Commands:
 
 **Related**:
 
-- [Using remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md)
-- [`InterceptorServer` API reference](/docs/zimic-interceptor/api/5-interceptor-server.md)
+- [Using remote HTTP interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md)
+- [Using remote WebSocket interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md)
+- [`InterceptorServer` API reference](/docs/zimic-interceptor/api/server/2-interceptor-server.md)
 
 ## `zimic-interceptor server start`
 

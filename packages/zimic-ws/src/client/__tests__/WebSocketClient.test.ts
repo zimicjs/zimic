@@ -51,7 +51,7 @@ describe('WebSocketClient', () => {
   describe('Lifecycle', () => {
     it('should open and close correctly', async () => {
       webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
-      expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
+      expect(webSocketClient.readyState).toBe(webSocketClient.CONNECTING);
 
       await webSocketClient.open();
       expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
@@ -62,7 +62,7 @@ describe('WebSocketClient', () => {
 
     it('should not throw an error if opened multiple times', async () => {
       webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
-      expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
+      expect(webSocketClient.readyState).toBe(webSocketClient.CONNECTING);
 
       await webSocketClient.open();
       await webSocketClient.open();
@@ -71,9 +71,109 @@ describe('WebSocketClient', () => {
       expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
     });
 
+    it('should open one socket if opened concurrently', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+
+      const connectionListener = vi.fn();
+      webSocketServer.addEventListener('connection', connectionListener);
+
+      await Promise.all([webSocketClient.open(), webSocketClient.open()]);
+
+      expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
+      expect(connectionListener).toHaveBeenCalledTimes(1);
+    });
+
+    it('should fail opening if closed while connecting', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+
+      const openPromise = webSocketClient.open();
+      expect(webSocketClient.readyState).toBe(webSocketClient.CONNECTING);
+
+      await webSocketClient.close();
+      expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
+
+      await expect(openPromise).rejects.toHaveProperty('type', 'error');
+    });
+
+    it('should open a new socket if opened after closed while connecting', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+
+      const openPromise = webSocketClient.open();
+      await webSocketClient.close();
+      await expect(openPromise).rejects.toHaveProperty('type', 'error');
+
+      await webSocketClient.open();
+      expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
+    });
+
+    it('should open a new socket if opened before a close while connecting finishes', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+
+      const closedOpenPromise = webSocketClient.open();
+      const closePromise = webSocketClient.close();
+      const openPromise = webSocketClient.open();
+
+      await expect(closedOpenPromise).rejects.toHaveProperty('type', 'error');
+      await closePromise;
+      await openPromise;
+
+      expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
+    });
+
+    it('should open a new socket if opened after the server closed the connection', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+
+      const serverWebSocketClients: WebSocketClient<Schema>[] = [];
+
+      webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
+        serverWebSocketClients.push(serverWebSocketClient);
+      });
+
+      await webSocketClient.open();
+      expect(serverWebSocketClients).toHaveLength(1);
+
+      await serverWebSocketClients[0].close();
+
+      await waitFor(() => {
+        expect(webSocketClient!.readyState).toBe(webSocketClient!.CLOSED);
+      });
+
+      await webSocketClient.open();
+
+      expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
+      expect(serverWebSocketClients).toHaveLength(2);
+    });
+
+    it('should fail opening if closed while reopening after the server closed the connection', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+
+      const serverWebSocketClients: WebSocketClient<Schema>[] = [];
+
+      webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
+        serverWebSocketClients.push(serverWebSocketClient);
+      });
+
+      await webSocketClient.open();
+      expect(serverWebSocketClients).toHaveLength(1);
+
+      await serverWebSocketClients[0].close();
+
+      await waitFor(() => {
+        expect(webSocketClient!.readyState).toBe(webSocketClient!.CLOSED);
+      });
+
+      const openPromise = webSocketClient.open();
+      expect(webSocketClient.readyState).toBe(webSocketClient.CONNECTING);
+
+      await webSocketClient.close();
+      expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
+
+      await expect(openPromise).rejects.toHaveProperty('type', 'error');
+    });
+
     it('should not throw an error if closed multiple times', async () => {
       webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
-      expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
+      expect(webSocketClient.readyState).toBe(webSocketClient.CONNECTING);
 
       await webSocketClient.open();
       expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
@@ -190,7 +290,7 @@ describe('WebSocketClient', () => {
       expect(webSocketClient.url).toBe(webSocketServer.baseURL);
       expect(webSocketClient.protocol).toBe('');
       expect(webSocketClient.extensions).toBe('');
-      expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
+      expect(webSocketClient.readyState).toBe(webSocketClient.CONNECTING);
       expect(webSocketClient.bufferedAmount).toBe(0);
 
       await webSocketClient.open();
@@ -255,10 +355,12 @@ describe('WebSocketClient', () => {
     it('should apply the binary type set while opening to received messages', async () => {
       const binaryWebSocketClient = new WebSocketClient<BinarySchema>(webSocketServer.baseURL);
 
+      let readyStateWhileSettingBinaryType: WebSocketClient.ReadyState | undefined;
+
       // The server accepts the connection only after the client created its socket, so this sets the binary type
       // while the client is still opening.
       webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
-        expect(binaryWebSocketClient.readyState).toBe(binaryWebSocketClient.CLOSED);
+        readyStateWhileSettingBinaryType = binaryWebSocketClient.readyState;
         binaryWebSocketClient.binaryType = 'arraybuffer';
 
         serverWebSocketClient.addEventListener('message', (event) => {
@@ -273,6 +375,7 @@ describe('WebSocketClient', () => {
         binaryWebSocketClient.addEventListener('message', messageListener);
 
         await binaryWebSocketClient.open();
+        expect(readyStateWhileSettingBinaryType).toBe(binaryWebSocketClient.CONNECTING);
         expect(binaryWebSocketClient.binaryType).toBe('arraybuffer');
 
         binaryWebSocketClient.send(new Uint8Array([1, 2, 3]).buffer);
@@ -291,16 +394,62 @@ describe('WebSocketClient', () => {
   });
 
   describe('Messaging', () => {
-    it('should not throw if sending while closed', () => {
+    it('should throw an invalid state error if sending before opened', () => {
       webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      expect(webSocketClient.readyState).toBe(webSocketClient.CONNECTING);
 
       expect(() => {
-        webSocketClient!.send(
-          JSON.stringify({
-            type: 'message',
-            data: 'test',
-          }),
-        );
+        webSocketClient!.send(JSON.stringify({ type: 'message', data: 'test' }));
+      }).toThrow(new DOMException('Still in CONNECTING state.', 'InvalidStateError'));
+    });
+
+    it('should throw an invalid state error if sending while connecting', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+
+      let readyStateWhileSending: WebSocketClient.ReadyState | undefined;
+      let sendError: unknown;
+
+      // The server accepts the connection before the client receives the handshake, so the client is still connecting.
+      webSocketServer.addEventListener('connection', () => {
+        readyStateWhileSending = webSocketClient!.readyState;
+
+        try {
+          webSocketClient!.send(JSON.stringify({ type: 'message', data: 'test' }));
+        } catch (error) {
+          sendError = error;
+        }
+      });
+
+      await webSocketClient.open();
+
+      expect(readyStateWhileSending).toBe(webSocketClient.CONNECTING);
+      expect(sendError).toBeInstanceOf(DOMException);
+      expect(sendError).toHaveProperty('name', 'InvalidStateError');
+    });
+
+    it('should not throw if sending while closing', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      await webSocketClient.open();
+
+      const closePromise = webSocketClient.close();
+      expect(webSocketClient.readyState).toBe(webSocketClient.CLOSING);
+
+      expect(() => {
+        webSocketClient!.send(JSON.stringify({ type: 'message', data: 'test' }));
+      }).not.toThrow();
+
+      await closePromise;
+    });
+
+    it('should not throw if sending after closed', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      await webSocketClient.open();
+
+      await webSocketClient.close();
+      expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
+
+      expect(() => {
+        webSocketClient!.send(JSON.stringify({ type: 'message', data: 'test' }));
       }).not.toThrow();
     });
 
@@ -348,6 +497,33 @@ describe('WebSocketClient', () => {
           }),
         );
       });
+    });
+
+    it('should send messages from an open listener', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+
+      const serverMessageListener = vi.fn<(data: string) => void>();
+
+      webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
+        serverWebSocketClient.addEventListener('message', (event) => {
+          serverMessageListener(event.data);
+        });
+      });
+
+      let readyStateWhileSending: WebSocketClient.ReadyState | undefined;
+
+      webSocketClient.addEventListener('open', () => {
+        readyStateWhileSending = webSocketClient!.readyState;
+        webSocketClient!.send(JSON.stringify({ type: 'message', data: 'hello' }));
+      });
+
+      await webSocketClient.open();
+      expect(readyStateWhileSending).toBe(webSocketClient.OPEN);
+
+      await waitFor(() => {
+        expect(serverMessageListener).toHaveBeenCalledTimes(1);
+      });
+      expect(serverMessageListener).toHaveBeenCalledWith(JSON.stringify({ type: 'message', data: 'hello' }));
     });
   });
 

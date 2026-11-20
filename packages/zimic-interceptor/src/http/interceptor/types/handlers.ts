@@ -8,6 +8,7 @@ import {
 
 import { LocalHttpRequestHandler, RemoteHttpRequestHandler } from '../../requestHandler/types/public';
 
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#declaring-request-handlers Declaring request handlers} */
 export type SyncHttpInterceptorMethodHandler<Schema extends HttpSchema, Method extends HttpMethod> =
   Method extends HttpSchemaMethod<Schema>
     ? <Path extends HttpSchemaPath.NonLiteral<Schema, Method>>(
@@ -16,6 +17,7 @@ export type SyncHttpInterceptorMethodHandler<Schema extends HttpSchema, Method e
     : // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (path: never) => LocalHttpRequestHandler<any, any, never>;
 
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#declaring-request-handlers Declaring request handlers} */
 export type AsyncHttpInterceptorMethodHandler<Schema extends HttpSchema, Method extends HttpMethod> =
   Method extends HttpSchemaMethod<Schema>
     ? <Path extends HttpSchemaPath.NonLiteral<Schema, Method>>(
