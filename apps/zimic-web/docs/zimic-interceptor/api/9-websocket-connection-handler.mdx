@@ -76,9 +76,9 @@ The path declared in [`interceptor.connection(path)`](/docs/zimic-interceptor/ap
 
 ## `handler.with()`
 
-Declares a restriction to intercepted connection matches. `searchParams` and `protocols` are supported to limit which connections will match the handler. If multiple restrictions are declared, either in a single object or with multiple calls to `handler.with()`, all of them must be met, creating an AND condition.
+Declares a restriction to intercepted connection matches. `searchParams`, `protocols`, and, in [Socket.IO](/docs/zimic-interceptor/guides/ws/9-socket-io.mdx#connections-and-clients) interceptors, `auth` are supported to limit which connections will match the handler. If multiple restrictions are declared, either in a single object or with multiple calls to `handler.with()`, all of them must be met, creating an AND condition.
 
-By default, restrictions use `exact: false`, meaning that any connection **containing** the declared restrictions will match the handler, regardless of having more search params or subprotocols. If you want to match only connections with the exact values declared, use `exact: true`.
+By default, restrictions use `exact: false`, meaning that any connection **containing** the declared restrictions will match the handler, regardless of having more search params, subprotocols, or `auth` properties. If you want to match only connections with the exact values declared, use `exact: true`.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -113,9 +113,13 @@ await handler.with((request) => matchesRequest);
 
      The subprotocols that the client must request to match the handler. The client must request all of these, in any order. If exact is `true`, the client must request exactly these subprotocols, in the same order, because clients list them in order of preference.
 
+   - **auth**: `DeepPartial<Auth> | undefined`
+
+     The `auth` payload that the [Socket.IO](/docs/zimic-interceptor/guides/ws/9-socket-io.mdx#connections-and-clients) client must send to match the handler. The payload must contain these properties, compared deeply as JSON. If exact is `true`, the payload must be equal to this one. Accepted only in interceptors of a `SocketIOSchema`.
+
    - **exact**: `boolean | undefined` (default: `false`)
 
-     If `true`, the connection must contain **exactly** the search params and subprotocols declared in this restriction. Otherwise, the connection must contain **at least** them.
+     If `true`, the connection must contain **exactly** the search params, subprotocols, and `auth` declared in this restriction. Otherwise, the connection must contain **at least** them.
 
    Restrictions can also be [computed](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#computed-restrictions), declared as a function to dynamically decide whether the connection matches:
 

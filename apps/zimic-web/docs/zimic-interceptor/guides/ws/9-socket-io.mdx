@@ -251,6 +251,16 @@ interceptor.connection().effect((client, request) => {
 });
 ```
 
+To match sockets by their `auth`, declare it in a static [`handler.with()`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerwith) restriction. As with request bodies in HTTP handlers, a socket matches if its `auth` contains the declared values, or only if it is equal to them with `exact: true`.
+
+```ts
+// Rejects sockets connected with an auth containing { token: 'expired' }
+interceptor
+  .connection()
+  .with({ auth: { token: 'expired' } })
+  .respond({ action: 'reject' });
+```
+
 - A connection handler rejecting a socket fails it with a `connect_error` of message `'Connection rejected'`. Other namespaces on the same connection stay connected.
 - `socket.disconnect()` in the client removes its client from the interceptor of its namespace.
 - [`client.close()`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientclose) disconnects the socket from the namespace, as `socket.disconnect()` in a Socket.IO server. Socket.IO has no close codes, so the code and reason are ignored.
