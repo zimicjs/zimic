@@ -103,7 +103,7 @@ import { WebSocketSchema } from '@zimic/ws';
 
 type ChatMessage = { type: 'message'; data: { text: string } } | { type: 'typing'; data: { username: string } };
 
-export type ChatSchema = WebSocketSchema<{ '/': { message: ChatMessage } }>;
+export type ChatSchema = WebSocketSchema<{ '/chat': { message: ChatMessage } }>;
 ```
 
 ## Your first WebSocket client
