@@ -142,11 +142,11 @@ test('example', () => {
 });
 ```
 
+Messages arrive in the order the client sent them. Zimic handles each message independently, so asynchronous restrictions, delays, effects, and responses can overlap and complete in any order.
+
 :::info INFO: <span>Local interceptors are synchronous</span>
 
 Many operations in local interceptors are **synchronous** because they do not involve communication with an external server. This is different from [remote interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md), which communicate with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle connections and messages.
-
-Messages arrive in the order the client sent them, but Zimic handles each one independently. Asynchronous restrictions, delays, effects, and responses can overlap and complete in any order.
 
 :::
 

@@ -113,13 +113,7 @@ await interceptor
   </TabItem>
 </Tabs>
 
-A rejected connection never dispatches `open` and does not become a connected client. As when a real server refuses the handshake, browsers and Node.js 24 or later dispatch `error`, then `close` with code `1006`, whereas Node.js 22 dispatches only `error`. Remote interceptors refuse the handshake with an HTTP `403` response, which clients that expose the handshake response can read.
-
-:::info INFO: <span>Connection setup in remote interceptors</span>
-
-Messages that a client sends right after `open` are handled in order, as in local interceptors. If the interceptor server cannot set up a connection, such as when the remote interceptor disconnects while the connection opens, the server closes it with code `1002`.
-
-:::
+A rejected connection never opens. Learn more about the events its client receives in [`handler.respond()`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerrespond).
 
 ## Using connected clients
 

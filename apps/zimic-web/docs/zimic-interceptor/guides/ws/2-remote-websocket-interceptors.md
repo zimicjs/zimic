@@ -199,11 +199,11 @@ test('example', async () => {
 });
 ```
 
+Remote interceptors handle messages in the same [order as local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md#mocking-messages).
+
 :::info INFO: <span>Remote interceptors are asynchronous</span>
 
 Many operations in remote interceptors are **asynchronous** because they may involve communication with an interceptor server. This is different from [local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md), which have mostly **synchronous** operations.
-
-Messages arrive in the order the client sent them, but Zimic handles each one independently. Asynchronous restrictions, delays, effects, and responses can overlap and complete in any order.
 
 If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy rule is [`@typescript-eslint/no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises). It checks promises appearing to be unhandled, which is helpful to indicate missing `await`'s in remote interceptor operations.
 

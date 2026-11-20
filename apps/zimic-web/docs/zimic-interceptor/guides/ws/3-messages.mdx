@@ -31,11 +31,7 @@ Messages are parsed before matching restrictions, running callbacks, or saving t
 
 Local and remote interceptors parse messages in the same way. In remote interceptors, each message keeps its frame type through the [interceptor server](/docs/zimic-interceptor/cli/1-server.md).
 
-:::info INFO: <span>JSON text in string messages</span>
-
 A text frame such as `'{"type":"message"}'` reaches handlers as `{ type: 'message' }`, even if the schema declares the message as a string. Avoid JSON object or array text in messages that must remain strings.
-
-:::
 
 ## Using client messages
 
@@ -186,11 +182,7 @@ await interceptor
   </TabItem>
 </Tabs>
 
-:::info INFO: <span>Numbers and booleans in client messages</span>
-
-Clients send numbers and booleans as text, such as `'42'` or `'true'`, and handlers receive them as strings, even when the schema declares a number or a boolean. Restrict them by their text, such as `handler.with('42')`.
-
-:::
+Clients send numbers and booleans as text, such as `'42'` or `'true'`. Handlers receive them as strings typed as `` `${number}` `` or `'true' | 'false'`, even when the schema declares a number or a boolean. Restrict them by their text, such as `handler.with('42')`.
 
 ## Using server messages
 

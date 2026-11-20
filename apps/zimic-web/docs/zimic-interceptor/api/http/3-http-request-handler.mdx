@@ -349,8 +349,4 @@ The intercepted requests that matched this handler, along with the responses ret
 
 **Type**: `InterceptedHttpInterceptorRequest<Path, MethodSchema, StatusCode>[]`
 
-:::info IMPORTANT: <span>`handler.requests` requires request saving to be enabled</span>
-
-This method can only be used if [`requestSaving.enabled`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorrequestsaving) is `true` in the interceptor.
-
-:::
+Accessing `handler.requests` throws a `DisabledRequestSavingError` unless [`requestSaving.enabled`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorrequestsaving) is `true` in the interceptor.

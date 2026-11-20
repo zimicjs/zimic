@@ -243,7 +243,13 @@ const adminInterceptor = createWebSocketInterceptor<AdminSchema>({
 });
 ```
 
-The interceptors of a base URL share each Engine.IO connection, so their protocols must use the same `polling` and `parser` options. Otherwise, `interceptor.start()` throws a `MismatchedSocketIOProtocolOptionsError`. Starting two interceptors on the same namespace of a base URL throws a `DuplicateSocketIONamespaceError`, and starting two interceptors with the same protocol throws a `SharedSocketIOProtocolError`. A socket connecting to a namespace without an interceptor fails with a `connect_error` of message `'Invalid namespace'`.
+The interceptors of a base URL share each Engine.IO connection. [`interceptor.start()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorstart) throws:
+
+- A `MismatchedSocketIOProtocolOptionsError` if the protocols of the base URL use different `polling` or `parser` options.
+- A `DuplicateSocketIONamespaceError` if another interceptor of the base URL handles the same namespace.
+- A `SharedSocketIOProtocolError` if another interceptor uses the same protocol.
+
+A socket connecting to a namespace without an interceptor fails with a `connect_error` of message `'Invalid namespace'`.
 
 ## Connections and clients
 
@@ -254,7 +260,7 @@ As with the `connection` event of a Socket.IO server, an interceptor lists a [cl
 - [`client.close()`](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx#clientclose) disconnects the socket from the namespace, as `socket.disconnect()` in a Socket.IO server. Socket.IO has no close codes, so the code and reason are ignored. The socket receives the disconnect reason `'io server disconnect'` and does not reconnect automatically.
 - [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear) and [`interceptor.stop()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorstop) disconnect the sockets of the namespace and close the connections that no other namespace uses.
 
-An interceptor with a Socket.IO protocol takes the WebSocket connections to its base URL alone, ahead of interceptors without a protocol, even ones started later. Those interceptors cannot serve Engine.IO packets, so they do not receive these connections and their connection handlers are not tried. Among Socket.IO interceptors, the newest one that claims a connection takes it. Connections to other paths under the base URL, such as `ws://localhost:3000/socket.io/chat`, are left to other interceptors.
+A Socket.IO interceptor receives every connection to its base URL. Interceptors without a protocol on the same base URL do not.
 
 ## Custom parsers
 

@@ -15,9 +15,7 @@ WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. 
 
 :::
 
-A WebSocket connection handler to decide whether intercepted connection attempts are accepted or rejected, and to run effects when they open. Handlers are created with [`interceptor.connection(path)`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorconnection).
-
-The handlers of all interceptors that intercept a connection attempt are tried together, from the _last_ created to the first, even if the handlers belong to different interceptors or were declared with different paths. The first handler that matches decides the handshake, so an older handler is not tried, even if it would reject the connection. A handler matches a connection even without a declared [response](#handlerrespond), in which case the connection is accepted. If no handler matches, the connection is accepted.
+A WebSocket connection handler to decide whether intercepted connection attempts are accepted or rejected, and to run effects when they open. When multiple handlers match the same connection, the _last_ handler created with [`interceptor.connection(path)`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#declaring-connection-handlers) decides it, even if the handlers belong to different interceptors or were declared with different paths. Connections that match no handler are accepted.
 
 The examples on this page use the following [schema](/docs/zimic-ws/guides/1-schemas.md):
 
@@ -53,12 +51,6 @@ const handler = await interceptor
 ```
 
 When using a local interceptor, you can safely skip awaiting the handler, as all operations are synchronous and immediate.
-
-:::
-
-:::info INFO: <span>Errors in connection handlers</span>
-
-If a [computed restriction](#handlerwith), a [delay factory](#handlerdelay), or a [computed response](#handlerrespond) throws, the error is logged with `console.error` and the connection is **accepted**. Older handlers are not tried, because the handler that threw may have already counted the connection toward its [`handler.times()`](#handlertimes) limit. For example, a computed response meant to reject a connection lets it open if the function throws.
 
 :::
 
@@ -305,16 +297,9 @@ await interceptor
   </TabItem>
 </Tabs>
 
-:::info INFO: <span>Rejected connections</span>
+A rejected connection never dispatches `open` and is not added to [`interceptor.clients`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclients). Its client receives the same events as when a real server refuses the handshake. Browsers and Node.js 24 or later dispatch `error`, then `close` with code `1006`. Node.js 22 dispatches only `error`. Remote interceptors refuse the handshake with an HTTP `403` response. Local interceptors dispatch a `close` event with `wasClean: true`, unlike a real server.
 
-A rejected connection never dispatches `open` and is not added to [`interceptor.clients`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclients). The events the client receives depend on the runtime, as when a real server refuses the handshake:
-
-- Browsers and Node.js 24 or later dispatch `error`, then `close` with code `1006`.
-- Node.js 22 dispatches only `error`.
-
-Remote interceptors refuse the handshake with an HTTP `403` response, which clients that expose the handshake response can read. Local interceptors report the refusal with a `close` event that has `wasClean: true`, unlike a refusal by a real server.
-
-:::
+If a [computed restriction](#handlerwith), a [delay factory](#handlerdelay), or a computed response throws, the interceptor logs the error with `console.error` and accepts the connection. Older handlers are not tried after an error.
 
 **Related**:
 
@@ -369,11 +354,7 @@ await handler.effect((client, request) => {
 
 The same handler, now including the declared effect.
 
-:::info IMPORTANT: <span>Effects do not run for rejected connections</span>
-
-A rejected connection has no client, so the effect of a handler that [rejects](#handlerrespond) a connection does not run. To observe rejected attempts, use [`handler.connections`](#handlerconnections), which saves both accepted and rejected attempts.
-
-:::
+The effect of a handler that [rejects](#handlerrespond) a connection does not run. To observe rejected attempts, use [`handler.connections`](#handlerconnections).
 
 **Related**:
 
@@ -469,8 +450,6 @@ Clears any response declared with [`handler.respond()`](#handlerrespond), effect
 
 To make the handler match connections again, declare it again with [`handler.with()`](#handlerwith), [`handler.respond()`](#handlerrespond), [`handler.effect()`](#handlereffect), [`handler.delay()`](#handlerdelay), or [`handler.times()`](#handlertimes).
 
-A connection whose handler is cleared during its [delay](#handlerdelay) is not decided by that handler and opens, even if the handler is declared again before the delay ends. If [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear) clears the only interceptor of a connection while a handler decides it, the connection closes. In local mode, the client receives only `close`. In remote mode, the client receives `open`, then `close`, because the interceptor server completes the handshake before closing the connection.
-
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
 
@@ -501,13 +480,9 @@ The connection attempts that matched this handler, whether accepted or rejected.
 
 Each attempt is a [connection request](#handlerwith), with its `url`, `protocols`, `searchParams`, and `pathParams`.
 
-This array is readonly and keeps the same reference for the handler lifetime. Calling [`handler.clear()`](#handlerclear), [`handler.respond()`](#handlerrespond), or [`handler.effect()`](#handlereffect) empties this array in place.
+Calling [`handler.clear()`](#handlerclear), [`handler.respond()`](#handlerrespond), or [`handler.effect()`](#handlereffect) empties `handler.connections`.
 
-:::info IMPORTANT: <span>`handler.connections` requires connection saving to be enabled</span>
-
-This property can only be used if [`connectionSaving.enabled`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorconnectionsaving) is `true` in the interceptor. Otherwise, accessing it throws a `DisabledConnectionSavingError`. Connection saving is independent of [`messageSaving`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptormessagesaving).
-
-:::
+Accessing `handler.connections` throws a `DisabledConnectionSavingError` unless [`connectionSaving.enabled`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorconnectionsaving) is `true` in the interceptor.
 
 **Related**:
 

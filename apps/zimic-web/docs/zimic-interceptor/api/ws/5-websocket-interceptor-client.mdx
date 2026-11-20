@@ -86,13 +86,9 @@ The client-to-server messages sent by this client that matched a [message handle
 
 **Type**: `readonly InterceptedWebSocketInterceptorMessage<Schema, Path>[]`
 
-This array is readonly and keeps the same reference for the client lifetime. Calling [`handler.clear()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerclear), [`handler.respond()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerrespond), or [`handler.effect()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlereffect) on a message handler removes the messages it saved from this array. Messages sent with [`client.send()`](#clientsend) are not saved, because they go from the server to the client.
+Calling [`handler.clear()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerclear), [`handler.respond()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerrespond), or [`handler.effect()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlereffect) on a message handler removes the messages it saved from `client.messages`. Messages sent with [`client.send()`](#clientsend) are not saved, because they go from the server to the client.
 
-:::info IMPORTANT: <span>`client.messages` requires message saving to be enabled</span>
-
-Messages are saved only if [`messageSaving.enabled`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptormessagesaving) is `true` in the interceptor. Otherwise, this array stays empty.
-
-:::
+Messages are saved only if [`messageSaving.enabled`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptormessagesaving) is `true` in the interceptor. Otherwise, `client.messages` stays empty.
 
 ## `client.send()`
 
@@ -106,10 +102,7 @@ client.send(message);
 
 1. **message**: `WebSocketInterceptorPathMessage<Schema, Path> | WebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>`
 
-   The message to send, as a message of the schema or as serialized data, sent as follows:
-   - Strings are sent as text frames, as they are.
-   - Binary data, as a `Blob`, an `ArrayBuffer`, or an `ArrayBufferView`, is sent as binary frames.
-   - Other values, such as objects, arrays, numbers, and booleans, are serialized with `JSON.stringify` and sent as text frames.
+   The message to send, as a message of the schema or as serialized data, sent as described in [Using server messages](/docs/zimic-interceptor/guides/ws/3-messages.mdx#using-server-messages).
 
 **Returns**: `void`
 
@@ -128,11 +121,7 @@ Messages are delivered in the order they are sent. Sending a message to a client
 
 Closes the connection of this client, as if the server closed it, and removes the client from every interceptor holding it. The arguments follow the native [`WebSocket.close()`](https://developer.mozilla.org/docs/Web/API/WebSocket/close).
 
-:::info INFO: <span>Protocols</span>
-
 When the interceptor uses a [protocol](/docs/zimic-interceptor/api/ws/1-create-websocket-interceptor.mdx), the protocol decides how the client is closed. With the [Socket.IO protocol](/docs/zimic-interceptor/guides/ws/9-socket-io.mdx#connections-and-clients), `client.close()` disconnects the socket from its namespace, as `socket.disconnect()` in a Socket.IO server, and ignores the code and reason.
-
-:::
 
 ```ts
 client.close();
@@ -144,7 +133,7 @@ client.close(code, reason);
 
 1. **code** (optional): `number`
 
-   The close code, either `1000` or between `3000` and `4999`. As in `WebSocket.close()`, the code is clamped to `0` through `65535` and rounded to the nearest integer, with ties to even, before being checked. If omitted, the client receives the close code `1005` and no reason.
+   The close code, either `1000` or between `3000` and `4999`. If omitted, the client receives the close code `1005` and no reason.
 
 2. **reason** (optional): `string`
 
@@ -154,7 +143,7 @@ client.close(code, reason);
 
 **Throws**:
 
-- A `DOMException` named `InvalidAccessError` if `code`, after clamping and rounding, is not `1000` or between `3000` and `4999`.
+- A `DOMException` named `InvalidAccessError` if `code` is not `1000` or between `3000` and `4999`.
 - A `DOMException` named `SyntaxError` if `reason` is longer than 123 bytes when encoded as UTF-8.
 
 If an error is thrown, the connection stays open.
