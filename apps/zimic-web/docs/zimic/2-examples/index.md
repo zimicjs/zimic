@@ -18,7 +18,6 @@ slug: /examples
 ### Vitest
 
 - [Zimic with Vitest + Node.js](https://github.com/zimicjs/zimic/tree/main/examples/zimic-with-vitest-node#readme)
-- [Zimic with Vitest + Node.js + WebSocket](https://github.com/zimicjs/zimic/tree/main/examples/zimic-with-vitest-node-websocket#readme)
 - [Zimic with Vitest + Browser Mode](https://github.com/zimicjs/zimic/tree/main/examples/zimic-with-vitest-browser#readme)
 - [Zimic with Vitest + JSDOM](https://github.com/zimicjs/zimic/tree/main/examples/zimic-with-vitest-jsdom#readme)
 
