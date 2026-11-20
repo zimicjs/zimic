@@ -70,7 +70,8 @@ export class WebSocketInterceptorClientImplementation implements InternalWebSock
   constructor(
     public url: string,
     public protocols: readonly string[],
-    // Only protocols such as Socket.IO authenticate clients, so clients of plain WebSocket connections have no `auth`.
+    // Only protocols such as Socket.IO authenticate clients, so clients of plain WebSocket connections have an undefined
+    // `auth`, which their public type hides.
     public auth: Record<string, unknown> | undefined,
     sendMessage: SendWebSocketInterceptorClientMessage,
     closeConnection: WebSocketInterceptorClientCloser,
