@@ -21,14 +21,34 @@ WebSocket interceptors can mock [Socket.IO](https://socket.io) servers with `cre
 
 The Socket.IO protocol uses `socket.io-parser` and `engine.io-parser`, which `socket.io-client` already installs. Install `@zimic/http`, which types the HTTP interceptor serving [polling](#polling) requests:
 
+<Tabs groupId="package-managers">
+  <TabItem value="npm" label="npm">
+
 ```bash
 npm install @zimic/ws @zimic/http @zimic/interceptor --save-dev
 ```
 
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm add @zimic/ws @zimic/http @zimic/interceptor --dev
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```bash
+yarn add @zimic/ws @zimic/http @zimic/interceptor --dev
+```
+
+  </TabItem>
+</Tabs>
+
 If your package manager does not hoist dependencies, such as pnpm, also install the parsers:
 
 ```bash
-pnpm add socket.io-parser engine.io-parser --save-dev
+pnpm add socket.io-parser engine.io-parser --dev
 ```
 
 ## Creating a Socket.IO interceptor
