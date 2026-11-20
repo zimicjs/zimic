@@ -13,6 +13,7 @@ class ConnectionSavingSafeLimitExceededError extends TypeError {
         optionName: 'connectionSaving',
         numberOfSavedResources: numberOfSavedConnections,
         safeLimit,
+        learnMoreURL: 'https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorconnectionsaving',
       }),
     );
     this.name = 'ConnectionSavingSafeLimitExceededError';
