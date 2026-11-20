@@ -285,7 +285,10 @@ class SocketIOEngine {
     }
 
     if (packet.type === PacketType.CONNECT) {
-      this.receiveNamespaceConnect(protocol, session);
+      // Parsers reject `CONNECT` packets whose data is neither an object nor absent. As `socket.handshake.auth` in
+      // Socket.IO servers, the auth of clients that send none is an empty object.
+      const auth = (packet.data as Record<string, unknown> | undefined) ?? {};
+      this.receiveNamespaceConnect(protocol, session, auth);
       return;
     }
 
@@ -446,7 +449,11 @@ class SocketIOEngine {
     connection?.releaseController.abort();
   }
 
-  private receiveNamespaceConnect(protocol: AnySocketIOProtocol, session: SocketIOEngineSession) {
+  private receiveNamespaceConnect(
+    protocol: AnySocketIOProtocol,
+    session: SocketIOEngineSession,
+    auth: Record<string, unknown>,
+  ) {
     if (session.connections.has(protocol.namespace)) {
       return;
     }
@@ -455,7 +462,7 @@ class SocketIOEngine {
     const pendingConnection: SocketIONamespaceConnection = { state: 'pending', releaseController };
     session.connections.set(protocol.namespace, pendingConnection);
 
-    void this.openNamespaceClient(protocol, session, releaseController)
+    void this.openNamespaceClient(protocol, session, auth, releaseController)
       .catch((error: unknown) => {
         console.error(error);
       })
@@ -469,10 +476,12 @@ class SocketIOEngine {
   private async openNamespaceClient(
     protocol: AnySocketIOProtocol,
     session: SocketIOEngineSession,
+    auth: Record<string, unknown>,
     releaseController: AbortController,
   ) {
     const openClientResult = await protocol.openClient({
       url: session.url,
+      auth,
       signal: releaseController.signal,
       send: (message: SocketIOMessage) => this.sendSocketPacket(session, protocol.createMessagePacket(message)),
       close: () => this.disconnectNamespace(protocol, session),

@@ -84,6 +84,10 @@ export interface WebSocketConnectionHandling {
 
 const UNHANDLED_CONNECTION_HANDLING: WebSocketConnectionHandling = Object.freeze({ action: 'accept' });
 
+// Only protocols such as Socket.IO authenticate clients, so plain WebSocket handshakes have no `auth`.
+type WebSocketConnectionHandshake = Pick<WebSocketInterceptorConnectionRequest, 'url' | 'protocols'> &
+  Partial<Pick<WebSocketInterceptorProtocolClientOptions<unknown>, 'auth'>>;
+
 abstract class WebSocketInterceptorWorker {
   platform: WebSocketInterceptorPlatform | null = null;
   isRunning = false;
@@ -213,7 +217,7 @@ abstract class WebSocketInterceptorWorker {
   // created to the first, and the first match decides the handshake. The connection is accepted if no handler handles
   // it. Interceptors that let the connection go while it is decided no longer hold it, as reported by `isHolding`.
   protected async handleConnectionWithHandlers(
-    connection: Pick<WebSocketInterceptorConnectionRequest, 'url' | 'protocols'>,
+    connection: WebSocketConnectionHandshake,
     isHolding: (interceptor: AnyWebSocketInterceptorImplementation) => boolean,
   ): Promise<WebSocketConnectionHandling> {
     const connectionURL = createPathMatchingURL(connection.url);
@@ -282,13 +286,12 @@ abstract class WebSocketInterceptorWorker {
   }
 
   private parseConnectionRequest(
-    connection: Pick<WebSocketInterceptorConnectionRequest, 'url' | 'protocols'>,
+    connection: WebSocketConnectionHandshake,
     connectionURL: string,
     handler: WebSocketConnectionHandler,
   ): WebSocketInterceptorConnectionRequest {
     return {
-      url: connection.url,
-      protocols: connection.protocols,
+      ...connection,
       searchParams: new HttpSearchParams(new URL(connection.url).searchParams),
       pathParams: parsePathParams({
         url: connectionURL,
@@ -404,7 +407,10 @@ abstract class WebSocketInterceptorWorker {
       return candidate === interceptor && !options.signal.aborted;
     }
 
-    const handling = await this.handleConnectionWithHandlers({ url: options.url, protocols: [] }, isHolding);
+    const handling = await this.handleConnectionWithHandlers(
+      { url: options.url, protocols: [], auth: options.auth },
+      isHolding,
+    );
 
     if (!isHolding(interceptor)) {
       return 'aborted';
@@ -418,6 +424,7 @@ abstract class WebSocketInterceptorWorker {
     const client = createWebSocketInterceptorClient({
       url: options.url,
       protocols: [],
+      auth: options.auth,
       send: (message) => {
         if (interceptor.clients.includes(client)) {
           // Clients are schema-erased and user code may bypass types, so protocols validate what they send.

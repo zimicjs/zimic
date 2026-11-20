@@ -63,15 +63,20 @@ type SocketIOAckMessages<Events extends object> = {
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The WebSocket schema of a Socket.IO server, with events declared as in `socket.io-client`.
+ * The WebSocket schema of a Socket.IO server, with events declared as in `socket.io-client` and the `auth` payload that
+ * clients send when connecting to a namespace.
  *
  * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#creating-a-socketio-interceptor Creating a Socket.IO interceptor}
  */
 export type SocketIOSchema<
   ServerToClientEvents extends object = SocketIOEventsMap,
   ClientToServerEvents extends object = SocketIOEventsMap,
+  Auth extends Record<string, unknown> = Record<string, unknown>,
 > = WebSocketSchema<{
   '/': {
+    // Socket.IO clients request no subprotocols. Declaring none also makes the connection share a key with
+    // `WebSocketConnectionSchema`, whose keys are all optional, so TypeScript accepts it.
+    connection: { auth: Auth; protocols?: never };
     message:
       | SocketIOServerEventMessages<ServerToClientEvents>
       | SocketIOClientEventMessages<ClientToServerEvents>

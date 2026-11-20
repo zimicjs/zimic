@@ -1,10 +1,11 @@
 import { HttpSearchParams, InferPathParams } from '@zimic/utils/http';
-import { IfNever, Replace, UnionHasMoreThanOneType, UnionToIntersection } from '@zimic/utils/types';
+import { IfAny, IfNever, Replace, UnionHasMoreThanOneType, UnionToIntersection } from '@zimic/utils/types';
 import {
   WebSocketConnectionProtocolSchema,
   WebSocketConnectionSearchParamsSchema,
   WebSocketMessageData,
   WebSocketMessageSchema,
+  WebSocketPathSchema,
   WebSocketSchema,
   WebSocketSchemaMessage,
   WebSocketSchemaPath,
@@ -114,17 +115,54 @@ export type WebSocketInterceptorConnectionProtocol<
   Path extends string,
 > = WebSocketConnectionProtocolSchema<Schema[DeclaredWebSocketInterceptorPath<Schema, Path>]>;
 
+type WebSocketPathConnectionAuth<PathSchema extends WebSocketPathSchema> = PathSchema extends {
+  connection: { auth: infer Auth };
+}
+  ? Auth
+  : never;
+
+/**
+ * The `auth` payload declared for connections to a handler path, as in Socket.IO schemas. `never` if the schema
+ * declares none, including in schema-erased types, so that clients of any schema are assignable to them.
+ */
+export type WebSocketInterceptorConnectionAuth<Schema extends WebSocketSchema, Path extends string> = IfAny<
+  Schema,
+  never,
+  WebSocketPathConnectionAuth<Schema[DeclaredWebSocketInterceptorPath<Schema, Path>]>
+>;
+
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * The handshake of a connection attempt to the interceptor, as matched by a connection handler before it is answered.
+ * `auth` exists only if the schema declares it, as in Socket.IO schemas.
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
  */
-export interface WebSocketInterceptorConnectionRequest<
+export type WebSocketInterceptorConnectionRequest<
   Schema extends WebSocketSchema = WebSocketSchema,
   Path extends string = string,
-> {
+> = IfNever<
+  WebSocketInterceptorConnectionAuth<Schema, Path>,
+  BaseWebSocketInterceptorConnectionRequest<Schema, Path>,
+  BaseWebSocketInterceptorConnectionRequest<Schema, Path> & {
+    /**
+     * The `auth` payload sent by the Socket.IO client when connecting to the namespace, or `{}` if it sent none.
+     *
+     * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
+     */
+    auth: WebSocketInterceptorConnectionAuth<Schema, Path>;
+  }
+>;
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * The members of {@link WebSocketInterceptorConnectionRequest} present in every schema.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
+ */
+export interface BaseWebSocketInterceptorConnectionRequest<Schema extends WebSocketSchema, Path extends string> {
   /**
    * The URL used to open the connection.
    *
@@ -158,14 +196,36 @@ export interface WebSocketInterceptorConnectionRequest<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A handle of a client connected to a WebSocket interceptor.
+ * A handle of a client connected to a WebSocket interceptor. `auth` exists only if the schema declares it, as in
+ * Socket.IO schemas.
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor-client `WebSocketInterceptorClient` API reference}
  */
-export interface WebSocketInterceptorClient<
+export type WebSocketInterceptorClient<
   Schema extends WebSocketSchema = WebSocketSchema,
   Path extends string = string,
-> {
+> = IfNever<
+  WebSocketInterceptorConnectionAuth<Schema, Path>,
+  BaseWebSocketInterceptorClient<Schema, Path>,
+  BaseWebSocketInterceptorClient<Schema, Path> & {
+    /**
+     * The `auth` payload sent by the Socket.IO client when connecting to the namespace, or `{}` if it sent none.
+     *
+     * @readonly
+     * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor-client#clientauth `client.auth` API reference}
+     */
+    auth: WebSocketInterceptorConnectionAuth<Schema, Path>;
+  }
+>;
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * The members of {@link WebSocketInterceptorClient} present in every schema.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor-client `WebSocketInterceptorClient` API reference}
+ */
+export interface BaseWebSocketInterceptorClient<Schema extends WebSocketSchema, Path extends string> {
   /**
    * The URL used to open the connection of the client.
    *

@@ -204,6 +204,86 @@ export function declareClientsSocketIOProtocolTests(options: SharedSocketIOProto
         });
       });
     });
+
+    it('should expose the auth of a socket on its connection request', async () => {
+      const auth = { token: 'abc' };
+      const receivedAuths: unknown[] = [];
+
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        await interceptor
+          .connection()
+          .with((request) => {
+            receivedAuths.push(request.auth);
+            return true;
+          })
+          .respond((request) => {
+            receivedAuths.push(request.auth);
+            return { action: 'accept' };
+          })
+          .effect((_client, request) => {
+            receivedAuths.push(request.auth);
+          });
+
+        await usingSocket(baseURL, { transports, auth }, async (socket) => {
+          await waitForSocketConnection(socket);
+
+          await waitFor(() => expect(receivedAuths).toEqual([auth, auth, auth]));
+        });
+      });
+    });
+
+    it('should expose the auth of a socket on its client', async () => {
+      const auth = { token: 'abc' };
+      const effectClientAuthPromise = createPromiseWithResolvers<unknown>();
+
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        await interceptor.connection().effect((client) => {
+          effectClientAuthPromise.resolve(client.auth);
+        });
+
+        await usingSocket(baseURL, { transports, auth }, async (socket) => {
+          await waitForSocketConnection(socket);
+
+          expect(await effectClientAuthPromise).toEqual(auth);
+          expect(interceptor.clients[0].auth).toEqual(auth);
+        });
+      });
+    });
+
+    it('should expose an empty auth for a socket that sends none', async () => {
+      const requestAuthPromise = createPromiseWithResolvers<unknown>();
+
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        await interceptor.connection().effect((_client, request) => {
+          requestAuthPromise.resolve(request.auth);
+        });
+
+        await usingSocket(baseURL, { transports }, async (socket) => {
+          await waitForSocketConnection(socket);
+
+          expect(await requestAuthPromise).toEqual({});
+          expect(interceptor.clients[0].auth).toEqual({});
+        });
+      });
+    });
+
+    it('should save the auth of a socket in the connections of its handler', async () => {
+      const auth = { token: 'abc' };
+
+      await usingWebSocketInterceptor<AnySchema>(
+        getSocketIOInterceptorOptions({}, { connectionSaving: { enabled: true } }),
+        async (interceptor) => {
+          const handler = await interceptor.connection().times(1);
+
+          await usingSocket(baseURL, { transports, auth }, async (socket) => {
+            await waitForSocketConnection(socket);
+
+            expect(handler.connections).toHaveLength(1);
+            expect(handler.connections[0].auth).toEqual(auth);
+          });
+        },
+      );
+    });
   });
 
   const pollingTransports: ManagerOptions['transports'] = [PollingTransport];

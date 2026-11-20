@@ -28,6 +28,10 @@ export interface WebSocketInterceptorProtocolClientOptions<Message> {
   // Matched by connection handlers and exposed as `client.url`.
   url: string;
 
+  // The payload the client authenticates with, such as the data of a Socket.IO `CONNECT` packet. Matched by connection
+  // handlers and exposed as `request.auth` and `client.auth`.
+  auth: Record<string, unknown>;
+
   // Aborting it releases the client, at any time, removing it from `interceptor.clients`.
   signal: AbortSignal;
 

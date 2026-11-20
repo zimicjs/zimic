@@ -197,6 +197,23 @@ describe('SocketIOProtocol > Types', () => {
     expectTypeOf(sendMessage).toBeFunction();
   });
 
+  it('should type client auth from the schema', () => {
+    function declareHandler() {
+      const interceptor = createWebSocketInterceptor<
+        SocketIOSchema<ServerToClientEvents, ClientToServerEvents, { token: string }>
+      >({
+        baseURL: 'ws://localhost:3000/socket.io',
+        protocol: createSocketIOProtocol(),
+      });
+
+      interceptor.connection().effect((client) => {
+        expectTypeOf(client.auth).toEqualTypeOf<{ token: string }>();
+      });
+    }
+
+    expectTypeOf(declareHandler).toBeFunction();
+  });
+
   it('should accept the default parser and socket.io-msgpack-parser as parsers', () => {
     expectTypeOf(defaultParser).toExtend<SocketIOParser>();
     expectTypeOf(msgpackParser).toExtend<SocketIOParser>();

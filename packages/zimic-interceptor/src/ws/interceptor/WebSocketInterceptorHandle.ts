@@ -1,19 +1,33 @@
 import { HttpSearchParams } from '@zimic/utils/http';
+import { IfNever } from '@zimic/utils/types';
 import { WebSocketMessageData, WebSocketMessageSchema, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
 
 import type {
+  BaseWebSocketInterceptorClient,
   InterceptedWebSocketInterceptorMessage,
-  WebSocketInterceptorClient,
+  WebSocketInterceptorConnectionAuth,
   WebSocketInterceptorServer,
   WebSocketInterceptorServerSendOptions,
 } from './types/messages';
 
-export interface InternalWebSocketInterceptorClient<
-  Schema extends WebSocketSchema = WebSocketSchema,
-  Path extends string = string,
-> extends WebSocketInterceptorClient<Schema, Path> {
+interface BaseInternalWebSocketInterceptorClient<
+  Schema extends WebSocketSchema,
+  Path extends string,
+> extends BaseWebSocketInterceptorClient<Schema, Path> {
   messages: InterceptedWebSocketInterceptorMessage<Schema, Path>[];
 }
+
+// Mirrors the variants of `WebSocketInterceptorClient`, so internal clients are assignable to public ones. Both variants
+// extend one interface, which TypeScript compares by type arguments, so schema-erased `any` clients accept clients of
+// any schema.
+export type InternalWebSocketInterceptorClient<
+  Schema extends WebSocketSchema = WebSocketSchema,
+  Path extends string = string,
+> = IfNever<
+  WebSocketInterceptorConnectionAuth<Schema, Path>,
+  BaseInternalWebSocketInterceptorClient<Schema, Path>,
+  BaseInternalWebSocketInterceptorClient<Schema, Path> & { auth: WebSocketInterceptorConnectionAuth<Schema, Path> }
+>;
 
 export const MAX_CLOSE_REASON_BYTE_LENGTH = 123;
 
@@ -56,6 +70,8 @@ class WebSocketInterceptorClientImplementation implements InternalWebSocketInter
   constructor(
     public url: string,
     public protocols: readonly string[],
+    // Only protocols such as Socket.IO authenticate clients, so clients of plain WebSocket connections have no `auth`.
+    public auth: Record<string, unknown> | undefined,
     sendMessage: SendWebSocketInterceptorClientMessage,
     closeConnection: WebSocketInterceptorClientCloser,
   ) {
@@ -92,10 +108,17 @@ class WebSocketInterceptorClientImplementation implements InternalWebSocketInter
 export function createWebSocketInterceptorClient(options: {
   url: string;
   protocols: readonly string[];
+  auth?: Record<string, unknown>;
   send: SendWebSocketInterceptorClientMessage;
   close: WebSocketInterceptorClientCloser;
 }): InternalWebSocketInterceptorClient {
-  return new WebSocketInterceptorClientImplementation(options.url, options.protocols, options.send, options.close);
+  return new WebSocketInterceptorClientImplementation(
+    options.url,
+    options.protocols,
+    options.auth,
+    options.send,
+    options.close,
+  );
 }
 
 export interface InternalWebSocketInterceptorServer<

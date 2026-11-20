@@ -1,4 +1,4 @@
-import { Manager, type ManagerOptions, type Socket } from 'socket.io-client';
+import { Manager, type ManagerOptions, type Socket, type SocketOptions } from 'socket.io-client';
 
 import { removeTrailingSlash } from '@/utils/urls';
 
@@ -31,13 +31,13 @@ export async function usingSocketManager(
 
 export async function usingSocket(
   baseURL: string,
-  options: Partial<ManagerOptions> & { nsp?: string },
+  options: Partial<ManagerOptions> & Pick<SocketOptions, 'auth'> & { nsp?: string },
   callback: (socket: Socket) => Promise<void>,
 ) {
-  const { nsp = '/', ...managerOptions } = options;
+  const { nsp = '/', auth, ...managerOptions } = options;
 
   await usingSocketManager(baseURL, managerOptions, async (manager) => {
-    const socket = manager.socket(nsp);
+    const socket = manager.socket(nsp, { auth });
 
     try {
       await callback(socket);

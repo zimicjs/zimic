@@ -89,6 +89,17 @@ describe('WebSocketConnectionHandler > Types', () => {
     expectTypeOf(declareHandlers).toBeFunction();
   });
 
+  it('should not type auth on paths that declare none', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      interceptor.connection('/rooms/:roomId').effect((client, request) => {
+        expectTypeOf(client).not.toHaveProperty('auth');
+        expectTypeOf(request).not.toHaveProperty('auth');
+      });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
   it('should type client search params from the declared path', () => {
     function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
       interceptor.connection('/rooms/:roomId').effect((client) => {
