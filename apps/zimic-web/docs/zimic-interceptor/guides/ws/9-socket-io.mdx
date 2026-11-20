@@ -261,6 +261,17 @@ interceptor
   .respond({ action: 'reject' });
 ```
 
+To match events by the `auth` of the socket that sent them, declare it in [`handler.from()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerfrom) of a message handler, with the same matching rules.
+
+```ts
+// Matches only events from sockets connected with an auth containing { token: 'abc' }
+interceptor
+  .message()
+  .from({ auth: { token: 'abc' } })
+  .with({ type: 'user:create' })
+  .respond({ type: 'user:created', data: { id: '1' } });
+```
+
 A connection handler rejecting a socket fails it with a `connect_error` of message `'Connection rejected'`. To send another error, as `next(error)` does in a Socket.IO server, declare an `error` in [`handler.respond()`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerrespond). The socket receives its `message` and `data` in `connect_error`. Other namespaces on the same connection stay connected.
 
 ```ts
