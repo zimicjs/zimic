@@ -1,8 +1,9 @@
 import { HttpSearchParams, HttpSearchParamsSchema } from '@zimic/utils/http';
-import { IfNever, PossiblePromise } from '@zimic/utils/types';
+import { DeepPartial, IfNever, PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
 import {
+  WebSocketInterceptorConnectionAuth,
   WebSocketInterceptorConnectionProtocol,
   WebSocketInterceptorConnectionRequest,
   WebSocketInterceptorConnectionSearchParamsSchema,
@@ -17,14 +18,31 @@ type PartialHttpSearchParamsOrSchema<Schema extends HttpSearchParamsSchema.Loose
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A static restriction declared with `handler.with()`. Each declared field must be met.
+ * A static restriction declared with `handler.with()`. Each declared field must be met. `auth` exists only if the
+ * schema declares it, as in Socket.IO schemas.
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
  */
-export interface WebSocketConnectionHandlerStaticRestriction<
+export type WebSocketConnectionHandlerStaticRestriction<
   Schema extends WebSocketSchema = WebSocketSchema,
   Path extends string = string,
-> {
+> = IfNever<
+  WebSocketInterceptorConnectionAuth<Schema, Path>,
+  BaseWebSocketConnectionHandlerStaticRestriction<Schema, Path>,
+  BaseWebSocketConnectionHandlerStaticRestriction<Schema, Path> & {
+    /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference} */
+    auth?: DeepPartial<WebSocketInterceptorConnectionAuth<Schema, Path>>;
+  }
+>;
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * The members of {@link WebSocketConnectionHandlerStaticRestriction} present in every schema.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
+ */
+export interface BaseWebSocketConnectionHandlerStaticRestriction<Schema extends WebSocketSchema, Path extends string> {
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference} */
   searchParams?: PartialHttpSearchParamsOrSchema<WebSocketInterceptorConnectionSearchParamsSchema<Schema, Path>>;
 
@@ -66,10 +84,14 @@ export interface WebSocketConnectionHandlerRestrictionDiff<Value> {
   received: Value;
 }
 
-export interface WebSocketConnectionHandlerRestrictionDiffs {
-  computed?: WebSocketConnectionHandlerRestrictionDiff<boolean>;
+export interface WebSocketConnectionStaticRestrictionDiffs {
   searchParams?: WebSocketConnectionHandlerRestrictionDiff<HttpSearchParams>;
   protocols?: WebSocketConnectionHandlerRestrictionDiff<readonly string[]>;
+  auth?: WebSocketConnectionHandlerRestrictionDiff<unknown>;
+}
+
+export interface WebSocketConnectionHandlerRestrictionDiffs extends WebSocketConnectionStaticRestrictionDiffs {
+  computed?: WebSocketConnectionHandlerRestrictionDiff<boolean>;
 }
 
 export type WebSocketConnectionHandlerRestrictionMatch =

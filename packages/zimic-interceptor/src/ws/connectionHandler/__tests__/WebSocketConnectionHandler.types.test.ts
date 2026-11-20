@@ -100,6 +100,15 @@ describe('WebSocketConnectionHandler > Types', () => {
     expectTypeOf(declareHandlers).toBeFunction();
   });
 
+  it('should not accept auth restrictions on paths that declare none', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      // @ts-expect-error The path declares no auth.
+      interceptor.connection('/rooms/:roomId').with({ auth: { token: 'value' } });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
   it('should type client search params from the declared path', () => {
     function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
       interceptor.connection('/rooms/:roomId').effect((client) => {

@@ -127,6 +127,16 @@ function createUnmatchedConnectionDiffs(unmatchedConnectionGroups: UnmatchedWebS
       connectionParts.push(`  ${color.red(`+ ${stringifiedReceived}`)}`);
     }
 
+    if (diff.auth) {
+      connectionParts.push('Auth:');
+
+      const stringifiedExpected = stringifyValueToLog(diff.auth.expected);
+      const stringifiedReceived = stringifyValueToLog(diff.auth.received);
+
+      connectionParts.push(`  ${color.green(`- ${stringifiedExpected}`)}`);
+      connectionParts.push(`  ${color.red(`+ ${stringifiedReceived}`)}`);
+    }
+
     return connectionParts.join('\n     ');
   });
 }

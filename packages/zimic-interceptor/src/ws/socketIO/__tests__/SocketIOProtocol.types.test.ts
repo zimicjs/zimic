@@ -214,6 +214,24 @@ describe('SocketIOProtocol > Types', () => {
     expectTypeOf(declareHandler).toBeFunction();
   });
 
+  it('should type connection auth restrictions from the schema', () => {
+    function declareHandler() {
+      const interceptor = createWebSocketInterceptor<
+        SocketIOSchema<ServerToClientEvents, ClientToServerEvents, { token: string; user: { id: string } }>
+      >({
+        baseURL: 'ws://localhost:3000/socket.io',
+        protocol: createSocketIOProtocol(),
+      });
+
+      interceptor.connection().with({ auth: { user: {} } });
+
+      // @ts-expect-error The auth token is declared as a string.
+      interceptor.connection().with({ auth: { token: 1 } });
+    }
+
+    expectTypeOf(declareHandler).toBeFunction();
+  });
+
   it('should accept the default parser and socket.io-msgpack-parser as parsers', () => {
     expectTypeOf(defaultParser).toExtend<SocketIOParser>();
     expectTypeOf(msgpackParser).toExtend<SocketIOParser>();

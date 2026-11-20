@@ -1,5 +1,6 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
+import color from 'picocolors';
 import type { ManagerOptions, Socket } from 'socket.io-client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,6 +13,7 @@ import {
   waitForSocketConnection,
   waitForSocketDisconnection,
 } from '@tests/utils/socketIO';
+import { expectWebSocketTimesCheckError } from '@tests/utils/webSocket';
 
 import type { SocketIOProtocolOptions } from '../../types/options';
 import {
@@ -280,6 +282,104 @@ export function declareClientsSocketIOProtocolTests(options: SharedSocketIOProto
 
             expect(handler.connections).toHaveLength(1);
             expect(handler.connections[0].auth).toEqual(auth);
+          });
+        },
+      );
+    });
+
+    it.each([{ exact: false }, { exact: undefined }])(
+      'should match only specific connections if contains a declared response, a static auth restriction, and exact $exact',
+      async ({ exact }) => {
+        await usingWebSocketInterceptor<AnySchema>(
+          getSocketIOInterceptorOptions({}, { connectionSaving: { enabled: true } }),
+          async (interceptor) => {
+            const handler = await interceptor
+              .connection()
+              .with({ auth: { token: 'abc' }, exact })
+              .respond({ action: 'reject' });
+
+            for (const matchingAuth of [{ token: 'abc' }, { token: 'abc', user: 'u' }]) {
+              await usingSocket(baseURL, { transports, auth: matchingAuth }, async (socket) => {
+                await expect(waitForSocketConnection(socket)).rejects.toThrow('Connection rejected');
+              });
+            }
+
+            expect(handler.connections.map((connection) => connection.auth)).toEqual([
+              { token: 'abc' },
+              { token: 'abc', user: 'u' },
+            ]);
+
+            for (const mismatchingAuth of [{ token: 'xyz' }, {}]) {
+              await usingSocket(baseURL, { transports, auth: mismatchingAuth }, async (socket) => {
+                await waitForSocketConnection(socket);
+              });
+            }
+
+            expect(handler.connections).toHaveLength(2);
+          },
+        );
+      },
+    );
+
+    it.each([{ exact: true }])(
+      'should match only specific connections if contains a declared response, a static auth restriction, and exact $exact',
+      async ({ exact }) => {
+        await usingWebSocketInterceptor<AnySchema>(
+          getSocketIOInterceptorOptions({}, { connectionSaving: { enabled: true } }),
+          async (interceptor) => {
+            const handler = await interceptor
+              .connection()
+              .with({ auth: { token: 'abc' }, exact })
+              .respond({ action: 'reject' });
+
+            await usingSocket(baseURL, { transports, auth: { token: 'abc' } }, async (socket) => {
+              await expect(waitForSocketConnection(socket)).rejects.toThrow('Connection rejected');
+            });
+
+            expect(handler.connections).toHaveLength(1);
+            expect(handler.connections[0].auth).toEqual({ token: 'abc' });
+
+            for (const mismatchingAuth of [{ token: 'abc', user: 'u' }, { token: 'xyz' }, {}]) {
+              await usingSocket(baseURL, { transports, auth: mismatchingAuth }, async (socket) => {
+                await waitForSocketConnection(socket);
+              });
+            }
+
+            expect(handler.connections).toHaveLength(1);
+          },
+        );
+      },
+    );
+
+    it('should consider connections unmatched due to auth restrictions in times check errors', async () => {
+      await usingWebSocketInterceptor<AnySchema>(
+        getSocketIOInterceptorOptions({}, { connectionSaving: { enabled: true } }),
+        async (interceptor) => {
+          const handler = await interceptor
+            .connection()
+            .with({ auth: { token: 'abc' } })
+            .respond({ action: 'reject' })
+            .times(1);
+
+          await usingSocket(baseURL, { transports, auth: { token: 'xyz' } }, async (socket) => {
+            await waitForSocketConnection(socket);
+
+            await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+              message: [
+                'Expected exactly 1 matching connection, but got 0.',
+                '',
+                'Connections evaluated by this handler:',
+                '',
+                `  ${color.green('- Expected')}`,
+                `  ${color.red('+ Received')}`,
+                '',
+                `1: ${interceptor.clients[0].url}`,
+                '     Auth:',
+                `       ${color.green('- { "token": "abc" }')}`,
+                `       ${color.red('+ { "token": "xyz" }')}`,
+              ].join('\n'),
+              expectedNumberOfMatches: 1,
+            });
           });
         },
       );

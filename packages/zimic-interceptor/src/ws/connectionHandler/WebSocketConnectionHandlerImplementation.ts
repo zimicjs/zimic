@@ -1,4 +1,3 @@
-import { HttpSearchParams } from '@zimic/utils/http';
 import { waitForDelay } from '@zimic/utils/time';
 import { Range } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
@@ -10,6 +9,11 @@ import WebSocketTimesDeclarationPointer from '../errors/WebSocketTimesDeclaratio
 import { WebSocketInterceptorClient, WebSocketInterceptorConnectionRequest } from '../interceptor/types/messages';
 import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
 import DisabledConnectionSavingError from './errors/DisabledConnectionSavingError';
+import {
+  LooseWebSocketConnectionStaticRestriction,
+  matchWebSocketConnectionStaticRestriction,
+  WebSocketConnectionHandshake,
+} from './staticRestrictions';
 import { WebSocketConnectionHandlerDelayFactory } from './types/connections';
 import {
   InternalWebSocketConnectionHandler,
@@ -20,10 +24,8 @@ import {
 import {
   UnmatchedWebSocketInterceptorConnectionGroup,
   WebSocketConnectionHandlerRestriction,
-  WebSocketConnectionHandlerRestrictionDiff,
   WebSocketConnectionHandlerRestrictionDiffs,
   WebSocketConnectionHandlerRestrictionMatch,
-  WebSocketConnectionHandlerStaticRestriction,
 } from './types/restrictions';
 
 const DEFAULT_NUMBER_OF_CONNECTION_LIMITS: Range<number> = Object.freeze({
@@ -37,9 +39,6 @@ export type WebSocketConnectionHandlerConnectionMatch =
   | { success: false; cause: 'unmatchedRestrictions'; diff: WebSocketConnectionHandlerRestrictionDiffs };
 
 export type WebSocketConnectionHandlerAction = 'accept' | 'reject';
-
-type StaticRestrictionFieldMatch<Value> =
-  { success: true } | { success: false; diff: WebSocketConnectionHandlerRestrictionDiff<Value> };
 
 class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, Path extends string = string> {
   private restrictions: WebSocketConnectionHandlerRestriction<Schema, Path>[] = [];
@@ -240,20 +239,13 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
       }
 
       // Static restrictions compare runtime values, so the schema that typed them does not apply here.
-      const looseRequest = request as WebSocketInterceptorConnectionRequest;
-      const looseRestriction = restriction as WebSocketConnectionHandlerStaticRestriction;
+      const staticRestrictionMatch = matchWebSocketConnectionStaticRestriction(
+        request as WebSocketConnectionHandshake,
+        restriction as LooseWebSocketConnectionStaticRestriction,
+      );
 
-      const matchesSearchParamsRestriction = this.matchesSearchParamsRestriction(looseRequest, looseRestriction);
-      const matchesProtocolsRestriction = this.matchesProtocolsRestriction(looseRequest, looseRestriction);
-
-      if (!matchesSearchParamsRestriction.success || !matchesProtocolsRestriction.success) {
-        return {
-          success: false,
-          diff: {
-            searchParams: matchesSearchParamsRestriction.success ? undefined : matchesSearchParamsRestriction.diff,
-            protocols: matchesProtocolsRestriction.success ? undefined : matchesProtocolsRestriction.diff,
-          },
-        };
+      if (!staticRestrictionMatch.success) {
+        return staticRestrictionMatch;
       }
     }
 
@@ -262,46 +254,6 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 
   private isComputedConnectionRestriction(restriction: WebSocketConnectionHandlerRestriction<Schema, Path>) {
     return typeof restriction === 'function';
-  }
-
-  private matchesSearchParamsRestriction(
-    request: WebSocketInterceptorConnectionRequest,
-    restriction: WebSocketConnectionHandlerStaticRestriction,
-  ): StaticRestrictionFieldMatch<HttpSearchParams> {
-    if (restriction.searchParams === undefined) {
-      return { success: true };
-    }
-
-    const restrictedSearchParams = new HttpSearchParams(restriction.searchParams);
-
-    const matchesRestriction = restriction.exact
-      ? request.searchParams.equals(restrictedSearchParams)
-      : request.searchParams.contains(restrictedSearchParams);
-
-    return matchesRestriction
-      ? { success: true }
-      : { success: false, diff: { expected: restrictedSearchParams, received: request.searchParams } };
-  }
-
-  private matchesProtocolsRestriction(
-    request: WebSocketInterceptorConnectionRequest,
-    restriction: WebSocketConnectionHandlerStaticRestriction,
-  ): StaticRestrictionFieldMatch<readonly string[]> {
-    if (restriction.protocols === undefined) {
-      return { success: true };
-    }
-
-    const restrictedProtocols = restriction.protocols;
-
-    // Requested subprotocols are listed in the client's order of preference, so their order is part of an exact match.
-    const matchesRestriction = restriction.exact
-      ? restrictedProtocols.length === request.protocols.length &&
-        restrictedProtocols.every((protocol, index) => request.protocols[index] === protocol)
-      : restrictedProtocols.every((protocol) => request.protocols.includes(protocol));
-
-    return matchesRestriction
-      ? { success: true }
-      : { success: false, diff: { expected: restrictedProtocols, received: request.protocols } };
   }
 
   markConnectionAsMatched() {
