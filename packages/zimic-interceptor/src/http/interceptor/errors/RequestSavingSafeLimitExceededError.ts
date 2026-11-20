@@ -1,10 +1,6 @@
 import { createInterceptorSavingSafeLimitExceededMessage } from '@/interceptor/errors/savingSafeLimit';
 
-/**
- * Error thrown when the safe limit of saved intercepted requests is exceeded.
- *
- * @see {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `createHttpInterceptor` API reference}
- */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptorrequestsaving `interceptor.requestSaving` API reference} */
 class RequestSavingSafeLimitExceededError extends TypeError {
   constructor(numberOfSavedRequests: number, safeLimit: number) {
     super(
@@ -13,7 +9,7 @@ class RequestSavingSafeLimitExceededError extends TypeError {
         optionName: 'requestSaving',
         numberOfSavedResources: numberOfSavedRequests,
         safeLimit,
-        learnMoreURL: 'https://zimic.dev/docs/interceptor/api/create-http-interceptor',
+        learnMoreURL: 'https://zimic.dev/docs/interceptor/api/http-interceptor#interceptorrequestsaving',
       }),
     );
     this.name = 'RequestSavingSafeLimitExceededError';
