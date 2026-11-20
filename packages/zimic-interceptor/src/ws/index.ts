@@ -30,6 +30,7 @@ export type {
   WebSocketMessageHandlerStaticRestriction,
   WebSocketMessageHandlerStaticRestrictionOptions,
   WebSocketMessageHandlerComputedRestriction,
+  WebSocketMessageHandlerSenderRestriction,
 } from './messageHandler/types/restrictions';
 
 export type { WebSocketConnectionHandlerDelayFactory } from './connectionHandler/types/connections';

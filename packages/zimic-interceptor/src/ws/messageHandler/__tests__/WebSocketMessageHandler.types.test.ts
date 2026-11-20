@@ -96,6 +96,15 @@ describe('WebSocketMessageHandler > Types', () => {
     expectTypeOf(declareHandler).toBeFunction();
   });
 
+  it('should not accept auth sender restrictions on paths that declare none', () => {
+    function declareHandler(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      // @ts-expect-error The path declares no auth.
+      interceptor.message('/rooms/:roomId').from({ auth: { token: 'value' } });
+    }
+
+    expectTypeOf(declareHandler).toBeFunction();
+  });
+
   it('should type the sender from the handler path', () => {
     function declareHandler(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
       interceptor.message('/rooms/:roomId').effect((_message, context) => {

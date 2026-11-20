@@ -1129,6 +1129,12 @@ export function declareTimesHttpRequestHandlerTests(
       // No HTTP counterpart for "should consider messages unmatched due to sender restrictions in times check errors":
       // an HTTP request has no long-lived connected client to restrict it to.
 
+      // No HTTP counterpart for "should consider messages unmatched due to static sender search params restrictions in
+      // times check errors": an HTTP request has no long-lived connected client to restrict it to.
+
+      // No HTTP counterpart for "should consider messages unmatched due to static sender protocols restrictions in times
+      // check errors": an HTTP request has no long-lived connected client to restrict it to.
+
       it('should consider requests unmatched due to search params and headers restrictions in times check errors', async () => {
         const handler = new Handler<Schema, 'POST', '/users'>(interceptorImplementation, 'POST', '/users')
           .with({ searchParams: { value: '1' }, headers: { accept: 'application/json' } })

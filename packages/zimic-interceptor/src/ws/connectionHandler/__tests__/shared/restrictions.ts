@@ -297,6 +297,20 @@ export function declareRestrictionWebSocketConnectionHandlerTests(
     });
   });
 
+  // No WebSocket connection counterpart for "should match only messages from a restricted sender if contains a static
+  // search params restriction and exact $exact": a connection attempt has no sender, and its own search params are
+  // restricted by `handler.with()`.
+
+  // No WebSocket connection counterpart for "should match only messages from a restricted sender if contains a static
+  // protocol restriction and exact $exact": a connection attempt has no sender, and its own protocols are restricted
+  // by `handler.with()`.
+
+  // No WebSocket connection counterpart for "should match only messages from the last restricted sender if a client is
+  // replaced by a static restriction": a connection attempt has no sender to restrict.
+
+  // No WebSocket connection counterpart for "should match only messages from the last restricted sender if a static
+  // restriction is replaced by a client": a connection attempt has no sender to restrict.
+
   // No WebSocket connection counterpart for "should match only messages from a restricted sender if contains a computed
   // restriction": a connection attempt has no connected client yet.
 

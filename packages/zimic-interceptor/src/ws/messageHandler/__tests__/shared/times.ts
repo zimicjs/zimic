@@ -866,6 +866,80 @@ export function declareTimesWebSocketMessageHandlerTests(
         );
       });
 
+      it('should consider messages unmatched due to static sender search params restrictions in times check errors', async () => {
+        await usingWebSocketInterceptor<Schema>(
+          { type, baseURL, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const handler = await interceptor
+              .message()
+              .from({ searchParams: { room: 'general' } })
+              .respond({ type: 'delete', id: 'restricted' })
+              .times(1);
+
+            await usingWebSocketClient<Schema>(`${baseURL}?room=random`, async (client) => {
+              client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+              await waitFor(() =>
+                expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                  message: [
+                    'Expected exactly 1 matching message, but got 0.',
+                    '',
+                    'Messages evaluated by this handler:',
+                    '',
+                    `  ${color.green('- Expected')}`,
+                    `  ${color.red('+ Received')}`,
+                    '',
+                    '1: { "type": "create", "body": { "text": "hello" } }',
+                    '     Sender:',
+                    '       Search params:',
+                    `         ${color.green('- { "room": "general" }')}`,
+                    `         ${color.red('+ { "room": "random" }')}`,
+                  ].join('\n'),
+                  expectedNumberOfMatches: 1,
+                }),
+              );
+            });
+          },
+        );
+      });
+
+      it('should consider messages unmatched due to static sender protocols restrictions in times check errors', async () => {
+        await usingWebSocketInterceptor<Schema>(
+          { type, baseURL, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const handler = await interceptor
+              .message()
+              .from({ protocols: ['chat'] })
+              .respond({ type: 'delete', id: 'restricted' })
+              .times(1);
+
+            await usingWebSocketClient<Schema>(baseURL, { protocols: ['json'] }, async (client) => {
+              client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+
+              await waitFor(() =>
+                expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                  message: [
+                    'Expected exactly 1 matching message, but got 0.',
+                    '',
+                    'Messages evaluated by this handler:',
+                    '',
+                    `  ${color.green('- Expected')}`,
+                    `  ${color.red('+ Received')}`,
+                    '',
+                    '1: { "type": "create", "body": { "text": "hello" } }',
+                    '     Sender:',
+                    '       Protocols:',
+                    `         ${color.green('- [ "chat" ]')}`,
+                    `         ${color.red('+ [ "json" ]')}`,
+                  ].join('\n'),
+                  expectedNumberOfMatches: 1,
+                }),
+              );
+            });
+          },
+        );
+      });
+
       // No WebSocket message counterpart for "should consider connections unmatched due to protocols restrictions in
       // times check errors": subprotocols are negotiated in the handshake, not per message.
 

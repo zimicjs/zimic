@@ -16,6 +16,7 @@ import {
   WebSocketMessageHandlerComputedTypeGuardRestriction,
   WebSocketMessageHandlerRestriction,
   WebSocketMessageHandlerRestrictionOptionsArguments,
+  WebSocketMessageHandlerSenderRestriction,
   WebSocketMessageHandlerStaticRestriction,
 } from './restrictions';
 
@@ -196,7 +197,7 @@ export interface LocalWebSocketMessageHandler<
   get path(): Path | undefined;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerfrom `handler.from()` API reference} */
-  from: (sender: WebSocketInterceptorClient<Schema>) => this;
+  from: (sender: WebSocketMessageHandlerSenderRestriction<Schema, Path>) => this;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
   with: <Restriction extends WebSocketMessageHandlerRestriction<Schema, Path, RestrictedMessage>>(
@@ -267,7 +268,7 @@ export interface SyncedRemoteWebSocketMessageHandler<
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerfrom `handler.from()` API reference} */
   from: (
-    sender: WebSocketInterceptorClient<Schema>,
+    sender: WebSocketMessageHandlerSenderRestriction<Schema, Path>,
   ) => PendingRemoteWebSocketMessageHandler<Schema, Path, RestrictedMessage>;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */

@@ -4,9 +4,16 @@ import color from 'picocolors';
 
 import { stringifyValueToLog } from '@/utils/logging';
 
-import { UnmatchedWebSocketInterceptorConnectionGroup } from '../connectionHandler/types/restrictions';
+import {
+  UnmatchedWebSocketInterceptorConnectionGroup,
+  WebSocketConnectionStaticRestrictionDiffs,
+} from '../connectionHandler/types/restrictions';
 import { WebSocketInterceptorConnectionSaving, WebSocketInterceptorMessageSaving } from '../interceptor/types/public';
-import { UnmatchedWebSocketInterceptorMessageGroup } from '../messageHandler/types/restrictions';
+import {
+  UnmatchedWebSocketInterceptorMessageGroup,
+  WebSocketMessageHandlerRestrictionDiff,
+  WebSocketMessageHandlerSenderRestrictionDiff,
+} from '../messageHandler/types/restrictions';
 import WebSocketTimesDeclarationPointer from './WebSocketTimesDeclarationPointer';
 
 type WebSocketTimesCheckErrorOptions = {
@@ -60,6 +67,48 @@ function createTimesCheckErrorHeader({
     .join('');
 }
 
+function isClientSenderRestrictionDiff(
+  diff: WebSocketMessageHandlerSenderRestrictionDiff,
+): diff is WebSocketMessageHandlerRestrictionDiff<boolean> {
+  return 'expected' in diff;
+}
+
+function createStaticConnectionRestrictionDiffParts(diff: WebSocketConnectionStaticRestrictionDiffs) {
+  const diffParts: string[] = [];
+
+  if (diff.searchParams) {
+    diffParts.push('Search params:');
+
+    const stringifiedExpected = stringifyValueToLog(diff.searchParams.expected.toObject());
+    const stringifiedReceived = stringifyValueToLog(diff.searchParams.received.toObject());
+
+    diffParts.push(`  ${color.green(`- ${stringifiedExpected}`)}`);
+    diffParts.push(`  ${color.red(`+ ${stringifiedReceived}`)}`);
+  }
+
+  if (diff.protocols) {
+    diffParts.push('Protocols:');
+
+    const stringifiedExpected = stringifyValueToLog(diff.protocols.expected);
+    const stringifiedReceived = stringifyValueToLog(diff.protocols.received);
+
+    diffParts.push(`  ${color.green(`- ${stringifiedExpected}`)}`);
+    diffParts.push(`  ${color.red(`+ ${stringifiedReceived}`)}`);
+  }
+
+  if (diff.auth) {
+    diffParts.push('Auth:');
+
+    const stringifiedExpected = stringifyValueToLog(diff.auth.expected);
+    const stringifiedReceived = stringifyValueToLog(diff.auth.received);
+
+    diffParts.push(`  ${color.green(`- ${stringifiedExpected}`)}`);
+    diffParts.push(`  ${color.red(`+ ${stringifiedReceived}`)}`);
+  }
+
+  return diffParts;
+}
+
 function createUnmatchedMessageDiffs(unmatchedMessageGroups: UnmatchedWebSocketInterceptorMessageGroup[]) {
   return unmatchedMessageGroups.map(({ message, diff }, index) => {
     const messageNumber = index + 1;
@@ -69,8 +118,13 @@ function createUnmatchedMessageDiffs(unmatchedMessageGroups: UnmatchedWebSocketI
     if (diff.sender) {
       messageParts.push('Sender:');
 
-      messageParts.push(`  ${color.green('- client from handler.from()')}`);
-      messageParts.push(`  ${color.red('+ another client')}`);
+      if (isClientSenderRestrictionDiff(diff.sender)) {
+        messageParts.push(`  ${color.green('- client from handler.from()')}`);
+        messageParts.push(`  ${color.red('+ another client')}`);
+      } else {
+        const staticRestrictionParts = createStaticConnectionRestrictionDiffParts(diff.sender);
+        messageParts.push(...staticRestrictionParts.map((part) => `  ${part}`));
+      }
     }
 
     if (diff.computed) {
@@ -107,35 +161,7 @@ function createUnmatchedConnectionDiffs(unmatchedConnectionGroups: UnmatchedWebS
       connectionParts.push(`  ${color.red(`+ return ${diff.computed.received}`)}`);
     }
 
-    if (diff.searchParams) {
-      connectionParts.push('Search params:');
-
-      const stringifiedExpected = stringifyValueToLog(diff.searchParams.expected.toObject());
-      const stringifiedReceived = stringifyValueToLog(diff.searchParams.received.toObject());
-
-      connectionParts.push(`  ${color.green(`- ${stringifiedExpected}`)}`);
-      connectionParts.push(`  ${color.red(`+ ${stringifiedReceived}`)}`);
-    }
-
-    if (diff.protocols) {
-      connectionParts.push('Protocols:');
-
-      const stringifiedExpected = stringifyValueToLog(diff.protocols.expected);
-      const stringifiedReceived = stringifyValueToLog(diff.protocols.received);
-
-      connectionParts.push(`  ${color.green(`- ${stringifiedExpected}`)}`);
-      connectionParts.push(`  ${color.red(`+ ${stringifiedReceived}`)}`);
-    }
-
-    if (diff.auth) {
-      connectionParts.push('Auth:');
-
-      const stringifiedExpected = stringifyValueToLog(diff.auth.expected);
-      const stringifiedReceived = stringifyValueToLog(diff.auth.received);
-
-      connectionParts.push(`  ${color.green(`- ${stringifiedExpected}`)}`);
-      connectionParts.push(`  ${color.red(`+ ${stringifiedReceived}`)}`);
-    }
+    connectionParts.push(...createStaticConnectionRestrictionDiffParts(diff));
 
     return connectionParts.join('\n     ');
   });

@@ -21,5 +21,11 @@ export type ChatMessage =
     };
 
 export type Schema = WebSocketSchema<{
-  '/rooms/:roomId': { message: ChatMessage };
+  '/rooms/:roomId': {
+    connection: {
+      searchParams: { room?: string; other?: string };
+      protocols: 'chat' | 'json';
+    };
+    message: ChatMessage;
+  };
 }>;

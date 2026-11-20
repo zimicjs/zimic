@@ -232,6 +232,24 @@ describe('SocketIOProtocol > Types', () => {
     expectTypeOf(declareHandler).toBeFunction();
   });
 
+  it('should type sender auth restrictions from the schema', () => {
+    function declareHandler() {
+      const interceptor = createWebSocketInterceptor<
+        SocketIOSchema<ServerToClientEvents, ClientToServerEvents, { token: string; user: { id: string } }>
+      >({
+        baseURL: 'ws://localhost:3000/socket.io',
+        protocol: createSocketIOProtocol(),
+      });
+
+      interceptor.message().from({ auth: { user: {} } });
+
+      // @ts-expect-error The auth token is declared as a string.
+      interceptor.message().from({ auth: { token: 1 } });
+    }
+
+    expectTypeOf(declareHandler).toBeFunction();
+  });
+
   it('should accept rejection errors only in rejections', () => {
     function declareHandler() {
       const interceptor = createWebSocketInterceptor<SocketIOSchema<ServerToClientEvents, ClientToServerEvents>>({

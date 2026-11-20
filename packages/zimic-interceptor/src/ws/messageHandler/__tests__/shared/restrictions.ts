@@ -378,6 +378,192 @@ export function declareRestrictionWebSocketMessageHandlerTests(
     );
   });
 
+  it.each([{ exact: true }])(
+    'should match only messages from a restricted sender if contains a static search params restriction and exact $exact',
+    async ({ exact }) => {
+      await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+        await interceptor.message().respond({ type: 'delete', id: 'fallback' });
+
+        await interceptor
+          .message()
+          .from({ searchParams: { room: 'general' }, exact })
+          .respond({ type: 'delete', id: 'restricted' });
+
+        await usingWebSocketClient<Schema>(`${baseURL}?room=general`, async (client) => {
+          const response = waitForWebSocketClientMessage(client);
+          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+          await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'restricted' }));
+        });
+
+        for (const mismatchingSearchParams of ['room=general&other=value', 'room=random', '']) {
+          await usingWebSocketClient<Schema>(`${baseURL}?${mismatchingSearchParams}`, async (client) => {
+            const response = waitForWebSocketClientMessage(client);
+            client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+            await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'fallback' }));
+          });
+        }
+      });
+    },
+  );
+
+  it.each([{ exact: false }, { exact: undefined }])(
+    'should match only messages from a restricted sender if contains a static search params restriction and exact $exact',
+    async ({ exact }) => {
+      await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+        await interceptor.message().respond({ type: 'delete', id: 'fallback' });
+
+        await interceptor
+          .message()
+          .from({ searchParams: { room: 'general' }, exact })
+          .respond({ type: 'delete', id: 'restricted' });
+
+        for (const matchingSearchParams of ['room=general', 'room=general&other=value']) {
+          await usingWebSocketClient<Schema>(`${baseURL}?${matchingSearchParams}`, async (client) => {
+            const response = waitForWebSocketClientMessage(client);
+            client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+            await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'restricted' }));
+          });
+        }
+
+        for (const mismatchingSearchParams of ['room=random', '']) {
+          await usingWebSocketClient<Schema>(`${baseURL}?${mismatchingSearchParams}`, async (client) => {
+            const response = waitForWebSocketClientMessage(client);
+            client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+            await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'fallback' }));
+          });
+        }
+      });
+    },
+  );
+
+  it.each([{ exact: true }])(
+    'should match only messages from a restricted sender if contains a static protocol restriction and exact $exact',
+    async ({ exact }) => {
+      await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+        await interceptor.message().respond({ type: 'delete', id: 'fallback' });
+
+        await interceptor
+          .message()
+          .from({ protocols: ['chat'], exact })
+          .respond({ type: 'delete', id: 'restricted' });
+
+        await usingWebSocketClient<Schema>(baseURL, { protocols: ['chat'] }, async (client) => {
+          const response = waitForWebSocketClientMessage(client);
+          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+          await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'restricted' }));
+        });
+
+        for (const mismatchingProtocols of [['chat', 'json'], ['json'], []]) {
+          await usingWebSocketClient<Schema>(baseURL, { protocols: mismatchingProtocols }, async (client) => {
+            const response = waitForWebSocketClientMessage(client);
+            client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+            await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'fallback' }));
+          });
+        }
+      });
+    },
+  );
+
+  it.each([{ exact: false }, { exact: undefined }])(
+    'should match only messages from a restricted sender if contains a static protocol restriction and exact $exact',
+    async ({ exact }) => {
+      await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+        await interceptor.message().respond({ type: 'delete', id: 'fallback' });
+
+        await interceptor
+          .message()
+          .from({ protocols: ['chat'], exact })
+          .respond({ type: 'delete', id: 'restricted' });
+
+        for (const matchingProtocols of [['chat'], ['json', 'chat']]) {
+          await usingWebSocketClient<Schema>(baseURL, { protocols: matchingProtocols }, async (client) => {
+            const response = waitForWebSocketClientMessage(client);
+            client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+            await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'restricted' }));
+          });
+        }
+
+        for (const mismatchingProtocols of [['json'], []]) {
+          await usingWebSocketClient<Schema>(baseURL, { protocols: mismatchingProtocols }, async (client) => {
+            const response = waitForWebSocketClientMessage(client);
+            client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+            await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'fallback' }));
+          });
+        }
+      });
+    },
+  );
+
+  it('should match only messages from the last restricted sender if a client is replaced by a static restriction', async () => {
+    await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+      await interceptor.message().respond({ type: 'delete', id: 'fallback' });
+
+      await usingWebSocketClient<Schema>(`${baseURL}?room=first`, async (firstClient) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        await usingWebSocketClient<Schema>(`${baseURL}?room=second`, async (secondClient) => {
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(2);
+          });
+
+          const [firstSender] = interceptor.clients;
+          expect(firstSender.searchParams.get('room')).toBe('first');
+
+          await interceptor
+            .message()
+            .from(firstSender)
+            .from({ searchParams: { room: 'second' } })
+            .respond({ type: 'delete', id: 'restricted' });
+
+          const firstResponse = waitForWebSocketClientMessage(firstClient);
+          firstClient.send(JSON.stringify({ type: 'create', body: { text: 'first' } }));
+          await expect(firstResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'fallback' }));
+
+          const secondResponse = waitForWebSocketClientMessage(secondClient);
+          secondClient.send(JSON.stringify({ type: 'create', body: { text: 'second' } }));
+          await expect(secondResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'restricted' }));
+        });
+      });
+    });
+  });
+
+  it('should match only messages from the last restricted sender if a static restriction is replaced by a client', async () => {
+    await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+      await interceptor.message().respond({ type: 'delete', id: 'fallback' });
+
+      await usingWebSocketClient<Schema>(`${baseURL}?room=first`, async (firstClient) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        await usingWebSocketClient<Schema>(`${baseURL}?room=second`, async (secondClient) => {
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(2);
+          });
+
+          const [, secondSender] = interceptor.clients;
+          expect(secondSender.searchParams.get('room')).toBe('second');
+
+          await interceptor
+            .message()
+            .from({ searchParams: { room: 'first' } })
+            .from(secondSender)
+            .respond({ type: 'delete', id: 'restricted' });
+
+          const firstResponse = waitForWebSocketClientMessage(firstClient);
+          firstClient.send(JSON.stringify({ type: 'create', body: { text: 'first' } }));
+          await expect(firstResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'fallback' }));
+
+          const secondResponse = waitForWebSocketClientMessage(secondClient);
+          secondClient.send(JSON.stringify({ type: 'create', body: { text: 'second' } }));
+          await expect(secondResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'restricted' }));
+        });
+      });
+    });
+  });
+
   it('should match only messages from a restricted sender if contains a computed restriction', async () => {
     await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
       await interceptor.message().respond({ type: 'delete', id: 'fallback' });

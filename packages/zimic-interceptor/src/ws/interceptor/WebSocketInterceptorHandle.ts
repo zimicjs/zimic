@@ -60,7 +60,7 @@ type SendWebSocketInterceptorClientMessage = (
 ) => void;
 
 // Workers create clients for connections of any path and interceptor, so a client is schema-erased when created.
-class WebSocketInterceptorClientImplementation implements InternalWebSocketInterceptorClient {
+export class WebSocketInterceptorClientImplementation implements InternalWebSocketInterceptorClient {
   #sendMessage: SendWebSocketInterceptorClientMessage;
   #closeConnection: WebSocketInterceptorClientCloser;
 

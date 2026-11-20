@@ -1,6 +1,5 @@
 import { WebSocketSchema } from '@zimic/ws';
 
-import { WebSocketInterceptorClient } from '../interceptor/types/messages';
 import { WebSocketInterceptorPathMessage } from '../interceptor/types/schema';
 import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
 import { WebSocketMessageHandlerDelayFactory } from './types/messages';
@@ -13,6 +12,7 @@ import {
 import {
   WebSocketMessageHandlerRestriction,
   WebSocketMessageHandlerRestrictionOptionsArguments,
+  WebSocketMessageHandlerSenderRestriction,
 } from './types/restrictions';
 import WebSocketMessageHandlerImplementation from './WebSocketMessageHandlerImplementation';
 
@@ -40,7 +40,7 @@ class LocalWebSocketMessageHandler<
     return this.implementation.path;
   }
 
-  from(sender: WebSocketInterceptorClient<Schema>) {
+  from(sender: WebSocketMessageHandlerSenderRestriction<Schema, Path>) {
     this.implementation.from(sender);
     return this;
   }

@@ -1,7 +1,15 @@
 import { DeepPartial, PossiblePromise } from '@zimic/utils/types';
 import { WebSocketMessageSchema, WebSocketSchema } from '@zimic/ws';
 
-import { ReceivedWebSocketMessageData, UnparsedWebSocketJSONPrimitive } from '@/ws/interceptor/types/messages';
+import {
+  WebSocketConnectionHandlerStaticRestriction,
+  WebSocketConnectionStaticRestrictionDiffs,
+} from '@/ws/connectionHandler/types/restrictions';
+import {
+  ReceivedWebSocketMessageData,
+  UnparsedWebSocketJSONPrimitive,
+  WebSocketInterceptorClient,
+} from '@/ws/interceptor/types/messages';
 import { WebSocketInterceptorPathMessage } from '@/ws/interceptor/types/schema';
 
 import { WebSocketMessageHandlerMessageContext } from './public';
@@ -88,15 +96,32 @@ export type WebSocketMessageHandlerRestrictionOptionsArguments<
     ? []
     : [options?: WebSocketMessageHandlerStaticRestrictionOptions];
 
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * A sender restriction declared with `handler.from()`: either a connected client, matched by identity, or a static
+ * restriction of the sender's connection, matched as in `connectionHandler.with()`.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerfrom `handler.from()` API reference}
+ */
+export type WebSocketMessageHandlerSenderRestriction<
+  Schema extends WebSocketSchema = WebSocketSchema,
+  Path extends string = string,
+> = WebSocketInterceptorClient<Schema> | WebSocketConnectionHandlerStaticRestriction<Schema, Path>;
+
 export interface WebSocketMessageHandlerRestrictionDiff<Value> {
   expected: Value;
   received: Value;
 }
 
+/** A client sender restriction reports whether the sender was the client, and a static one reports each field. */
+export type WebSocketMessageHandlerSenderRestrictionDiff =
+  WebSocketMessageHandlerRestrictionDiff<boolean> | WebSocketConnectionStaticRestrictionDiffs;
+
 export interface WebSocketMessageHandlerRestrictionDiffs<
   Message extends WebSocketMessageSchema = WebSocketMessageSchema,
 > {
-  sender?: WebSocketMessageHandlerRestrictionDiff<boolean>;
+  sender?: WebSocketMessageHandlerSenderRestrictionDiff;
   computed?: WebSocketMessageHandlerRestrictionDiff<boolean>;
   data?: WebSocketMessageHandlerRestrictionDiff<
     WebSocketMessageHandlerStaticRestriction<Message> | ReceivedWebSocketMessageData<Message>

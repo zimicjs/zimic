@@ -385,6 +385,77 @@ export function declareClientsSocketIOProtocolTests(options: SharedSocketIOProto
       );
     });
 
+    it('should match only messages from a restricted sender if contains a static auth restriction', async () => {
+      await usingWebSocketInterceptor<AnySchema>(
+        getSocketIOInterceptorOptions({}, { messageSaving: { enabled: true } }),
+        async (interceptor) => {
+          const fallbackHandler = await interceptor.message().with({ type: 'event' });
+          const handler = await interceptor
+            .message()
+            .from({ auth: { token: 'abc' } })
+            .with({ type: 'event' });
+
+          const socketAuths = [{ token: 'abc' }, { token: 'abc', user: 'u' }, { token: 'xyz' }, {}];
+
+          for (const [index, auth] of socketAuths.entries()) {
+            await usingSocket(baseURL, { transports, auth }, async (socket) => {
+              await waitForSocketConnection(socket);
+
+              socket.emit('event', 'data');
+
+              await waitFor(() => {
+                expect(handler.messages.length + fallbackHandler.messages.length).toBe(index + 1);
+              });
+            });
+          }
+
+          expect(handler.messages.map((message) => message.sender.auth)).toEqual([
+            { token: 'abc' },
+            { token: 'abc', user: 'u' },
+          ]);
+          expect(fallbackHandler.messages.map((message) => message.sender.auth)).toEqual([{ token: 'xyz' }, {}]);
+        },
+      );
+    });
+
+    it('should consider messages unmatched due to static sender auth restrictions in times check errors', async () => {
+      await usingWebSocketInterceptor<AnySchema>(
+        getSocketIOInterceptorOptions({}, { messageSaving: { enabled: true } }),
+        async (interceptor) => {
+          const handler = await interceptor
+            .message()
+            .from({ auth: { token: 'abc' } })
+            .times(1);
+
+          await usingSocket(baseURL, { transports, auth: { token: 'xyz' } }, async (socket) => {
+            await waitForSocketConnection(socket);
+
+            socket.emit('event', 'data');
+
+            await waitFor(() =>
+              expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                message: [
+                  'Expected exactly 1 matching message, but got 0.',
+                  '',
+                  'Messages evaluated by this handler:',
+                  '',
+                  `  ${color.green('- Expected')}`,
+                  `  ${color.red('+ Received')}`,
+                  '',
+                  '1: { "type": "event", "data": "data" }',
+                  '     Sender:',
+                  '       Auth:',
+                  `         ${color.green('- { "token": "abc" }')}`,
+                  `         ${color.red('+ { "token": "xyz" }')}`,
+                ].join('\n'),
+                expectedNumberOfMatches: 1,
+              }),
+            );
+          });
+        },
+      );
+    });
+
     const rejectionError = { message: 'Token has expired', data: { code: 'EXPIRED' } };
 
     it.each([

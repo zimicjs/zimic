@@ -10,9 +10,16 @@ import WebSocketTimesDeclarationPointer from '@/ws/errors/WebSocketTimesDeclarat
 export async function usingWebSocketClient<
   Schema extends WebSocketSchema,
   Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketSchemaPath.Literal<Schema>,
->(url: string, callback: (client: WebSocketClient<Schema, Path>) => PossiblePromise<void>) {
+>(
+  url: string,
+  ...args:
+    | [callback: (client: WebSocketClient<Schema, Path>) => PossiblePromise<void>]
+    | [options: { protocols: string[] }, callback: (client: WebSocketClient<Schema, Path>) => PossiblePromise<void>]
+) {
+  const [protocols, callback] = args.length === 1 ? [undefined, args[0]] : [args[0].protocols, args[1]];
+
   // The constructor type stays unresolved for a generic path, so the compiler cannot accept a plain URL here.
-  const client = new WebSocketClient<Schema, Path>(url as never);
+  const client = new WebSocketClient<Schema, Path>(url as never, protocols);
 
   try {
     await client.open();
