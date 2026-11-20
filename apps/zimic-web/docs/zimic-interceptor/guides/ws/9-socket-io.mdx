@@ -49,7 +49,7 @@ interface ClientToServerEvents {
 type Schema = SocketIOSchema<ServerToClientEvents, ClientToServerEvents>;
 ```
 
-Then, pass `createSocketIOProtocol()` as the [`protocol`](/docs/zimic-interceptor/api/6-create-websocket-interceptor.mdx) of a WebSocket interceptor. The `baseURL` is the Socket.IO endpoint, including its path, which is `/socket.io` by default. Create one protocol for each interceptor.
+Then, pass `createSocketIOProtocol()` as the [`protocol`](/docs/zimic-interceptor/api/ws/1-create-websocket-interceptor.mdx) of a WebSocket interceptor. The `baseURL` is the Socket.IO endpoint, including its path, which is `/socket.io` by default. Create one protocol for each interceptor.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -133,7 +133,7 @@ Clients restricted to `transports: ['websocket']` need [remote interceptors](#re
 
 ### Remote interceptors
 
-Remote interceptors serve polling and WebSocket transports. Polling sessions upgrade to WebSocket and keep the same [client](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx), so the messages of a socket reach the same handlers before and after the upgrade.
+Remote interceptors serve polling and WebSocket transports. Polling sessions upgrade to WebSocket and keep the same [client](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx), so the messages of a socket reach the same handlers before and after the upgrade.
 
 If your clients use `transports: ['websocket']` only, you can omit the `polling` option, which disables polling.
 
@@ -146,7 +146,7 @@ As Engine.IO servers, the protocol answers invalid polling requests with status 
 
 ## Handling events
 
-Handlers receive events as `{ type, data, args?, ackId? }`. `type` is the event name, `data` is the first argument, and `args` holds the remaining arguments, omitted when there are none. Restrictions, responses, sends, and [`handler.messages`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlermessages) use the same shape.
+Handlers receive events as `{ type, data, args?, ackId? }`. `type` is the event name, `data` is the first argument, and `args` holds the remaining arguments, omitted when there are none. Restrictions, responses, sends, and [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages) use the same shape.
 
 :::info INFO: <span>`args` is not `...args`</span>
 
@@ -214,7 +214,7 @@ await interceptor
 
 ### Sending events
 
-[`interceptor.server.send()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorserver) and [`client.send()`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientsend) send Socket.IO events and acks, as described in [Sending server messages](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#sending-server-messages).
+[`interceptor.server.send()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorserver) and [`client.send()`](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx#clientsend) send Socket.IO events and acks, as described in [Sending server messages](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#sending-server-messages).
 
 ```ts
 interceptor.server.send({ type: 'user:created', data: { id: '1' } });
@@ -247,12 +247,12 @@ The interceptors of a base URL share each Engine.IO connection, so their protoco
 
 ## Connections and clients
 
-As with the `connection` event of a Socket.IO server, an interceptor lists a [client](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx) in [`interceptor.clients`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclients) and runs its [connection handlers](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx) when a socket joins its namespace.
+As with the `connection` event of a Socket.IO server, an interceptor lists a [client](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx) in [`interceptor.clients`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclients) and runs its [connection handlers](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx) when a socket joins its namespace.
 
 - A connection handler rejecting a socket fails it with a `connect_error` of message `'Connection rejected'`. Other namespaces on the same connection stay connected.
 - `socket.disconnect()` in the client removes its client from the interceptor of its namespace.
-- [`client.close()`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientclose) disconnects the socket from the namespace, as `socket.disconnect()` in a Socket.IO server. Socket.IO has no close codes, so the code and reason are ignored. The socket receives the disconnect reason `'io server disconnect'` and does not reconnect automatically.
-- [`interceptor.clear()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclear) and [`interceptor.stop()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorstop) disconnect the sockets of the namespace and close the connections that no other namespace uses.
+- [`client.close()`](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx#clientclose) disconnects the socket from the namespace, as `socket.disconnect()` in a Socket.IO server. Socket.IO has no close codes, so the code and reason are ignored. The socket receives the disconnect reason `'io server disconnect'` and does not reconnect automatically.
+- [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear) and [`interceptor.stop()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorstop) disconnect the sockets of the namespace and close the connections that no other namespace uses.
 
 An interceptor with a Socket.IO protocol takes the WebSocket connections to its base URL alone, ahead of interceptors without a protocol, even ones started later. Those interceptors cannot serve Engine.IO packets, so they do not receive these connections and their connection handlers are not tried. Among Socket.IO interceptors, the newest one that claims a connection takes it. Connections to other paths under the base URL, such as `ws://localhost:3000/socket.io/chat`, are left to other interceptors.
 

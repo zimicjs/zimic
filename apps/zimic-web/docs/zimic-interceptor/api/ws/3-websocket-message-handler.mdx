@@ -15,7 +15,7 @@ WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. 
 
 :::
 
-A WebSocket message handler to observe client-to-server messages, run effects, and declare server responses. When multiple handlers match the same message, the _last_ handler created with [`interceptor.message(path)`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#declaring-message-handlers) will be used, even if the handlers belong to different interceptors holding the connection or were declared with different paths.
+A WebSocket message handler to observe client-to-server messages, run effects, and declare server responses. When multiple handlers match the same message, the _last_ handler created with [`interceptor.message(path)`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#declaring-message-handlers) will be used, even if the handlers belong to different interceptors holding the connection or were declared with different paths.
 
 The examples on this page use the following [schema](/docs/zimic-ws/guides/1-schemas.md):
 
@@ -66,7 +66,7 @@ The type of the handler, either `local` or `remote`.
 
 ## `handler.path`
 
-The path declared in [`interceptor.message(path)`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptormessage), relative to the base URL of the interceptor. The handler matches only messages of connections to this path. If no path was declared, `handler.path` is `undefined` and the handler matches messages of every connection to the interceptor.
+The path declared in [`interceptor.message(path)`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptormessage), relative to the base URL of the interceptor. The handler matches only messages of connections to this path. If no path was declared, `handler.path` is `undefined` and the handler matches messages of every connection to the interceptor.
 
 **Type**: `string | undefined` (readonly)
 
@@ -302,11 +302,11 @@ await handler.effect((message, context) => {
       The handles of the matched message, with the following properties:
       - **sender**: `WebSocketInterceptorClient<Schema, Path>`
 
-        The [client](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx) that sent the matched message.
+        The [client](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx) that sent the matched message.
 
       - **receiver**: `WebSocketInterceptorServer<Schema>`
 
-        The [interceptor server](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorserver) that received the matched message.
+        The [interceptor server](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorserver) that received the matched message.
 
    **Returns**: `Promise<void> | void`
 
@@ -422,7 +422,7 @@ The same handler, now considering the specified number of messages.
 
 :::info IMPORTANT: <span>Checking the number of messages</span>
 
-To make sure that all expected messages were sent, use [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes) or [`handler.checkTimes()`](#handlerchecktimes). [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes) is generally preferred, as it checks all handlers created by the interceptor with a single call.
+To make sure that all expected messages were sent, use [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes) or [`handler.checkTimes()`](#handlerchecktimes). [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes) is generally preferred, as it checks all handlers created by the interceptor with a single call.
 
 :::
 
@@ -436,9 +436,9 @@ Checks if the handler has matched the expected number of messages declared with 
 
 If the handler has matched fewer or more messages than expected, this method will throw a `WebSocketTimesCheckError` error pointing to the [`handler.times()`](#handlertimes) declaration that was not satisfied.
 
-This is useful at the end of a test to ensure that all expected messages were sent. If you are calling [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes) after each test, you can skip this call, as it checks all message handlers created by the interceptor.
+This is useful at the end of a test to ensure that all expected messages were sent. If you are calling [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes) after each test, you can skip this call, as it checks all message handlers created by the interceptor.
 
-When [`messageSaving.enabled`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptormessagesaving) is `true` in your interceptor, the `WebSocketTimesCheckError` errors will also list each unmatched message with a diff of the expected and received data. This is useful for debugging messages that did not match a handler with [`handler.with()`](#handlerwith) or [`handler.from()`](#handlerfrom) restrictions.
+When [`messageSaving.enabled`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptormessagesaving) is `true` in your interceptor, the `WebSocketTimesCheckError` errors will also list each unmatched message with a diff of the expected and received data. This is useful for debugging messages that did not match a handler with [`handler.with()`](#handlerwith) or [`handler.from()`](#handlerfrom) restrictions.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -500,11 +500,11 @@ Each message has the following properties:
 
 - **sender**: `WebSocketInterceptorClient<Schema, Path>`
 
-  The [client](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx) that sent the message.
+  The [client](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx) that sent the message.
 
 - **receiver**: `WebSocketInterceptorServer<Schema>`
 
-  The [interceptor server](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorserver) that received the message.
+  The [interceptor server](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorserver) that received the message.
 
 - **data**: `ReceivedWebSocketMessageData<RestrictedMessage>`
 
@@ -514,7 +514,7 @@ This array is readonly and keeps the same reference for the handler lifetime. Ca
 
 :::info IMPORTANT: <span>`handler.messages` requires message saving to be enabled</span>
 
-This property can only be used if [`messageSaving.enabled`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptormessagesaving) is `true` in the interceptor.
+This property can only be used if [`messageSaving.enabled`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptormessagesaving) is `true` in the interceptor.
 
 :::
 
@@ -536,5 +536,5 @@ WebSocket interceptors are designed for typed test and development mocks. They d
 
 - [Using local WebSocket interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md)
 - [Using remote WebSocket interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md)
-- [`WebSocketInterceptor`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx)
+- [`WebSocketInterceptor`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx)
 - [WebSocket schemas](/docs/zimic-ws/guides/1-schemas.md)

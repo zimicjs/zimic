@@ -41,13 +41,13 @@ type Schema = WebSocketSchema<{
 
 ## Handling connections
 
-Connection attempts are handled by [connection handlers](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx), created with [`interceptor.connection()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorconnection). Connection handlers can restrict which connections they match, delay the handshake, accept or reject the connection, and run an effect when it opens.
+Connection attempts are handled by [connection handlers](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx), created with [`interceptor.connection()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorconnection). Connection handlers can restrict which connections they match, delay the handshake, accept or reject the connection, and run an effect when it opens.
 
-As with [message handlers](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#declaring-message-handlers), the handlers are tried from the **last** one created to the first, and the first handler that matches decides the connection. A handler without a response accepts the connection, and a connection that matches no handler is also accepted. Learn more about [declaring connection handlers](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#declaring-connection-handlers).
+As with [message handlers](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#declaring-message-handlers), the handlers are tried from the **last** one created to the first, and the first handler that matches decides the connection. A handler without a response accepts the connection, and a connection that matches no handler is also accepted. Learn more about [declaring connection handlers](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#declaring-connection-handlers).
 
 ### Running effects on connection
 
-Use [`handler.effect()`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlereffect) to run code when a client connects, before it sends any messages, such as sending an initial server message. The effect receives the [client](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx) of the connection.
+Use [`handler.effect()`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlereffect) to run code when a client connects, before it sends any messages, such as sending an initial server message. The effect receives the [client](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx) of the connection.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -83,7 +83,7 @@ Declare connection handlers before your application opens its connections. Conne
 
 ### Rejecting connections
 
-Use [`handler.respond()`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerrespond) with `{ action: 'reject' }` to refuse the handshake, such as to test how your application handles authentication failures. Combine it with [`handler.with()`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerwith) to reject only some connections.
+Use [`handler.respond()`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerrespond) with `{ action: 'reject' }` to refuse the handshake, such as to test how your application handles authentication failures. Combine it with [`handler.with()`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerwith) to reject only some connections.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -123,9 +123,9 @@ Messages that a client sends right after `open` are handled in order, as in loca
 
 ## Using connected clients
 
-The clients connected to an interceptor are listed in [`interceptor.clients`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclients), one for each accepted connection. A client is also available as the `client` argument of connection effects and as the `sender` of intercepted messages. Each [client](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx) describes its connection, sends messages to it, and closes it.
+The clients connected to an interceptor are listed in [`interceptor.clients`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclients), one for each accepted connection. A client is also available as the `client` argument of connection effects and as the `sender` of intercepted messages. Each [client](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx) describes its connection, sends messages to it, and closes it.
 
-To restrict a message handler to the messages of a specific client, use [`handler.from()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerfrom).
+To restrict a message handler to the messages of a specific client, use [`handler.from()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerfrom).
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -161,7 +161,7 @@ await interceptor
 
 ## Sending server messages
 
-Use [`interceptor.server.send()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorserver) to send a server message outside of a handler, such as a broadcast or a push notification. Without options, the message is sent to all clients in `interceptor.clients`. To send to some clients only, pass them in `options.to`.
+Use [`interceptor.server.send()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorserver) to send a server message outside of a handler, such as a broadcast or a push notification. Without options, the message is sent to all clients in `interceptor.clients`. To send to some clients only, pass them in `options.to`.
 
 ```ts
 // highlight-next-line
@@ -171,7 +171,7 @@ interceptor.server.send({ type: 'presence', data: { online: true } });
 interceptor.server.send({ type: 'presence', data: { online: false } }, { to: interceptor.clients.slice(0, 2) });
 ```
 
-To send to a single client, you can also use [`client.send()`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientsend), such as in an effect with the [`sender`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlereffect) of a message.
+To send to a single client, you can also use [`client.send()`](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx#clientsend), such as in an effect with the [`sender`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlereffect) of a message.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -203,13 +203,13 @@ await interceptor
   </TabItem>
 </Tabs>
 
-Server messages are sent as described in [Using server messages](/docs/zimic-interceptor/guides/ws/3-messages.mdx#using-server-messages). They are not saved in [`handler.messages`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlermessages) or [`client.messages`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientmessages), which list only client messages.
+Server messages are sent as described in [Using server messages](/docs/zimic-interceptor/guides/ws/3-messages.mdx#using-server-messages). They are not saved in [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages) or [`client.messages`](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx#clientmessages), which list only client messages.
 
 ## Closing connections
 
-Use [`client.close()`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientclose) to close a connection as if the server closed it, optionally with a close code and reason. Messages sent before closing are delivered first, and the client is removed from `interceptor.clients`.
+Use [`client.close()`](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx#clientclose) to close a connection as if the server closed it, optionally with a close code and reason. Messages sent before closing are delivered first, and the client is removed from `interceptor.clients`.
 
-A common use is to test how your application reconnects. In the following example, the newest handler closes the first connection. Once its [`handler.times()`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlertimes) limit is reached, the reconnection falls through to the older handler, which accepts it.
+A common use is to test how your application reconnects. In the following example, the newest handler closes the first connection. Once its [`handler.times()`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlertimes) limit is reached, the reconnection falls through to the older handler, which accepts it.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">

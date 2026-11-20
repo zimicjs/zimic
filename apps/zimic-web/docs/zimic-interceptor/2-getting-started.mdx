@@ -307,9 +307,9 @@ type Schema = HttpSchema<{
 
 #### Creating an HTTP interceptor
 
-With the schema defined, you can now create an [HTTP interceptor](/docs/zimic-interceptor/api/2-http-interceptor.mdx).
+With the schema defined, you can now create an [HTTP interceptor](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx).
 
-`@zimic/interceptor` provides a [`createHttpInterceptor`](/docs/zimic-interceptor/api/1-create-http-interceptor.mdx) function that takes the schema as a type parameter and returns an interceptor instance. It allows you to intercept HTTP requests, validate their contents, and return mock responses, all automatically typed based on the schema. The `baseURL` option represents the scope of the interceptor and points to the URL that your application will use to make requests.
+`@zimic/interceptor` provides a [`createHttpInterceptor`](/docs/zimic-interceptor/api/http/1-create-http-interceptor.mdx) function that takes the schema as a type parameter and returns an interceptor instance. It allows you to intercept HTTP requests, validate their contents, and return mock responses, all automatically typed based on the schema. The `baseURL` option represents the scope of the interceptor and points to the URL that your application will use to make requests.
 
 ```ts
 import { createHttpInterceptor } from '@zimic/interceptor/http';
@@ -319,7 +319,7 @@ const interceptor = createHttpInterceptor<Schema>({
 });
 ```
 
-You can also set other options, such as the interceptor type and how unhandled requests should be treated. Refer to the [`createHttpInterceptor` API reference](/docs/zimic-interceptor/api/1-create-http-interceptor.mdx) for more details.
+You can also set other options, such as the interceptor type and how unhandled requests should be treated. Refer to the [`createHttpInterceptor` API reference](/docs/zimic-interceptor/api/http/1-create-http-interceptor.mdx) for more details.
 
 :::info INFO: <span>Choosing your interceptor type</span>
 
@@ -367,7 +367,7 @@ Learn more about [local interceptors](/docs/zimic-interceptor/guides/http/1-loca
 
 #### Starting an interceptor
 
-To intercept requests, an interceptor must be started with [`interceptor.start()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorstart). This is usually done in a `beforeAll` hook in your test suite.
+To intercept requests, an interceptor must be started with [`interceptor.start()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorstart). This is usually done in a `beforeAll` hook in your test suite.
 
 ```ts
 beforeAll(async () => {
@@ -390,7 +390,7 @@ If you are using a [remote interceptor](/docs/zimic-interceptor/guides/http/2-re
 
 #### Clearing an interceptor
 
-When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another. This is performed with [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorclear), which resets the interceptor and handlers to their initial states.
+When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another. This is performed with [`interceptor.clear()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorclear), which resets the interceptor and handlers to their initial states.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -418,7 +418,7 @@ beforeEach(async () => {
 
 #### Checking expectations
 
-After each test, you can check if your application has made all of the expected requests with [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes). Learn more about how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) to keep your tests clean and readable.
+After each test, you can check if your application has made all of the expected requests with [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorchecktimes). Learn more about how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) to keep your tests clean and readable.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -446,7 +446,7 @@ afterEach(async () => {
 
 #### Stopping an interceptor
 
-After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with [`interceptor.stop()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorstop).
+After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with [`interceptor.stop()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorstop).
 
 ```ts
 afterAll(async () => {
@@ -518,7 +518,7 @@ Many operations in [remote interceptors](/docs/zimic-interceptor/guides/http/2-r
 
 :::
 
-If you need to access the requests processed by the interceptor, use [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrequests).
+If you need to access the requests processed by the interceptor, use [`handler.requests`](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx#handlerrequests).
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -621,9 +621,9 @@ type Schema = WebSocketSchema<{
 
 #### Creating a WebSocket interceptor
 
-With the schema defined, you can now create a [WebSocket interceptor](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx).
+With the schema defined, you can now create a [WebSocket interceptor](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx).
 
-`@zimic/interceptor` provides a [`createWebSocketInterceptor`](/docs/zimic-interceptor/api/6-create-websocket-interceptor.mdx) function that takes the schema as a type parameter and returns an interceptor instance. It allows you to intercept WebSocket connections and messages, validate their contents, and send mock server messages, all automatically typed based on the schema. The `baseURL` option represents the scope of the interceptor and points to the URL that your application will use to open WebSocket connections.
+`@zimic/interceptor` provides a [`createWebSocketInterceptor`](/docs/zimic-interceptor/api/ws/1-create-websocket-interceptor.mdx) function that takes the schema as a type parameter and returns an interceptor instance. It allows you to intercept WebSocket connections and messages, validate their contents, and send mock server messages, all automatically typed based on the schema. The `baseURL` option represents the scope of the interceptor and points to the URL that your application will use to open WebSocket connections.
 
 ```ts
 import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
@@ -633,7 +633,7 @@ const interceptor = createWebSocketInterceptor<Schema>({
 });
 ```
 
-You can also set other options, such as the interceptor type and how unhandled messages should be treated. Refer to the [`createWebSocketInterceptor` API reference](/docs/zimic-interceptor/api/6-create-websocket-interceptor.mdx) for more details.
+You can also set other options, such as the interceptor type and how unhandled messages should be treated. Refer to the [`createWebSocketInterceptor` API reference](/docs/zimic-interceptor/api/ws/1-create-websocket-interceptor.mdx) for more details.
 
 :::info INFO: <span>Choosing your interceptor type</span>
 
@@ -681,7 +681,7 @@ Learn more about [local interceptors](/docs/zimic-interceptor/guides/ws/1-local-
 
 #### Starting an interceptor
 
-To intercept connections and messages, an interceptor must be started with [`interceptor.start()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorstart). This is usually done in a `beforeAll` hook in your test suite.
+To intercept connections and messages, an interceptor must be started with [`interceptor.start()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorstart). This is usually done in a `beforeAll` hook in your test suite.
 
 ```ts
 beforeAll(async () => {
@@ -704,7 +704,7 @@ If you are using a [remote interceptor](/docs/zimic-interceptor/guides/ws/2-remo
 
 #### Clearing an interceptor
 
-When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another. This is performed with [`interceptor.clear()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclear), which resets the interceptor and handlers to their initial states.
+When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another. This is performed with [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear), which resets the interceptor and handlers to their initial states.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -732,7 +732,7 @@ beforeEach(async () => {
 
 #### Checking expectations
 
-After each test, you can check if your application has opened all of the expected connections and sent all of the expected messages with [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes). Learn more about how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx) to keep your tests clean and readable.
+After each test, you can check if your application has opened all of the expected connections and sent all of the expected messages with [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes). Learn more about how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx) to keep your tests clean and readable.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -760,7 +760,7 @@ afterEach(async () => {
 
 #### Stopping an interceptor
 
-After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with [`interceptor.stop()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorstop).
+After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with [`interceptor.stop()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorstop).
 
 ```ts
 afterAll(async () => {
@@ -772,7 +772,7 @@ afterAll(async () => {
 
 You can now use the interceptor to handle connections and messages. All paths, connection parameters, messages, and responses are typed by default based on the schema.
 
-Use [`interceptor.connection()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorconnection) to create a [connection handler](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx), which accepts or rejects connection attempts, and [`interceptor.message()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptormessage) to create a [message handler](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx), which responds to client messages.
+Use [`interceptor.connection()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorconnection) to create a [connection handler](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx), which accepts or rejects connection attempts, and [`interceptor.message()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptormessage) to create a [message handler](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx), which responds to client messages.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -836,7 +836,7 @@ Many operations in [remote interceptors](/docs/zimic-interceptor/guides/ws/2-rem
 
 :::
 
-If you need to access the connections and messages processed by the interceptor, use [`handler.connections`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerconnections) and [`handler.messages`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlermessages).
+If you need to access the connections and messages processed by the interceptor, use [`handler.connections`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerconnections) and [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages).
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -915,7 +915,7 @@ Try our [examples](/docs/zimic/2-examples/index.md) for more practical use cases
 
 ### API reference
 
-Visit the [API reference](/docs/interceptor/api) for more details on the resources available in `@zimic/interceptor`. The WebSocket interceptor APIs are imported from `@zimic/interceptor/experimental/ws`; start with the [WebSocket interceptor guide](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md) and the [WebSocket API reference](/docs/zimic-interceptor/api/6-create-websocket-interceptor.mdx).
+Visit the [API reference](/docs/interceptor/api) for more details on the resources available in `@zimic/interceptor`. The WebSocket interceptor APIs are imported from `@zimic/interceptor/experimental/ws`; start with the [WebSocket interceptor guide](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md) and the [WebSocket API reference](/docs/zimic-interceptor/api/ws/1-create-websocket-interceptor.mdx).
 
 ### Explore the ecosystem
 

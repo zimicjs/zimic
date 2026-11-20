@@ -16,11 +16,11 @@ A handle of a client connected to a WebSocket interceptor. It describes the conn
 
 Clients are not created directly. Each accepted connection has one client per interceptor holding it, available from:
 
-- [`interceptor.clients`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclients), which lists the clients currently connected to the interceptor.
-- The `client` argument of [connection effects](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlereffect), declared with `handler.effect()` in connection handlers.
-- The `sender` of intercepted messages, in the context of [message effects and responses](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlereffect) and in saved messages, such as [`handler.messages`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlermessages).
+- [`interceptor.clients`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclients), which lists the clients currently connected to the interceptor.
+- The `client` argument of [connection effects](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlereffect), declared with `handler.effect()` in connection handlers.
+- The `sender` of intercepted messages, in the context of [message effects and responses](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlereffect) and in saved messages, such as [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages).
 
-A client can also restrict a message handler to the messages it sends, with [`handler.from(client)`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerfrom).
+A client can also restrict a message handler to the messages it sends, with [`handler.from(client)`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerfrom).
 
 The members of a client work the same in local and remote interceptors, and none of them need to be awaited.
 
@@ -82,15 +82,15 @@ interceptor.connection('/rooms/:roomId').effect((client) => {
 
 ## `client.messages`
 
-The client-to-server messages sent by this client that matched a [message handler](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx), along with sender and receiver handles. Each message has the same properties as in [`handler.messages`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlermessages).
+The client-to-server messages sent by this client that matched a [message handler](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx), along with sender and receiver handles. Each message has the same properties as in [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages).
 
 **Type**: `readonly InterceptedWebSocketInterceptorMessage<Schema, Path>[]`
 
-This array is readonly and keeps the same reference for the client lifetime. Calling [`handler.clear()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerclear), [`handler.respond()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerrespond), or [`handler.effect()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlereffect) on a message handler removes the messages it saved from this array. Messages sent with [`client.send()`](#clientsend) are not saved, because they go from the server to the client.
+This array is readonly and keeps the same reference for the client lifetime. Calling [`handler.clear()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerclear), [`handler.respond()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerrespond), or [`handler.effect()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlereffect) on a message handler removes the messages it saved from this array. Messages sent with [`client.send()`](#clientsend) are not saved, because they go from the server to the client.
 
 :::info IMPORTANT: <span>`client.messages` requires message saving to be enabled</span>
 
-Messages are saved only if [`messageSaving.enabled`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptormessagesaving) is `true` in the interceptor. Otherwise, this array stays empty.
+Messages are saved only if [`messageSaving.enabled`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptormessagesaving) is `true` in the interceptor. Otherwise, this array stays empty.
 
 :::
 
@@ -130,7 +130,7 @@ Closes the connection of this client, as if the server closed it, and removes th
 
 :::info INFO: <span>Protocols</span>
 
-When the interceptor uses a [protocol](/docs/zimic-interceptor/api/6-create-websocket-interceptor.mdx), the protocol decides how the client is closed. With the [Socket.IO protocol](/docs/zimic-interceptor/guides/ws/9-socket-io.mdx#connections-and-clients), `client.close()` disconnects the socket from its namespace, as `socket.disconnect()` in a Socket.IO server, and ignores the code and reason.
+When the interceptor uses a [protocol](/docs/zimic-interceptor/api/ws/1-create-websocket-interceptor.mdx), the protocol decides how the client is closed. With the [Socket.IO protocol](/docs/zimic-interceptor/guides/ws/9-socket-io.mdx#connections-and-clients), `client.close()` disconnects the socket from its namespace, as `socket.disconnect()` in a Socket.IO server, and ignores the code and reason.
 
 :::
 
@@ -168,14 +168,14 @@ interceptor
   });
 ```
 
-Messages sent with [`client.send()`](#clientsend) before `client.close()` are delivered before the connection closes. Once the connection closes, the client is removed from [`interceptor.clients`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclients) of every interceptor holding it. Closing a client that is already closed, or no longer held by a running interceptor, does nothing.
+Messages sent with [`client.send()`](#clientsend) before `client.close()` are delivered before the connection closes. Once the connection closes, the client is removed from [`interceptor.clients`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclients) of every interceptor holding it. Closing a client that is already closed, or no longer held by a running interceptor, does nothing.
 
 **Related**:
 
 - [Using local WebSocket interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md)
 - [Using remote WebSocket interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md)
 - [Using connections and server sends](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx)
-- [`WebSocketInterceptor`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx)
-- [`WebSocketMessageHandler`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx)
-- [`WebSocketConnectionHandler`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx)
+- [`WebSocketInterceptor`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx)
+- [`WebSocketMessageHandler`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx)
+- [`WebSocketConnectionHandler`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx)
 - [`WebSocket` - MDN reference](https://developer.mozilla.org/docs/Web/API/WebSocket)

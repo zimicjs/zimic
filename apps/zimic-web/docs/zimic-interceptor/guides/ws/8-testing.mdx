@@ -15,7 +15,7 @@ WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. 
 
 :::
 
-`@zimic/interceptor` is designed with testing in mind and provides utilities to give you confidence in your tests. Using [declarative assertions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx), you can write your expectations in a readable way that makes it clear how many messages and connections the application should send and open, what data they should have, and what responses they will receive. If you need more specific assertions, the messages and connections processed by the interceptor are available in [`handler.messages`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlermessages) and [`handler.connections`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerconnections).
+`@zimic/interceptor` is designed with testing in mind and provides utilities to give you confidence in your tests. Using [declarative assertions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx), you can write your expectations in a readable way that makes it clear how many messages and connections the application should send and open, what data they should have, and what responses they will receive. If you need more specific assertions, the messages and connections processed by the interceptor are available in [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages) and [`handler.connections`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerconnections).
 
 ## Configuration
 
@@ -23,13 +23,13 @@ Configuring `@zimic/interceptor` in a testing environment usually depends on you
 
 ### Interceptor lifecycle
 
-`@zimic/interceptor` interceptors need to be started before they can intercept connections and messages. You can start an interceptor by calling [`interceptor.start()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorstart).
+`@zimic/interceptor` interceptors need to be started before they can intercept connections and messages. You can start an interceptor by calling [`interceptor.start()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorstart).
 
-When an interceptor is running, you can declare mocks with [`interceptor.message()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptormessage) and [`interceptor.connection()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorconnection). To make sure that your tests do not affect each other, it's a good practice to clear the interceptor between tests with [`interceptor.clear()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclear). Clearing also closes the connections that no other interceptor holds.
+When an interceptor is running, you can declare mocks with [`interceptor.message()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptormessage) and [`interceptor.connection()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorconnection). To make sure that your tests do not affect each other, it's a good practice to clear the interceptor between tests with [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear). Clearing also closes the connections that no other interceptor holds.
 
-After each test, you can check that all expected messages and connections were made with [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes). This method will throw an error if the number of messages or connections does not match the expectations you set with `handler.times()` in [message handlers](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlertimes) and [connection handlers](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlertimes), considering their [restrictions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#restrictions).
+After each test, you can check that all expected messages and connections were made with [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes). This method will throw an error if the number of messages or connections does not match the expectations you set with `handler.times()` in [message handlers](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlertimes) and [connection handlers](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlertimes), considering their [restrictions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#restrictions).
 
-After all tests are done, stop the interceptor with [`interceptor.stop()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorstop).
+After all tests are done, stop the interceptor with [`interceptor.stop()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorstop).
 
 A common way to manage this lifecycle is to have a test setup file with hooks such as `beforeAll`, `beforeEach`, `afterEach`, and `afterAll`. The specific implementation may vary depending on your test framework.
 
@@ -98,19 +98,19 @@ afterAll(async () => {
 
 :::info INFO: <span>Remote interceptors are asynchronous</span>
 
-Note that [`interceptor.clear()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclear) and [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes) are awaited in the remote interceptor example, whereas this is not necessary for local interceptors.
+Note that [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear) and [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes) are awaited in the remote interceptor example, whereas this is not necessary for local interceptors.
 
 This is because many operations in [remote interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md) are asynchronous because they may involve communication with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is different from [local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md), which have mostly synchronous operations.
 
 :::
 
-For more information on the available interceptor methods, check the [`WebSocketInterceptor` API reference](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx).
+For more information on the available interceptor methods, check the [`WebSocketInterceptor` API reference](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx).
 
 ### Saving messages and connections
 
-[`handler.messages`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlermessages) and [`handler.connections`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerconnections) are available only when [`messageSaving.enabled`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptormessagesaving) and [`connectionSaving.enabled`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorconnectionsaving) are `true`, respectively. Otherwise, accessing them throws a `DisabledMessageSavingError` or a `DisabledConnectionSavingError`. When enabled, the `WebSocketTimesCheckError` errors thrown by `checkTimes()` also list each unmatched message or connection with a diff of the expected and received data.
+[`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages) and [`handler.connections`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerconnections) are available only when [`messageSaving.enabled`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptormessagesaving) and [`connectionSaving.enabled`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorconnectionsaving) are `true`, respectively. Otherwise, accessing them throws a `DisabledMessageSavingError` or a `DisabledConnectionSavingError`. When enabled, the `WebSocketTimesCheckError` errors thrown by `checkTimes()` also list each unmatched message or connection with a diff of the expected and received data.
 
-Both options are enabled by default when `process.env.NODE_ENV` is `test` in Node.js, and disabled by default in browsers. To configure them explicitly, use the `messageSaving` and `connectionSaving` options of [`createWebSocketInterceptor`](/docs/zimic-interceptor/api/6-create-websocket-interceptor.mdx).
+Both options are enabled by default when `process.env.NODE_ENV` is `test` in Node.js, and disabled by default in browsers. To configure them explicitly, use the `messageSaving` and `connectionSaving` options of [`createWebSocketInterceptor`](/docs/zimic-interceptor/api/ws/1-create-websocket-interceptor.mdx).
 
 ```ts
 import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
@@ -148,4 +148,4 @@ Instead, consider splitting your tests into smaller files. By doing this, your t
 
 2. **Applying default mocks before your tests start**:
 
-   In this approach, you can start your interceptor server and run a script that populates a set of default mocks. When your tests start, the mocks will already be loaded and no racing conditions will occur. It's important that individual tests do not create new mocks that may override the default ones and affect others. Instead, declare the default mocks in such a way that they can be reused by all tests, such as with [computed restrictions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#computed-restrictions) and [computed responses](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerrespond).
+   In this approach, you can start your interceptor server and run a script that populates a set of default mocks. When your tests start, the mocks will already be loaded and no racing conditions will occur. It's important that individual tests do not create new mocks that may override the default ones and affect others. Instead, declare the default mocks in such a way that they can be reused by all tests, such as with [computed restrictions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#computed-restrictions) and [computed responses](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerrespond).

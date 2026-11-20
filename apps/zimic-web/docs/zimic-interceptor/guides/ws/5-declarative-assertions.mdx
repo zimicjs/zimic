@@ -40,9 +40,9 @@ type Schema = WebSocketSchema<{
 
 ## Restrictions
 
-Restrictions can be declared using `handler.with()` in [message handlers](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerwith) and [connection handlers](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerwith), and specify conditions expected for the intercepted messages and connections. Message restrictions check the [message data](/docs/zimic-interceptor/guides/ws/3-messages.mdx), and connection restrictions check the search params and subprotocols of the connection. A handler can have multiple restrictions, and all of them must be met for the message or connection to be matched by the handler.
+Restrictions can be declared using `handler.with()` in [message handlers](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerwith) and [connection handlers](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerwith), and specify conditions expected for the intercepted messages and connections. Message restrictions check the [message data](/docs/zimic-interceptor/guides/ws/3-messages.mdx), and connection restrictions check the search params and subprotocols of the connection. A handler can have multiple restrictions, and all of them must be met for the message or connection to be matched by the handler.
 
-Message handlers can also be restricted to the messages of a specific client with [`handler.from()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerfrom), as described in [Using connected clients](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#using-connected-clients).
+Message handlers can also be restricted to the messages of a specific client with [`handler.from()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerfrom), as described in [Using connected clients](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#using-connected-clients).
 
 Restrictions are available in two forms: static and computed.
 
@@ -156,7 +156,7 @@ await interceptor
 
 ### Computed restrictions
 
-Computed restrictions support more complex or dynamic conditions. They are defined by passing a function to `handler.with()`. In message handlers, the function receives the intercepted message data. In connection handlers, it receives the [connection request](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerwith), with its `url`, `protocols`, `searchParams`, and `pathParams`. The function returns a boolean value indicating whether the message or connection matches the restriction.
+Computed restrictions support more complex or dynamic conditions. They are defined by passing a function to `handler.with()`. In message handlers, the function receives the intercepted message data. In connection handlers, it receives the [connection request](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerwith), with its `url`, `protocols`, `searchParams`, and `pathParams`. The function returns a boolean value indicating whether the message or connection matches the restriction.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -262,7 +262,7 @@ await interceptor
 
 By default, restrictions are partial (`exact: false`), so messages and connections having additional data still match the handler as long as **at least** the restrictions are met. If you want to enforce exact matching, use `exact: true`.
 
-In message handlers, `exact` is an option passed as the second argument of [`handler.with()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerwith). JSON messages must be equal to the restriction and text messages must be identical to it. Binary restrictions always compare whole bytes.
+In message handlers, `exact` is an option passed as the second argument of [`handler.with()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerwith). JSON messages must be equal to the restriction and text messages must be identical to it. Binary restrictions always compare whole bytes.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -296,7 +296,7 @@ await interceptor
   </TabItem>
 </Tabs>
 
-In connection handlers, `exact` is a property of the restriction in [`handler.with()`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerwith). The connection must have exactly the declared search params, and the client must request exactly the declared subprotocols, in the same order.
+In connection handlers, `exact` is a property of the restriction in [`handler.with()`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerwith). The connection must have exactly the declared search params, and the client must request exactly the declared subprotocols, in the same order.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -332,7 +332,7 @@ await interceptor
 
 ## Number of messages and connections
 
-Another form of checking the behavior of your application is to assert the number of messages it sends and connections it opens. To achieve this, use `handler.times()` in [message handlers](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlertimes) and [connection handlers](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlertimes), which takes a number or a range of numbers as an argument and specifies how many messages or connections the handler should match. Accepted and rejected connections both count.
+Another form of checking the behavior of your application is to assert the number of messages it sends and connections it opens. To achieve this, use `handler.times()` in [message handlers](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlertimes) and [connection handlers](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlertimes), which takes a number or a range of numbers as an argument and specifies how many messages or connections the handler should match. Accepted and rejected connections both count.
 
 If the application sends more messages than expected, they may be handled by the next handler in the chain or unhandled. To learn more about how unhandled messages are processed, check our [unhandled messages guide](/docs/zimic-interceptor/guides/ws/7-unhandled-messages.md). If the application opens more connections than expected, they may be handled by the next handler in the chain or accepted.
 
@@ -368,7 +368,7 @@ await interceptor
   </TabItem>
 </Tabs>
 
-`handler.times()` on its own only restricts how many messages or connections the handler should match. To really validate the number of messages and connections, use `handler.checkTimes()` in [message handlers](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerchecktimes) and [connection handlers](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerchecktimes), or [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes), at a point when your application should have sent the messages and opened the connections, such as after a specific action or at the end of a test.
+`handler.times()` on its own only restricts how many messages or connections the handler should match. To really validate the number of messages and connections, use `handler.checkTimes()` in [message handlers](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerchecktimes) and [connection handlers](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerchecktimes), or [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes), at a point when your application should have sent the messages and opened the connections, such as after a specific action or at the end of a test.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -406,7 +406,7 @@ await handler.checkTimes();
   </TabItem>
 </Tabs>
 
-A common strategy is to call [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes) in an `afterEach` test hook. This way, you can declare how many messages and connections you expect in each handler and have them validated automatically without needing to call `handler.checkTimes()` in each test.
+A common strategy is to call [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes) in an `afterEach` test hook. This way, you can declare how many messages and connections you expect in each handler and have them validated automatically without needing to call `handler.checkTimes()` in each test.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">

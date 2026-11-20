@@ -47,7 +47,7 @@ type Schema = WebSocketSchema<{
 }>;
 ```
 
-With the schema defined, you can now create your interceptor with [`createWebSocketInterceptor`](/docs/zimic-interceptor/api/6-create-websocket-interceptor.mdx). It takes the schema as a type parameter and returns an interceptor instance. The `baseURL` option represents the scope of the interceptor and points to the URL that your application will use to open WebSocket connections.
+With the schema defined, you can now create your interceptor with [`createWebSocketInterceptor`](/docs/zimic-interceptor/api/ws/1-create-websocket-interceptor.mdx). It takes the schema as a type parameter and returns an interceptor instance. The `baseURL` option represents the scope of the interceptor and points to the URL that your application will use to open WebSocket connections.
 
 In the case of a remote interceptor, the `baseURL` should point to an [interceptor server](/docs/zimic-interceptor/cli/1-server.md), which is configured by the interceptor to handle connections and messages.
 
@@ -61,7 +61,7 @@ const interceptor = createWebSocketInterceptor<Schema>({
 });
 ```
 
-You can also set other options, such as the interceptor type and how unhandled messages should be treated. Refer to the [`createWebSocketInterceptor` API reference](/docs/zimic-interceptor/api/6-create-websocket-interceptor.mdx) for more details.
+You can also set other options, such as the interceptor type and how unhandled messages should be treated. Refer to the [`createWebSocketInterceptor` API reference](/docs/zimic-interceptor/api/ws/1-create-websocket-interceptor.mdx) for more details.
 
 ### Path discriminators
 
@@ -132,7 +132,7 @@ Although authentication is optional for private development servers, we strongly
 
 :::
 
-Once the server is running, you can start the interceptor with [`interceptor.start()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorstart). This is usually done in a `beforeAll` hook in your test suite.
+Once the server is running, you can start the interceptor with [`interceptor.start()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorstart). This is usually done in a `beforeAll` hook in your test suite.
 
 ```ts
 beforeAll(async () => {
@@ -145,7 +145,7 @@ During the start up, the interceptor will connect to the server and get ready to
 
 ### Clearing an interceptor
 
-When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another. This is performed with [`interceptor.clear()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclear), which resets the interceptor and handlers to their initial states.
+When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another. This is performed with [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear), which resets the interceptor and handlers to their initial states.
 
 ```ts
 beforeEach(async () => {
@@ -156,7 +156,7 @@ beforeEach(async () => {
 
 ### Checking expectations
 
-After each test, you can check if your application has sent all of the expected messages and opened all of the expected connections with [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes). Learn more about how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx) to keep your tests clean and readable.
+After each test, you can check if your application has sent all of the expected messages and opened all of the expected connections with [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes). Learn more about how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx) to keep your tests clean and readable.
 
 ```ts
 afterEach(async () => {
@@ -167,7 +167,7 @@ afterEach(async () => {
 
 ### Stopping an interceptor
 
-After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with [`interceptor.stop()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorstop).
+After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with [`interceptor.stop()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorstop).
 
 ```ts
 afterAll(async () => {
@@ -180,7 +180,7 @@ afterAll(async () => {
 
 You can now use the interceptor to handle client messages and send mock server messages. All paths, messages, restrictions, and responses are typed by default based on the schema.
 
-Use [`interceptor.message()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptormessage) to create a [message handler](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx). To handle connections, use [`interceptor.connection()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorconnection), as described in [Using connections and server sends](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx).
+Use [`interceptor.message()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptormessage) to create a [message handler](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx). To handle connections, use [`interceptor.connection()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorconnection), as described in [Using connections and server sends](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx).
 
 ```ts
 test('example', async () => {
@@ -209,7 +209,7 @@ If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy ru
 
 :::
 
-If you need to access the messages processed by the interceptor, use [`handler.messages`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlermessages).
+If you need to access the messages processed by the interceptor, use [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages).
 
 ```ts
 // highlight-next-line
@@ -233,7 +233,7 @@ While authentication is optional for private development servers, we strongly re
 
 Without authentication, browser remote interceptors can connect only when both the interceptor server and the web application use a loopback hostname: `localhost`, `127.0.0.1`, or `::1`. Configure authentication if either one uses another hostname. This restriction does not apply to remote interceptors running outside a browser.
 
-Starting an unauthenticated server through the CLI or [`createInterceptorServer`](/docs/zimic-interceptor/api/4-create-interceptor-server.md) logs a warning when the server uses a non-loopback hostname or runs with `NODE_ENV=production`. The warning does not stop the server in v1.
+Starting an unauthenticated server through the CLI or [`createInterceptorServer`](/docs/zimic-interceptor/api/server/1-create-interceptor-server.md) logs a warning when the server uses a non-loopback hostname or runs with `NODE_ENV=production`. The warning does not stop the server in v1.
 
 In `@zimic/interceptor` v2, unauthenticated servers will refuse to start on non-loopback hostnames.
 

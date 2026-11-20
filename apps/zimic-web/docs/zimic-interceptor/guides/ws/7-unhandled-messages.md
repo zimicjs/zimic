@@ -6,17 +6,17 @@ slug: /interceptor/guides/ws/unhandled-messages
 
 # Unhandled messages
 
-When a client message reaches a WebSocket interceptor and no [message handler](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx) matches it, the message is considered **unhandled** and is logged to the console by default.
+When a client message reaches a WebSocket interceptor and no [message handler](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx) matches it, the message is considered **unhandled** and is logged to the console by default.
 
 Unlike [unhandled HTTP requests](/docs/zimic-interceptor/guides/http/9-unhandled-requests.md), unhandled messages cannot be bypassed or rejected. WebSocket is not a request-response protocol, so a client message does not need a reply. The message is dropped and the connection stays open, in both [local](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md) and [remote](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md) interceptors.
 
-The strategies on this page apply only to messages. Connections have no unhandled state: a connection that matches no [connection handler](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx) is accepted. Learn more about [handling connections](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#handling-connections).
+The strategies on this page apply only to messages. Connections have no unhandled state: a connection that matches no [connection handler](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx) is accepted. Learn more about [handling connections](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#handling-connections).
 
-You can override the logging behavior per interceptor with `onUnhandledMessage` in [`createWebSocketInterceptor()`](/docs/zimic-interceptor/api/6-create-websocket-interceptor.mdx), or by setting [`interceptor.onUnhandledMessage`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptoronunhandledmessage). `onUnhandledMessage` also accepts a function to dynamically determine which strategy to use for each unhandled message.
+You can override the logging behavior per interceptor with `onUnhandledMessage` in [`createWebSocketInterceptor()`](/docs/zimic-interceptor/api/ws/1-create-websocket-interceptor.mdx), or by setting [`interceptor.onUnhandledMessage`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptoronunhandledmessage). `onUnhandledMessage` also accepts a function to dynamically determine which strategy to use for each unhandled message.
 
 :::info INFO: <span>How `@zimic/interceptor` treats unhandled messages</span>
 
-A client message is tried by the running interceptors [sharing its connection](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorbaseurl), from the **last** one started to the first, until one of them handles it. If none handles it, the strategy of the last started interceptor still sharing the connection is used, or the default strategy if none was defined.
+A client message is tried by the running interceptors [sharing its connection](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorbaseurl), from the **last** one started to the first, until one of them handles it. If none handles it, the strategy of the last started interceptor still sharing the connection is used, or the default strategy if none was defined.
 
 If the strategy is a function and it throws, the error is logged and the default strategy is used.
 
@@ -28,11 +28,11 @@ If no running interceptor matches the connection URL, the connection is not inte
 
 If you expected a message to be handled, but it was not, make sure that:
 
-1. The interceptor is running before the connection is opened (see [`interceptor.start()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorstart));
-2. The [base URL](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorbaseurl) of the interceptor matches the connection URL;
-3. The [restrictions](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerwith) of the handler, if present, correctly match the message;
-4. The [sender](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerfrom) of the handler, if present, is the client that sent the message;
-5. The handler has not already matched the maximum number of messages declared with [`handler.times()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlertimes).
+1. The interceptor is running before the connection is opened (see [`interceptor.start()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorstart));
+2. The [base URL](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorbaseurl) of the interceptor matches the connection URL;
+3. The [restrictions](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerwith) of the handler, if present, correctly match the message;
+4. The [sender](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerfrom) of the handler, if present, is the client that sent the message;
+5. The handler has not already matched the maximum number of messages declared with [`handler.times()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlertimes).
 
 :::
 
@@ -52,7 +52,7 @@ const interceptor = createWebSocketInterceptor<Schema>({
 
 ## Dynamically ignoring unhandled messages
 
-You can also provide a function to `onUnhandledMessage` that receives the unhandled message and returns the strategy to use. This allows you to dynamically determine whether to log the message based on its contents. The message is typed with the messages of the interceptor schema and is parsed as in [message handlers](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx).
+You can also provide a function to `onUnhandledMessage` that receives the unhandled message and returns the strategy to use. This allows you to dynamically determine whether to log the message based on its contents. The message is typed with the messages of the interceptor schema and is parsed as in [message handlers](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx).
 
 ```ts
 import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';

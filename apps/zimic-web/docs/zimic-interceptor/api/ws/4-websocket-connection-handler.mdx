@@ -15,7 +15,7 @@ WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. 
 
 :::
 
-A WebSocket connection handler to decide whether intercepted connection attempts are accepted or rejected, and to run effects when they open. Handlers are created with [`interceptor.connection(path)`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorconnection).
+A WebSocket connection handler to decide whether intercepted connection attempts are accepted or rejected, and to run effects when they open. Handlers are created with [`interceptor.connection(path)`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorconnection).
 
 The handlers of all interceptors that intercept a connection attempt are tried together, from the _last_ created to the first, even if the handlers belong to different interceptors or were declared with different paths. The first handler that matches decides the handshake, so an older handler is not tried, even if it would reject the connection. A handler matches a connection even without a declared [response](#handlerrespond), in which case the connection is accepted. If no handler matches, the connection is accepted.
 
@@ -70,7 +70,7 @@ The type of the handler, either `local` or `remote`.
 
 ## `handler.path`
 
-The path declared in [`interceptor.connection(path)`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorconnection), relative to the base URL of the interceptor. The handler matches only connections to this path. If no path was declared, `handler.path` is `undefined` and the handler matches every connection to the interceptor.
+The path declared in [`interceptor.connection(path)`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorconnection), relative to the base URL of the interceptor. The handler matches only connections to this path. If no path was declared, `handler.path` is `undefined` and the handler matches every connection to the interceptor.
 
 **Type**: `string | undefined` (readonly)
 
@@ -307,7 +307,7 @@ await interceptor
 
 :::info INFO: <span>Rejected connections</span>
 
-A rejected connection never dispatches `open` and is not added to [`interceptor.clients`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclients). The events the client receives depend on the runtime, as when a real server refuses the handshake:
+A rejected connection never dispatches `open` and is not added to [`interceptor.clients`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclients). The events the client receives depend on the runtime, as when a real server refuses the handshake:
 
 - Browsers and Node.js 24 or later dispatch `error`, then `close` with code `1006`.
 - Node.js 22 dispatches only `error`.
@@ -324,7 +324,7 @@ Remote interceptors refuse the handshake with an HTTP `403` response, which clie
 
 Declares a side effect to run when the handler accepts a matched connection. Only the effect of the handler that decided the connection runs.
 
-The effect runs after the interceptor of the handler adds the client to [`interceptor.clients`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclients), and it does not hold up the handshake. An effect waiting for a message from its client does not keep the connection from opening. Nothing awaits the effect, so its errors are logged with `console.error` and the connection stays open.
+The effect runs after the interceptor of the handler adds the client to [`interceptor.clients`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclients), and it does not hold up the handshake. An effect waiting for a message from its client does not keep the connection from opening. Nothing awaits the effect, so its errors are logged with `console.error` and the connection stays open.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -357,7 +357,7 @@ await handler.effect((client, request) => {
    **Arguments**:
    1. **client**: `WebSocketInterceptorClient<Schema, Path>`
 
-      The [client](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx) of the accepted connection.
+      The [client](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx) of the accepted connection.
 
    2. **request**: `WebSocketInterceptorConnectionRequest<Schema, Path>`
 
@@ -423,7 +423,7 @@ The same handler, now considering the specified number of connections.
 
 :::info IMPORTANT: <span>Checking the number of connections</span>
 
-To make sure that all expected connections were made, use [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes) or [`handler.checkTimes()`](#handlerchecktimes). [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes) is generally preferred, as it checks all handlers created by the interceptor with a single call.
+To make sure that all expected connections were made, use [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes) or [`handler.checkTimes()`](#handlerchecktimes). [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes) is generally preferred, as it checks all handlers created by the interceptor with a single call.
 
 :::
 
@@ -437,9 +437,9 @@ Checks if the handler has matched the expected number of connections declared wi
 
 If the handler has matched fewer or more connections than expected, this method will throw a `WebSocketTimesCheckError` error pointing to the [`handler.times()`](#handlertimes) declaration that was not satisfied.
 
-This is useful at the end of a test to ensure that all expected connections were made. If you are calling [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorchecktimes) after each test, you can skip this call, as it checks all handlers created by the interceptor.
+This is useful at the end of a test to ensure that all expected connections were made. If you are calling [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes) after each test, you can skip this call, as it checks all handlers created by the interceptor.
 
-When [`connectionSaving.enabled`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorconnectionsaving) is `true` in your interceptor, the `WebSocketTimesCheckError` errors will also list each unmatched connection with a diff of the expected and received data. This is useful for debugging connections that did not match a handler with [`handler.with()`](#handlerwith) restrictions.
+When [`connectionSaving.enabled`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorconnectionsaving) is `true` in your interceptor, the `WebSocketTimesCheckError` errors will also list each unmatched connection with a diff of the expected and received data. This is useful for debugging connections that did not match a handler with [`handler.with()`](#handlerwith) restrictions.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -469,7 +469,7 @@ Clears any response declared with [`handler.respond()`](#handlerrespond), effect
 
 To make the handler match connections again, declare it again with [`handler.with()`](#handlerwith), [`handler.respond()`](#handlerrespond), [`handler.effect()`](#handlereffect), [`handler.delay()`](#handlerdelay), or [`handler.times()`](#handlertimes).
 
-A connection whose handler is cleared during its [delay](#handlerdelay) is not decided by that handler and opens, even if the handler is declared again before the delay ends. If [`interceptor.clear()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclear) clears the only interceptor of a connection while a handler decides it, the connection closes. In local mode, the client receives only `close`. In remote mode, the client receives `open`, then `close`, because the interceptor server completes the handshake before closing the connection.
+A connection whose handler is cleared during its [delay](#handlerdelay) is not decided by that handler and opens, even if the handler is declared again before the delay ends. If [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear) clears the only interceptor of a connection while a handler decides it, the connection closes. In local mode, the client receives only `close`. In remote mode, the client receives `open`, then `close`, because the interceptor server completes the handshake before closing the connection.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -505,7 +505,7 @@ This array is readonly and keeps the same reference for the handler lifetime. Ca
 
 :::info IMPORTANT: <span>`handler.connections` requires connection saving to be enabled</span>
 
-This property can only be used if [`connectionSaving.enabled`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorconnectionsaving) is `true` in the interceptor. Otherwise, accessing it throws a `DisabledConnectionSavingError`. Connection saving is independent of [`messageSaving`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptormessagesaving).
+This property can only be used if [`connectionSaving.enabled`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorconnectionsaving) is `true` in the interceptor. Otherwise, accessing it throws a `DisabledConnectionSavingError`. Connection saving is independent of [`messageSaving`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptormessagesaving).
 
 :::
 
@@ -513,6 +513,6 @@ This property can only be used if [`connectionSaving.enabled`](/docs/zimic-inter
 
 - [Using local WebSocket interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md)
 - [Using remote WebSocket interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md)
-- [`WebSocketInterceptor`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx)
-- [`WebSocketMessageHandler`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx)
+- [`WebSocketInterceptor`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx)
+- [`WebSocketMessageHandler`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx)
 - [WebSocket schemas](/docs/zimic-ws/guides/1-schemas.md)
