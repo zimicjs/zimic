@@ -106,6 +106,20 @@ describe('WebSocketClient', () => {
       expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
     });
 
+    it('should open a new socket if opened before a close while connecting finishes', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+
+      const closedOpenPromise = webSocketClient.open();
+      const closePromise = webSocketClient.close();
+      const openPromise = webSocketClient.open();
+
+      await expect(closedOpenPromise).rejects.toHaveProperty('type', 'error');
+      await closePromise;
+      await openPromise;
+
+      expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
+    });
+
     it('should open a new socket if opened after the server closed the connection', async () => {
       webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
 
@@ -128,6 +142,33 @@ describe('WebSocketClient', () => {
 
       expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
       expect(serverWebSocketClients).toHaveLength(2);
+    });
+
+    it('should fail opening if closed while reopening after the server closed the connection', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+
+      const serverWebSocketClients: WebSocketClient<Schema>[] = [];
+
+      webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
+        serverWebSocketClients.push(serverWebSocketClient);
+      });
+
+      await webSocketClient.open();
+      expect(serverWebSocketClients).toHaveLength(1);
+
+      await serverWebSocketClients[0].close();
+
+      await waitFor(() => {
+        expect(webSocketClient!.readyState).toBe(webSocketClient!.CLOSED);
+      });
+
+      const openPromise = webSocketClient.open();
+      expect(webSocketClient.readyState).toBe(webSocketClient.CONNECTING);
+
+      await webSocketClient.close();
+      expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
+
+      await expect(openPromise).rejects.toHaveProperty('type', 'error');
     });
 
     it('should not throw an error if closed multiple times', async () => {

@@ -226,9 +226,15 @@ export class WebSocketClient<
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientopen `client.open()` API reference} */
   async open(options?: WebSocketClientOpenOptions) {
-    this.openingPromise ??= this.openSocket(options).finally(() => {
-      this.openingPromise = undefined;
-    });
+    if (!this.openingPromise) {
+      const openingPromise = this.openSocket(options).finally(() => {
+        if (this.openingPromise === openingPromise) {
+          this.openingPromise = undefined;
+        }
+      });
+
+      this.openingPromise = openingPromise;
+    }
 
     await this.openingPromise;
   }
@@ -238,10 +244,10 @@ export class WebSocketClient<
       return;
     }
 
-    // Creating the socket synchronously when there is none lets a `close()` right after `open()` find and close it.
-    if (this.socket) {
-      await this.close();
-    }
+    // The new socket replaces the previous one before any await, so a `close()` called while reopening closes the
+    // socket being opened instead of only the previous one.
+    const previousSocket = this.socket;
+    this.socket = undefined;
 
     const socket = new WebSocket(this.#url, this.#protocols);
     this.openingSocket = socket;
@@ -254,12 +260,14 @@ export class WebSocketClient<
 
       this.applyListeners(socket);
 
-      await openWebSocketClient(socket, options);
+      await Promise.all([previousSocket && closeWebSocketClient(previousSocket), openWebSocketClient(socket, options)]);
     } catch (error) {
       socket.close();
       throw error;
     } finally {
-      this.openingSocket = undefined;
+      if (this.openingSocket === socket) {
+        this.openingSocket = undefined;
+      }
     }
 
     this.socket = socket;
@@ -287,11 +295,15 @@ export class WebSocketClient<
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientclose `client.close()` API reference} */
   async close(code?: number, reason?: string, options?: WebSocketClientCloseOptions) {
     if (!this.socket) {
-      if (this.openingSocket) {
+      const { openingSocket, openingPromise } = this;
+
+      if (openingSocket) {
         // Like a native socket, closing while connecting fails the connection, so the pending `open()` rejects with
-        // the error and this waits only for it to settle.
-        this.openingSocket.close(code, reason);
-        await Promise.allSettled([this.openingPromise]);
+        // the error and this waits only for it to settle. A later `open()` starts a new connection instead of
+        // joining the failing one.
+        this.openingPromise = undefined;
+        openingSocket.close(code, reason);
+        await Promise.allSettled([openingPromise]);
       }
 
       return;
