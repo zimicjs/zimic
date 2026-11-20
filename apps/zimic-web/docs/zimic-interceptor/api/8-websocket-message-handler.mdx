@@ -82,7 +82,7 @@ By default, static restrictions use `exact: false`, meaning that any message **c
 ```ts
 handler.with(restriction);
 handler.with(restriction, { exact: true });
-handler.with((message) => matchesMessage);
+handler.with((message, context) => matchesMessage);
 ```
 
   </TabItem>
@@ -92,7 +92,7 @@ handler.with((message) => matchesMessage);
 ```ts
 await handler.with(restriction);
 await handler.with(restriction, { exact: true });
-await handler.with((message) => matchesMessage);
+await handler.with((message, context) => matchesMessage);
 ```
 
   </TabItem>
@@ -100,7 +100,7 @@ await handler.with((message) => matchesMessage);
 
 **Arguments**:
 
-1. **restriction**: `WebSocketMessageHandlerRestriction<RestrictedMessage>`
+1. **restriction**: `WebSocketMessageHandlerRestriction<Schema, Path, RestrictedMessage>`
 
    The restriction to match intercepted messages. It can be [static](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#static-restrictions), declared as one of the following:
    - A partial JSON object or array, matching JSON messages that contain it.
@@ -116,9 +116,13 @@ await handler.with((message) => matchesMessage);
 
       The intercepted message data to check against the restriction.
 
+   2. **context**: `WebSocketMessageHandlerMessageContext<Schema, Path>`
+
+      The handles of the intercepted message, with the same properties as in [`handler.effect()`](#handlereffect). Use `context.sender` to match messages by the client that sent them.
+
    **Returns**: `Promise<boolean> | boolean`
 
-   A boolean indicating whether the intercepted message matches the restriction. If the function is a type guard, such as `(message) => message is Message`, the handler message type is narrowed to the guarded type.
+   A boolean indicating whether the intercepted message matches the restriction. If the function is a type guard, such as `(message, context) => message is Message`, the handler message type is narrowed to the guarded type.
 
 2. **options**: `WebSocketMessageHandlerStaticRestrictionOptions | undefined`
 

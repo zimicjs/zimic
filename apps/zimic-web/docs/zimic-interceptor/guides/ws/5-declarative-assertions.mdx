@@ -156,7 +156,7 @@ await interceptor
 
 ### Computed restrictions
 
-Computed restrictions support more complex or dynamic conditions. They are defined by passing a function to `handler.with()`. In message handlers, the function receives the intercepted message data. In connection handlers, it receives the [connection request](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerwith), with its `url`, `protocols`, `searchParams`, and `pathParams`. The function returns a boolean value indicating whether the message or connection matches the restriction.
+Computed restrictions support more complex or dynamic conditions. They are defined by passing a function to `handler.with()`. In message handlers, the function receives the intercepted message data and a [context](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerwith) with the `sender` client and the `receiver` server. In connection handlers, it receives the [connection request](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerwith), with its `url`, `protocols`, `searchParams`, and `pathParams`. The function returns a boolean value indicating whether the message or connection matches the restriction.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
