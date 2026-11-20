@@ -478,6 +478,17 @@ export function declareClientsSocketIOProtocolTests(options: SharedSocketIOProto
         });
       },
     );
+
+    it('should fail with connect_error without data the sockets whose connection handler rejects them with an error without data', async () => {
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        await interceptor.connection().respond({ action: 'reject', error: { message: 'Token has expired' } });
+
+        await usingSocket(baseURL, { transports }, async (socket) => {
+          const expectedConnectError = Object.assign(new Error('Token has expired'), { data: undefined });
+          await expect(waitForSocketConnection(socket)).rejects.toThrow(expectedConnectError);
+        });
+      });
+    });
   });
 
   const pollingTransports: ManagerOptions['transports'] = [PollingTransport];

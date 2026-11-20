@@ -135,10 +135,10 @@ function createConnectErrorData(error: unknown) {
 
   assertTypeOf('error', error, 'object');
 
-  const message = 'message' in error ? error.message : undefined;
+  const message: unknown = Reflect.get(error, 'message');
   assertTypeOf('error.message', message, 'string');
 
-  const data = 'data' in error ? error.data : undefined;
+  const data: unknown = Reflect.get(error, 'data');
   return data === undefined ? { message } : { message, data };
 }
 
