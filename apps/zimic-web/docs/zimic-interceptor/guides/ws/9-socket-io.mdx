@@ -241,7 +241,7 @@ As with the `connection` event of a Socket.IO server, an interceptor lists a [cl
 
 - A connection handler rejecting a socket fails it with a `connect_error` of message `'Connection rejected'`. Other namespaces on the same connection stay connected.
 - `socket.disconnect()` in the client removes its client from the interceptor of its namespace.
-- [`client.close()`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientclose) disconnects the socket from the namespace, as `socket.disconnect()` in a Socket.IO server. Socket.IO has no close codes, so the code and reason are ignored.
+- [`client.close()`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientclose) disconnects the socket from the namespace, as `socket.disconnect()` in a Socket.IO server. Socket.IO has no close codes, so the code and reason are ignored. The socket receives the disconnect reason `'io server disconnect'` and does not reconnect automatically.
 - [`interceptor.clear()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclear) and [`interceptor.stop()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorstop) disconnect the sockets of the namespace and close the connections that no other namespace uses.
 
 An interceptor with a Socket.IO protocol takes the WebSocket connections to its base URL alone, ahead of interceptors without a protocol, even ones started later. Those interceptors cannot serve Engine.IO packets, so they do not receive these connections and their connection handlers are not tried. Among Socket.IO interceptors, the newest one that claims a connection takes it. Connections to other paths under the base URL, such as `ws://localhost:3000/socket.io/chat`, are left to other interceptors.

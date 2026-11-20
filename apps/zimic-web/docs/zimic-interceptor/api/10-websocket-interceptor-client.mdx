@@ -128,6 +128,12 @@ Messages are delivered in the order they are sent. Sending a message to a client
 
 Closes the connection of this client, as if the server closed it, and removes the client from every interceptor holding it. The arguments follow the native [`WebSocket.close()`](https://developer.mozilla.org/docs/Web/API/WebSocket/close).
 
+:::info INFO: <span>Protocols</span>
+
+When the interceptor uses a [protocol](/docs/zimic-interceptor/api/6-create-websocket-interceptor.mdx), the protocol decides how the client is closed. With the [Socket.IO protocol](/docs/zimic-interceptor/guides/ws/9-socket-io.mdx#connections-and-clients), `client.close()` disconnects the socket from its namespace, as `socket.disconnect()` in a Socket.IO server, and ignores the code and reason.
+
+:::
+
 ```ts
 client.close();
 client.close(code);
