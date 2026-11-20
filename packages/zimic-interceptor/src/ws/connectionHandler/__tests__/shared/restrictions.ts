@@ -297,6 +297,9 @@ export function declareRestrictionWebSocketConnectionHandlerTests(
     });
   });
 
+  // No WebSocket connection counterpart for "should match only messages from a restricted sender if contains a computed
+  // restriction": a connection attempt has no connected client yet.
+
   it.each([{ exact: true }])(
     'should match only specific connections if contains a declared response, a static restriction of search params and protocols, and exact $exact',
     async ({ exact }) => {

@@ -6,6 +6,7 @@ import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { createBinaryMessage, usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorType } from '../../../interceptor/types/options';
+import { WebSocketMessageHandlerMessageContext } from '../../types/public';
 import { ChatMessage, Schema, SharedWebSocketMessageHandlerTestOptions } from './utils';
 
 export function declareRestrictionWebSocketMessageHandlerTests(
@@ -375,6 +376,59 @@ export function declareRestrictionWebSocketMessageHandlerTests(
         });
       },
     );
+  });
+
+  it('should match only messages from a restricted sender if contains a computed restriction', async () => {
+    await usingWebSocketInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+      await interceptor.message().respond({ type: 'delete', id: 'fallback' });
+
+      await usingWebSocketClient<Schema>(baseURL, async (restrictedClient) => {
+        await waitFor(() => {
+          expect(interceptor.clients).toHaveLength(1);
+        });
+
+        await usingWebSocketClient<Schema>(baseURL, async (otherClient) => {
+          await waitFor(() => {
+            expect(interceptor.clients).toHaveLength(2);
+          });
+
+          const [restrictedSender, otherSender] = interceptor.clients;
+
+          const restriction = vi.fn(
+            (_message: ChatMessage, context: WebSocketMessageHandlerMessageContext<Schema>) =>
+              context.sender === restrictedSender,
+          );
+
+          const handler = await interceptor
+            .message()
+            .with(restriction)
+            .respond({ type: 'delete', id: 'restricted' })
+            .times(1);
+
+          const otherResponse = waitForWebSocketClientMessage(otherClient);
+          otherClient.send(JSON.stringify({ type: 'create', body: { text: 'other' } }));
+          await expect(otherResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'fallback' }));
+
+          const restrictedResponse = waitForWebSocketClientMessage(restrictedClient);
+          restrictedClient.send(JSON.stringify({ type: 'create', body: { text: 'restricted' } }));
+          await expect(restrictedResponse).resolves.toBe(JSON.stringify({ type: 'delete', id: 'restricted' }));
+
+          expect(restriction).toHaveBeenCalledTimes(2);
+
+          const [otherMessage, otherContext] = restriction.mock.calls[0];
+          expect(otherMessage).toEqual({ type: 'create', body: { text: 'other' } });
+          expect(otherContext.sender).toBe(otherSender);
+          expect(otherContext.receiver).toBe(interceptor.server);
+
+          const [restrictedMessage, restrictedContext] = restriction.mock.calls[1];
+          expect(restrictedMessage).toEqual({ type: 'create', body: { text: 'restricted' } });
+          expect(restrictedContext.sender).toBe(restrictedSender);
+          expect(restrictedContext.receiver).toBe(interceptor.server);
+
+          await handler.checkTimes();
+        });
+      });
+    });
   });
 
   // No WebSocket message counterpart for "should match only specific requests if contains a declared response, a static

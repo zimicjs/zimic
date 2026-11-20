@@ -45,20 +45,20 @@ class LocalWebSocketMessageHandler<
     return this;
   }
 
-  with<Restriction extends WebSocketMessageHandlerRestriction<RestrictedMessage>>(
+  with<Restriction extends WebSocketMessageHandlerRestriction<Schema, Path, RestrictedMessage>>(
     restriction: Restriction,
-    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<RestrictedMessage, Restriction>
+    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<Schema, Path, RestrictedMessage, Restriction>
   ): LocalWebSocketMessageHandler<
     Schema,
     Path,
-    WebSocketMessageHandlerMessageWithRestriction<RestrictedMessage, Restriction>
+    WebSocketMessageHandlerMessageWithRestriction<Schema, Path, RestrictedMessage, Restriction>
   > {
     this.implementation.with(restriction, ...options);
 
     const newThis = this as unknown as LocalWebSocketMessageHandler<
       Schema,
       Path,
-      WebSocketMessageHandlerMessageWithRestriction<RestrictedMessage, Restriction>
+      WebSocketMessageHandlerMessageWithRestriction<Schema, Path, RestrictedMessage, Restriction>
     >;
     return newThis;
   }

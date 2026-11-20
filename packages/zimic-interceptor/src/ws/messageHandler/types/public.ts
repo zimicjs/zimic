@@ -153,8 +153,13 @@ type WebSocketMessageHandlerMessageCompatibleWithTypeGuard<Message extends WebSo
   | WebSocketMessageHandlerPrimitiveMessageMatchingText<Message, Predicate>;
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
-export type WebSocketMessageHandlerMessageWithRestriction<Message extends WebSocketMessageSchema, Restriction> =
-  Restriction extends WebSocketMessageHandlerComputedTypeGuardRestriction<Message, infer Predicate>
+export type WebSocketMessageHandlerMessageWithRestriction<
+  Schema extends WebSocketSchema,
+  Path extends string,
+  Message extends WebSocketMessageSchema,
+  Restriction,
+> =
+  Restriction extends WebSocketMessageHandlerComputedTypeGuardRestriction<Schema, Path, Message, infer Predicate>
     ? [Predicate] extends [never]
       ? Message
       : WebSocketMessageHandlerMessageCompatibleWithTypeGuard<Message, Predicate>
@@ -194,13 +199,13 @@ export interface LocalWebSocketMessageHandler<
   from: (sender: WebSocketInterceptorClient<Schema>) => this;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
-  with: <Restriction extends WebSocketMessageHandlerRestriction<RestrictedMessage>>(
+  with: <Restriction extends WebSocketMessageHandlerRestriction<Schema, Path, RestrictedMessage>>(
     restriction: Restriction,
-    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<RestrictedMessage, Restriction>
+    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<Schema, Path, RestrictedMessage, Restriction>
   ) => LocalWebSocketMessageHandler<
     Schema,
     Path,
-    WebSocketMessageHandlerMessageWithRestriction<RestrictedMessage, Restriction>
+    WebSocketMessageHandlerMessageWithRestriction<Schema, Path, RestrictedMessage, Restriction>
   >;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerdelay `handler.delay()` API reference} */
@@ -266,13 +271,13 @@ export interface SyncedRemoteWebSocketMessageHandler<
   ) => PendingRemoteWebSocketMessageHandler<Schema, Path, RestrictedMessage>;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
-  with: <Restriction extends WebSocketMessageHandlerRestriction<RestrictedMessage>>(
+  with: <Restriction extends WebSocketMessageHandlerRestriction<Schema, Path, RestrictedMessage>>(
     restriction: Restriction,
-    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<RestrictedMessage, Restriction>
+    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<Schema, Path, RestrictedMessage, Restriction>
   ) => PendingRemoteWebSocketMessageHandler<
     Schema,
     Path,
-    WebSocketMessageHandlerMessageWithRestriction<RestrictedMessage, Restriction>
+    WebSocketMessageHandlerMessageWithRestriction<Schema, Path, RestrictedMessage, Restriction>
   >;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerdelay `handler.delay()` API reference} */

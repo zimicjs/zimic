@@ -1,7 +1,10 @@
 import { DeepPartial, PossiblePromise } from '@zimic/utils/types';
-import { WebSocketMessageSchema } from '@zimic/ws';
+import { WebSocketMessageSchema, WebSocketSchema } from '@zimic/ws';
 
 import { ReceivedWebSocketMessageData, UnparsedWebSocketJSONPrimitive } from '@/ws/interceptor/types/messages';
+import { WebSocketInterceptorPathMessage } from '@/ws/interceptor/types/schema';
+
+import { WebSocketMessageHandlerMessageContext } from './public';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -28,15 +31,25 @@ export interface WebSocketMessageHandlerStaticRestrictionOptions {
 }
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
-type WebSocketMessageHandlerComputedBooleanRestriction<Message extends WebSocketMessageSchema> = (
+type WebSocketMessageHandlerComputedBooleanRestriction<
+  Schema extends WebSocketSchema,
+  Path extends string = string,
+  Message extends WebSocketMessageSchema = WebSocketInterceptorPathMessage<Schema, Path>,
+> = (
   message: ReceivedWebSocketMessageData<Message>,
+  context: WebSocketMessageHandlerMessageContext<Schema, Path>,
 ) => PossiblePromise<boolean>;
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
 export type WebSocketMessageHandlerComputedTypeGuardRestriction<
-  Message extends WebSocketMessageSchema,
+  Schema extends WebSocketSchema,
+  Path extends string = string,
+  Message extends WebSocketMessageSchema = WebSocketInterceptorPathMessage<Schema, Path>,
   PredicateMessage extends ReceivedWebSocketMessageData<Message> = ReceivedWebSocketMessageData<Message>,
-> = (message: ReceivedWebSocketMessageData<Message>) => message is PredicateMessage;
+> = (
+  message: ReceivedWebSocketMessageData<Message>,
+  context: WebSocketMessageHandlerMessageContext<Schema, Path>,
+) => message is PredicateMessage;
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -44,23 +57,34 @@ export type WebSocketMessageHandlerComputedTypeGuardRestriction<
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
  */
 export type WebSocketMessageHandlerComputedRestriction<
-  Message extends WebSocketMessageSchema,
+  Schema extends WebSocketSchema,
+  Path extends string = string,
+  Message extends WebSocketMessageSchema = WebSocketInterceptorPathMessage<Schema, Path>,
   PredicateMessage extends ReceivedWebSocketMessageData<Message> = ReceivedWebSocketMessageData<Message>,
 > =
-  | WebSocketMessageHandlerComputedBooleanRestriction<Message>
-  | WebSocketMessageHandlerComputedTypeGuardRestriction<Message, PredicateMessage>;
+  | WebSocketMessageHandlerComputedBooleanRestriction<Schema, Path, Message>
+  | WebSocketMessageHandlerComputedTypeGuardRestriction<Schema, Path, Message, PredicateMessage>;
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference}
  */
-export type WebSocketMessageHandlerRestriction<Message extends WebSocketMessageSchema> =
-  WebSocketMessageHandlerStaticRestriction<Message> | WebSocketMessageHandlerComputedRestriction<Message>;
+export type WebSocketMessageHandlerRestriction<
+  Schema extends WebSocketSchema,
+  Path extends string = string,
+  Message extends WebSocketMessageSchema = WebSocketInterceptorPathMessage<Schema, Path>,
+> =
+  WebSocketMessageHandlerStaticRestriction<Message> | WebSocketMessageHandlerComputedRestriction<Schema, Path, Message>;
 
 /** The arguments accepted by `handler.with()` after a restriction. Only static restrictions accept options. */
-export type WebSocketMessageHandlerRestrictionOptionsArguments<Message extends WebSocketMessageSchema, Restriction> =
-  Restriction extends WebSocketMessageHandlerComputedRestriction<Message>
+export type WebSocketMessageHandlerRestrictionOptionsArguments<
+  Schema extends WebSocketSchema,
+  Path extends string,
+  Message extends WebSocketMessageSchema,
+  Restriction,
+> =
+  Restriction extends WebSocketMessageHandlerComputedRestriction<Schema, Path, Message>
     ? []
     : [options?: WebSocketMessageHandlerStaticRestrictionOptions];
 

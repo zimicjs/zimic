@@ -616,6 +616,9 @@ export function declareRestrictionHttpRequestHandlerTests(
 
   // No HTTP counterpart for "By protocols": HTTP requests negotiate no subprotocols.
 
+  // No HTTP counterpart for "should match only messages from a restricted sender if contains a computed restriction": an
+  // HTTP request is not sent through a connected client.
+
   it.each([{ exact: true }])(
     'should match only specific requests if contains a declared response, a static restriction of search params and headers, and exact $exact',
     async ({ exact }) => {

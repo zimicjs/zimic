@@ -68,7 +68,7 @@ class WebSocketMessageHandlerImplementation<
   >,
 > {
   private restrictions: {
-    restriction: WebSocketMessageHandlerRestriction<RestrictedMessage>;
+    restriction: WebSocketMessageHandlerRestriction<Schema, Path, RestrictedMessage>;
     options: WebSocketMessageHandlerStaticRestrictionOptions;
   }[] = [];
 
@@ -117,7 +117,7 @@ class WebSocketMessageHandlerImplementation<
   }
 
   with(
-    restriction: WebSocketMessageHandlerRestriction<RestrictedMessage>,
+    restriction: WebSocketMessageHandlerRestriction<Schema, Path, RestrictedMessage>,
     options: WebSocketMessageHandlerStaticRestrictionOptions = {},
   ) {
     this.restrictions.push({ restriction, options });
@@ -286,7 +286,7 @@ class WebSocketMessageHandlerImplementation<
 
     for (const { restriction, options } of this.restrictions) {
       if (this.isComputedMessageRestriction(restriction)) {
-        const matchesComputedRestriction = await restriction(this.assumeMessageMatchesRestrictions(message));
+        const matchesComputedRestriction = await restriction(this.assumeMessageMatchesRestrictions(message), context);
 
         if (!matchesComputedRestriction) {
           return {
@@ -311,8 +311,8 @@ class WebSocketMessageHandlerImplementation<
   }
 
   private isComputedMessageRestriction(
-    restriction: WebSocketMessageHandlerRestriction<RestrictedMessage>,
-  ): restriction is WebSocketMessageHandlerComputedRestriction<RestrictedMessage> {
+    restriction: WebSocketMessageHandlerRestriction<Schema, Path, RestrictedMessage>,
+  ): restriction is WebSocketMessageHandlerComputedRestriction<Schema, Path, RestrictedMessage> {
     return typeof restriction === 'function';
   }
 

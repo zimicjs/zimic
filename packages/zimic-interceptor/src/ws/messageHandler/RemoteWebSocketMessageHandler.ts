@@ -76,20 +76,20 @@ class RemoteWebSocketMessageHandler<
     return this.pending;
   }
 
-  with<Restriction extends WebSocketMessageHandlerRestriction<RestrictedMessage>>(
+  with<Restriction extends WebSocketMessageHandlerRestriction<Schema, Path, RestrictedMessage>>(
     restriction: Restriction,
-    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<RestrictedMessage, Restriction>
+    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<Schema, Path, RestrictedMessage, Restriction>
   ): RemoteWebSocketMessageHandler<
     Schema,
     Path,
-    WebSocketMessageHandlerMessageWithRestriction<RestrictedMessage, Restriction>
+    WebSocketMessageHandlerMessageWithRestriction<Schema, Path, RestrictedMessage, Restriction>
   > {
     this.implementation.with(restriction, ...options);
 
     const pending = this.pending as unknown as RemoteWebSocketMessageHandler<
       Schema,
       Path,
-      WebSocketMessageHandlerMessageWithRestriction<RestrictedMessage, Restriction>
+      WebSocketMessageHandlerMessageWithRestriction<Schema, Path, RestrictedMessage, Restriction>
     >;
     return pending;
   }
