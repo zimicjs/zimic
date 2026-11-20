@@ -98,7 +98,7 @@ afterAll(async () => {
 
 :::info INFO: <span>Remote interceptors are asynchronous</span>
 
-Note that [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear) and [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes) are awaited in the remote interceptor example, whereas this is not necessary for local interceptors.
+[`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear) and [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes) are awaited in the remote interceptor example, whereas this is not necessary for local interceptors.
 
 This is because many operations in [remote interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md) are asynchronous because they may involve communication with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is different from [local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md), which have mostly synchronous operations.
 
@@ -132,15 +132,15 @@ Running tests in parallel may cause your interceptors to start interfering with 
 
 #### Local interceptors
 
-With [local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md), racing conditions between test workers are unlikely, because each interceptor affects only the thread it was created in (hence, the name _local_).
+With [local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md), race conditions between test workers are unlikely, because each interceptor affects only the thread it was created in (hence, the name _local_).
 
 However, running more than one test at the same time in the same thread **can** lead to concurrency problems. `@zimic/interceptor` does not currently support this, so we recommend avoiding concurrent features like [`test.concurrent`](https://vitest.dev/api/#test-concurrent).
 
-Instead, consider splitting your tests into smaller files. By doing this, your test framework can run them in parallel in separate threads, each with their own interceptors and without racing conditions.
+Instead, consider splitting your tests into smaller files. By doing this, your test framework can run them in parallel in separate threads, each with their own interceptors and without race conditions.
 
 #### Remote interceptors
 
-[Remote interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md) use an [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle connections and messages. They are especially useful when your application and your test runner run in _separate_ processes, such as in end-to-end tests. If you are sharing the same interceptor server between multiple parallel test workers, you may run into racing conditions. The interceptor server gives each connection to the most recently connected process with a running interceptor whose base URL matches the connection, so a worker can receive the connections opened for another one. In this case, some solutions include:
+[Remote interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md) use an [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle connections and messages. They are especially useful when your application and your test runner run in _separate_ processes, such as in end-to-end tests. If you are sharing the same interceptor server between multiple parallel test workers, you may run into race conditions. The interceptor server gives each connection to a single process and authentication token. It picks the most recently connected one with a running interceptor whose base URL matches the connection. Starting an interceptor in an older process or with an older token does not move new connections to it. As a result, a worker can receive the connections opened for another one. In this case, some solutions include:
 
 1. **Using a [path discriminator](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md#path-discriminators)**:
 
@@ -148,4 +148,4 @@ Instead, consider splitting your tests into smaller files. By doing this, your t
 
 2. **Applying default mocks before your tests start**:
 
-   In this approach, you can start your interceptor server and run a script that populates a set of default mocks. When your tests start, the mocks will already be loaded and no racing conditions will occur. It's important that individual tests do not create new mocks that may override the default ones and affect others. Instead, declare the default mocks in such a way that they can be reused by all tests, such as with [computed restrictions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#computed-restrictions) and [computed responses](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerrespond).
+   In this approach, you can start your interceptor server and run a script that populates a set of default mocks. When your tests start, the mocks will already be loaded and no race conditions will occur. It's important that individual tests do not create new mocks that may override the default ones and affect others. Instead, declare the default mocks in such a way that they can be reused by all tests, such as with [computed restrictions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#computed-restrictions) and [computed responses](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerrespond).
