@@ -59,8 +59,6 @@ Options:
                                 it is shared over a network.            [string]
 ```
 
-`--log-unhandled-requests` applies only to HTTP interceptors. WebSocket interceptors configure their own [unhandled message handling](/docs/zimic-interceptor/guides/ws/7-unhandled-messages.md).
-
 :::info NOTE: <span>Interceptor servers in development and testing</span>
 
 Interceptor servers are development and test tools. Do not use them as production application servers.
