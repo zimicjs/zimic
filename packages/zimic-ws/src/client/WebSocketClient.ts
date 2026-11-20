@@ -132,6 +132,7 @@ export class WebSocketClient<
 > implements Omit<WebSocket, `${string}EventListener` | `on${string}`> {
   private socket?: WebSocket;
   private openingSocket?: WebSocket;
+  private openingPromise?: Promise<void>;
 
   // A client created with a URL has not connected yet, which matches a native socket that is still connecting. After
   // an open attempt or a close, a client without a socket is closed.
@@ -330,11 +331,22 @@ export class WebSocketClient<
    * @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientopen `client.open()` API reference}
    */
   async open(options?: WebSocketClientOpenOptions) {
+    this.openingPromise ??= this.openSocket(options).finally(() => {
+      this.openingPromise = undefined;
+    });
+
+    await this.openingPromise;
+  }
+
+  private async openSocket(options?: WebSocketClientOpenOptions) {
     if (this.readyState === WebSocketClient.OPEN) {
       return;
     }
 
-    await this.close();
+    // Creating the socket synchronously when there is none lets a `close()` right after `open()` find and close it.
+    if (this.socket) {
+      await this.close();
+    }
 
     const socket = new WebSocket(this.#url, this.#protocols);
     this.openingSocket = socket;
@@ -384,6 +396,13 @@ export class WebSocketClient<
    */
   async close(code?: number, reason?: string, options?: WebSocketClientCloseOptions) {
     if (!this.socket) {
+      if (this.openingSocket) {
+        // Like a native socket, closing while connecting fails the connection, so the pending `open()` rejects with
+        // the error and this waits only for it to settle.
+        this.openingSocket.close(code, reason);
+        await Promise.allSettled([this.openingPromise]);
+      }
+
       return;
     }
 
@@ -407,7 +426,7 @@ export class WebSocketClient<
     // Like a native socket, a client without a socket throws while connecting and discards the data once closed.
     if (socket) {
       socket.send(data);
-    } else if (this.readyState === WebSocketClient.CONNECTING) {
+    } else if (this.#readyStateWithoutSocket === WebSocketClient.CONNECTING) {
       throw new DOMException('Still in CONNECTING state.', 'InvalidStateError');
     }
   }
