@@ -149,6 +149,7 @@ export async function readBytes(data: Blob | ArrayBuffer) {
 export async function expectWebSocketTimesCheckError(
   callback: () => PossiblePromise<void>,
   options: {
+    handler: 'message' | 'connection';
     message: string;
     expectedNumberOfMatches: number | { min: number; max: number };
   },
@@ -167,14 +168,10 @@ export async function expectWebSocketTimesCheckError(
   expect(timesCheckError).toBeDefined();
   expect(timesCheckError!.name).toBe('WebSocketTimesCheckError');
 
-  // The expected header names the subject of the handler, which selects the page linked by the footer.
-  const isConnectionTimesCheck = /^Expected .* connections?, but got/.test(options.message);
-  const expectedHandlerPage = isConnectionTimesCheck ? 'websocket-connection-handler' : 'websocket-message-handler';
-
   const expectedMessage = [
     options.message,
     '',
-    `Learn more: https://zimic.dev/docs/interceptor/api/${expectedHandlerPage}#handlertimes`,
+    `Learn more: https://zimic.dev/docs/interceptor/api/websocket-${options.handler}-handler#handlertimes`,
   ].join('\n');
 
   expect(timesCheckError!.message).toEqual(expectedMessage);

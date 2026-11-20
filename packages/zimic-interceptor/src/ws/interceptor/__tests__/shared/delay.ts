@@ -397,6 +397,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
         });
 
         await expectWebSocketTimesCheckError(() => interceptor.checkTimes(), {
+          handler: 'message',
           message: 'Expected exactly 1 message, but got 0.',
           expectedNumberOfMatches: 1,
         });
@@ -760,6 +761,7 @@ export function declareDelayWebSocketInterceptorTests(options: SharedWebSocketIn
           }
 
           await expectWebSocketTimesCheckError(() => interceptor.checkTimes(), {
+            handler: 'connection',
             message: 'Expected exactly 1 connection, but got 0.',
             expectedNumberOfMatches: 1,
           });
