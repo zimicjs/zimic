@@ -97,7 +97,11 @@ The interceptor answers handshakes, namespace connections, and pings without any
 
 ### Connecting clients
 
-`socket.io-client` reads the path of the URL passed to `io()` as the namespace, not as the endpoint. If the base URL of the interceptor has a path other than `/socket.io`, such as a [path discriminator](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md#path-discriminators), pass the origin to `io()` and the path of the base URL, with a trailing slash, in the `path` option.
+:::warning WARNING: <span>URL paths in `io()` are namespaces</span>
+
+`socket.io-client` reads the path of the URL passed to `io()` as the namespace, not as the endpoint. If the base URL of the interceptor has a path other than `/socket.io`, such as a [path discriminator](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md#path-discriminators), pass the origin to `io()` and the path of the base URL, with a trailing slash, in the `path` option. Otherwise, the client connects to `/socket.io` on the origin and no interceptor handles its connection.
+
+:::
 
 ```ts
 import { io } from 'socket.io-client';
