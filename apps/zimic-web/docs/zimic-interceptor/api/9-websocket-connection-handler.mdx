@@ -139,6 +139,10 @@ await handler.with((request) => matchesRequest);
 
         The URI-decoded path params of the connection URL, parsed from the path declared in `interceptor.connection(path)`. Empty if the handler declares no path.
 
+      - **auth**: `Auth`
+
+        The `auth` payload that the [Socket.IO](/docs/zimic-interceptor/guides/ws/9-socket-io.mdx#connections-and-clients) client sent when connecting to the namespace, or `{}` if it sent none. Present only in interceptors of a `SocketIOSchema`.
+
    **Returns**: `Promise<boolean> | boolean`
 
    A boolean indicating whether the intercepted connection matches the restriction.
