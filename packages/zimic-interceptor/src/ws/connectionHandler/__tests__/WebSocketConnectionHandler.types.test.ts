@@ -109,6 +109,15 @@ describe('WebSocketConnectionHandler > Types', () => {
     expectTypeOf(declareHandlers).toBeFunction();
   });
 
+  it('should not accept rejection errors on paths that declare none', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      // @ts-expect-error The path declares no rejection error.
+      interceptor.connection('/rooms/:roomId').respond({ action: 'reject', error: { message: 'Rejected' } });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
   it('should type client search params from the declared path', () => {
     function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
       interceptor.connection('/rooms/:roomId').effect((client) => {

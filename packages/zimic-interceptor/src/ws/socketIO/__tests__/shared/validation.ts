@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
-import { usingSocket, waitForSocketConnection } from '@tests/utils/socketIO';
+import { usingSocket, usingSocketManager, waitForSocketConnection } from '@tests/utils/socketIO';
 import { waitForWebSocketClientClose } from '@tests/utils/webSocket';
 
 import DuplicateSocketIONamespaceError from '../../errors/DuplicateSocketIONamespaceError';
@@ -21,9 +21,11 @@ import {
   createSocketIOInterceptorOptions,
   createSocketIOPollingInterceptor,
   getSocketIOBaseURL,
+  getSocketIOTransportCases,
   SharedSocketIOProtocolTestsOptions,
   SocketIOPollingInterceptor,
   SocketIOTestSavingOptions,
+  usingSocketIONamespaceInterceptors,
 } from './utils';
 
 type PlainSchema = WebSocketSchema<{ '/': { message: string } }>;
@@ -334,6 +336,146 @@ export function declareValidationSocketIOProtocolTests(options: SharedSocketIOPr
               await interceptor.clear();
 
               expect(interceptor.clients).toHaveLength(0);
+            });
+          });
+        });
+      });
+    });
+  });
+
+  describe('Rejection errors', () => {
+    describe.each(getSocketIOTransportCases(options))('Transport: $transportName', ({ transports }) => {
+      it.each(createInvalidTypeOfCases('object', { optional: true }))(
+        'should log the error of rejections with an error that is not an object ($label)',
+        async ({ value, actualType }) => {
+          await usingIgnoredConsole(['error'], async (console) => {
+            await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+              // @ts-expect-error Forcing an invalid rejection error type.
+              await interceptor.connection().respond({ action: 'reject', error: value });
+
+              await usingSocket(baseURL, { transports }, async () => {
+                await waitFor(() => {
+                  expect(console.error).toHaveBeenCalledWith(
+                    new ValidationError(`Expected error to be object, but got ${actualType}.`),
+                  );
+                });
+                expect(console.error).toHaveBeenCalledTimes(1);
+              });
+            });
+          });
+        },
+      );
+
+      it.each(createInvalidTypeOfCases('string'))(
+        'should log the error of rejections with an error message that is not a string ($label)',
+        async ({ value, actualType }) => {
+          await usingIgnoredConsole(['error'], async (console) => {
+            await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+              // @ts-expect-error Forcing an invalid rejection error message type.
+              await interceptor.connection().respond({ action: 'reject', error: { message: value } });
+
+              await usingSocket(baseURL, { transports }, async () => {
+                await waitFor(() => {
+                  expect(console.error).toHaveBeenCalledWith(
+                    new ValidationError(`Expected error.message to be string, but got ${actualType}.`),
+                  );
+                });
+                expect(console.error).toHaveBeenCalledTimes(1);
+              });
+            });
+          });
+        },
+      );
+
+      it('should not reply to namespace connections rejected with an invalid error', async () => {
+        await usingIgnoredConsole(['error'], async (console) => {
+          await usingSocketIONamespaceInterceptors(
+            { type, baseURL, polling },
+            {},
+            async (rootInterceptor, adminInterceptor) => {
+              // @ts-expect-error Forcing an invalid rejection error message type.
+              await adminInterceptor.connection().respond({ action: 'reject', error: { message: 1 } });
+
+              await usingSocketManager(baseURL, { transports }, async (manager) => {
+                const rootSocket = manager.socket('/');
+                const adminSocket = manager.socket('/admin');
+
+                const onAdminConnectError = vi.fn();
+                adminSocket.on('connect_error', onAdminConnectError);
+
+                await waitForSocketConnection(rootSocket);
+                await waitFor(() => {
+                  expect(console.error).toHaveBeenCalledWith(
+                    new ValidationError('Expected error.message to be string, but got number.'),
+                  );
+                });
+
+                const markerPromise = new Promise<void>((resolve) => {
+                  rootSocket.once('marker', () => resolve());
+                });
+                rootInterceptor.server.send({ type: 'marker' });
+                await markerPromise;
+
+                // Packets arrive in order, so receiving the marker proves that no connect_error was sent before it.
+                expect(onAdminConnectError).not.toHaveBeenCalled();
+                expect(adminSocket.connected).toBe(false);
+              });
+            },
+          );
+        });
+      });
+
+      it('should keep other namespaces connecting after a rejection with an invalid error', async () => {
+        await usingIgnoredConsole(['error'], async (console) => {
+          await usingSocketIONamespaceInterceptors(
+            { type, baseURL, polling },
+            {},
+            async (_rootInterceptor, adminInterceptor) => {
+              // @ts-expect-error Forcing an invalid rejection error message type.
+              await adminInterceptor.connection().respond({ action: 'reject', error: { message: 1 } });
+
+              await usingSocketManager(baseURL, { transports }, async (manager) => {
+                const adminSocket = manager.socket('/admin');
+
+                await waitFor(() => {
+                  expect(console.error).toHaveBeenCalledWith(
+                    new ValidationError('Expected error.message to be string, but got number.'),
+                  );
+                });
+
+                const rootSocket = manager.socket('/');
+                await waitForSocketConnection(rootSocket);
+
+                expect(rootSocket.connected).toBe(true);
+                expect(adminSocket.connected).toBe(false);
+              });
+            },
+          );
+        });
+      });
+
+      it('should accept new connections to a namespace after a rejection with an invalid error', async () => {
+        await usingIgnoredConsole(['error'], async (console) => {
+          await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+            await interceptor
+              .connection()
+              .times(1)
+              // @ts-expect-error Forcing an invalid rejection error message type.
+              .respond({ action: 'reject', error: { message: 1 } });
+
+            await usingSocket(baseURL, { transports }, async (socket) => {
+              await waitFor(() => {
+                expect(console.error).toHaveBeenCalledWith(
+                  new ValidationError('Expected error.message to be string, but got number.'),
+                );
+              });
+
+              // The handler matches only once, so the new connection falls through and is accepted.
+              socket.disconnect();
+              socket.connect();
+              await waitForSocketConnection(socket);
+
+              expect(interceptor.clients).toHaveLength(1);
             });
           });
         });

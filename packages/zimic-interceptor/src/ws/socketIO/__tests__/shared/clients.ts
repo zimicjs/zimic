@@ -384,6 +384,29 @@ export function declareClientsSocketIOProtocolTests(options: SharedSocketIOProto
         },
       );
     });
+
+    const rejectionError = { message: 'Token has expired', data: { code: 'EXPIRED' } };
+
+    it.each([
+      { declarationKind: 'static', declaration: { action: 'reject' as const, error: rejectionError } },
+      { declarationKind: 'computed', declaration: () => ({ action: 'reject' as const, error: rejectionError }) },
+    ])(
+      'should fail with connect_error of the declared error the sockets whose connection handler rejects them ($declarationKind)',
+      async ({ declaration }) => {
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+          await interceptor.connection().respond(declaration);
+
+          await usingSocket(baseURL, { transports }, async (socket) => {
+            // As in `socket.io-client`, the error of `connect_error` carries the data of the rejection.
+            const expectedConnectError = Object.assign(new Error(rejectionError.message), {
+              data: rejectionError.data,
+            });
+
+            await expect(waitForSocketConnection(socket)).rejects.toThrow(expectedConnectError);
+          });
+        });
+      },
+    );
   });
 
   const pollingTransports: ManagerOptions['transports'] = [PollingTransport];

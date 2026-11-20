@@ -9,8 +9,8 @@ import { createPathMatchingURL, parsePathParams } from '@/utils/urls';
 
 import type {
   AnyWebSocketConnectionHandlerImplementation,
-  WebSocketConnectionHandlerAction,
   WebSocketConnectionHandlerConnectionMatch,
+  WebSocketConnectionHandlerDecision,
 } from '../connectionHandler/WebSocketConnectionHandlerImplementation';
 import {
   ReceivedWebSocketMessageData,
@@ -72,8 +72,8 @@ interface FailedWebSocketConnectionMatch {
   connectionMatch: Extract<WebSocketConnectionHandlerConnectionMatch, { success: false }>;
 }
 
-export interface WebSocketConnectionHandling {
-  action: WebSocketConnectionHandlerAction;
+interface AcceptedWebSocketConnectionHandling {
+  action: 'accept';
   // The handler that accepted the connection, whose effects run with the request it parsed once its interceptor lists
   // the client.
   acceptance?: {
@@ -81,6 +81,9 @@ export interface WebSocketConnectionHandling {
     request: WebSocketInterceptorConnectionRequest;
   };
 }
+
+export type WebSocketConnectionHandling =
+  AcceptedWebSocketConnectionHandling | Extract<WebSocketConnectionHandlerDecision, { action: 'reject' }>;
 
 const UNHANDLED_CONNECTION_HANDLING: WebSocketConnectionHandling = Object.freeze({ action: 'accept' });
 
@@ -255,13 +258,17 @@ abstract class WebSocketInterceptorWorker {
           continue;
         }
 
-        const action = await holder.handleMatchedConnection(handler.implementation, request);
+        const decision = await holder.handleMatchedConnection(handler.implementation, request);
 
-        if (action === null) {
+        if (decision === null) {
           return UNHANDLED_CONNECTION_HANDLING;
         }
 
-        return { action, acceptance: action === 'accept' ? { handler, request } : undefined };
+        if (decision.action === 'reject') {
+          return decision;
+        }
+
+        return { action: 'accept', acceptance: { handler, request } };
       } catch (error) {
         console.error(error);
 
@@ -332,7 +339,7 @@ abstract class WebSocketInterceptorWorker {
   // effect waiting for a message from its client does not keep the connection from opening. Failures are logged because
   // no caller awaits them.
   protected async applyConnectionEffect(
-    handling: WebSocketConnectionHandling,
+    handling: AcceptedWebSocketConnectionHandling,
     holders: RegisteredWebSocketConnectionHolder[],
   ) {
     const { acceptance } = handling;
@@ -413,11 +420,11 @@ abstract class WebSocketInterceptorWorker {
     );
 
     if (!isHolding(interceptor)) {
-      return 'aborted';
+      return { result: 'aborted' };
     }
 
     if (handling.action === 'reject') {
-      return 'rejected';
+      return { result: 'rejected', error: handling.error };
     }
 
     // A client retained after its interceptor lets it go does nothing, as with WebSocket connection clients.
@@ -456,7 +463,7 @@ abstract class WebSocketInterceptorWorker {
 
     await this.applyConnectionEffect(handling, [{ registeredInterceptor: { interceptor }, client }]);
 
-    return 'accepted';
+    return { result: 'accepted' };
   }
 
   // The handlers of all interceptors holding the connection are tried together, from the last created to the first, so

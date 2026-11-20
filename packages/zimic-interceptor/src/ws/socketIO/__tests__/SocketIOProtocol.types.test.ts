@@ -232,6 +232,26 @@ describe('SocketIOProtocol > Types', () => {
     expectTypeOf(declareHandler).toBeFunction();
   });
 
+  it('should accept rejection errors only in rejections', () => {
+    function declareHandler() {
+      const interceptor = createWebSocketInterceptor<SocketIOSchema<ServerToClientEvents, ClientToServerEvents>>({
+        baseURL: 'ws://localhost:3000/socket.io',
+        protocol: createSocketIOProtocol(),
+      });
+
+      interceptor.connection().respond({ action: 'reject', error: { message: 'Rejected', data: { code: 1 } } });
+      interceptor.connection().respond(() => ({ action: 'reject', error: { message: 'Rejected' } }));
+
+      // @ts-expect-error Accepted connections receive no error.
+      interceptor.connection().respond({ action: 'accept', error: { message: 'Rejected' } });
+
+      // @ts-expect-error The error message is declared as a string.
+      interceptor.connection().respond({ action: 'reject', error: { message: 1 } });
+    }
+
+    expectTypeOf(declareHandler).toBeFunction();
+  });
+
   it('should accept the default parser and socket.io-msgpack-parser as parsers', () => {
     expectTypeOf(defaultParser).toExtend<SocketIOParser>();
     expectTypeOf(msgpackParser).toExtend<SocketIOParser>();

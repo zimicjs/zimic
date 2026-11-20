@@ -131,6 +131,22 @@ export type WebSocketInterceptorConnectionAuth<Schema extends WebSocketSchema, P
   WebSocketPathConnectionAuth<Schema[DeclaredWebSocketInterceptorPath<Schema, Path>]>
 >;
 
+type WebSocketPathConnectionError<PathSchema extends WebSocketPathSchema> = PathSchema extends {
+  connection: { error: infer Error };
+}
+  ? Error
+  : never;
+
+/**
+ * The error declared for rejected connections to a handler path, as in Socket.IO schemas. `never` if the schema
+ * declares none, including in schema-erased types.
+ */
+export type WebSocketInterceptorConnectionError<Schema extends WebSocketSchema, Path extends string> = IfAny<
+  Schema,
+  never,
+  WebSocketPathConnectionError<Schema[DeclaredWebSocketInterceptorPath<Schema, Path>]>
+>;
+
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *

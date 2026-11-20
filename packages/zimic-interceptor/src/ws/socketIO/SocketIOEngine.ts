@@ -1,4 +1,4 @@
-import { ValidationError } from '@zimic/utils/validation';
+import { assertTypeOf, ValidationError } from '@zimic/utils/validation';
 import {
   decodePacket,
   decodePayload,
@@ -124,6 +124,22 @@ function encodeSocketIOPacket(
 
     return normalizeBufferSource(encodedChunk);
   });
+}
+
+// As `next(error)` in a Socket.IO server, which sends the message and data of the error in its `CONNECT_ERROR` packet.
+// Rejection errors come from user code that may bypass the schema types.
+function createConnectErrorData(error: unknown) {
+  if (error === undefined) {
+    return { message: 'Connection rejected' };
+  }
+
+  assertTypeOf('error', error, 'object');
+
+  const message = 'message' in error ? error.message : undefined;
+  assertTypeOf('error.message', message, 'string');
+
+  const data = 'data' in error ? error.data : undefined;
+  return data === undefined ? { message } : { message, data };
 }
 
 function reportUnsupportedEngineIOVersion(version: string | null) {
@@ -490,11 +506,11 @@ class SocketIOEngine {
       },
     });
 
-    if (openClientResult === 'rejected') {
+    if (openClientResult.result === 'rejected') {
       this.sendSocketPacket(session, {
         type: PacketType.CONNECT_ERROR,
         nsp: protocol.namespace,
-        data: { message: 'Connection rejected' },
+        data: createConnectErrorData(openClientResult.error),
       });
     }
   }

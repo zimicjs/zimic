@@ -49,8 +49,10 @@ export interface WebSocketInterceptorProtocolClientOptions<Message> {
 }
 
 // `accepted` if the connection handlers accepted the client, `rejected` if they rejected it, or `aborted` if its signal
-// was aborted while they decided it.
-export type WebSocketInterceptorProtocolOpenClientResult = 'accepted' | 'rejected' | 'aborted';
+// was aborted while they decided it. A rejection carries the `error` declared by the rejecting handler, if any, which
+// comes from user code that may bypass the schema types, so the protocol validates it before sending it.
+export type WebSocketInterceptorProtocolOpenClientResult =
+  { result: 'accepted' } | { result: 'rejected'; error?: unknown } | { result: 'aborted' };
 
 export interface WebSocketInterceptorProtocolContext<Message> {
   interceptor: {

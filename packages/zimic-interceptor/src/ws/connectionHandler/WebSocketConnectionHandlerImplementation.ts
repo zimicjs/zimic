@@ -38,7 +38,8 @@ export type WebSocketConnectionHandlerConnectionMatch =
   | { success: false; cause: 'clearedHandler' | 'exceededNumberOfConnections' }
   | { success: false; cause: 'unmatchedRestrictions'; diff: WebSocketConnectionHandlerRestrictionDiffs };
 
-export type WebSocketConnectionHandlerAction = 'accept' | 'reject';
+// The error of a rejection comes from user code that may bypass the schema types, so protocols validate it.
+export type WebSocketConnectionHandlerDecision = { action: 'accept' } | { action: 'reject'; error?: unknown };
 
 class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, Path extends string = string> {
   private restrictions: WebSocketConnectionHandlerRestriction<Schema, Path>[] = [];
@@ -273,10 +274,10 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
   }
 
   // Called in the same synchronous step that reserves the connection, so the captured generation is the one the
-  // connection was counted in. Returns the action to apply to the connection, or `null` if it was not handled.
+  // connection was counted in. Returns the decision to apply to the connection, or `null` if it was not handled.
   async applyDeclarations(
     request: WebSocketInterceptorConnectionRequest<Schema, Path>,
-  ): Promise<WebSocketConnectionHandlerAction | null> {
+  ): Promise<WebSocketConnectionHandlerDecision | null> {
     const clearGeneration = this.#clearGeneration;
 
     if (this.createResponseDelay) {
@@ -294,7 +295,12 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 
     // The interceptor checks the clear generation again after the response is computed.
     const responseDeclaration = await this.createResponseDeclaration?.(request);
-    return responseDeclaration?.action ?? 'accept';
+
+    if (responseDeclaration?.action !== 'reject') {
+      return { action: 'accept' };
+    }
+
+    return { action: 'reject', error: 'error' in responseDeclaration ? responseDeclaration.error : undefined };
   }
 
   async applyConnectionEffect(

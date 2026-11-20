@@ -1,7 +1,11 @@
-import { PossiblePromise } from '@zimic/utils/types';
+import { IfNever, PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
-import { WebSocketInterceptorClient, WebSocketInterceptorConnectionRequest } from '@/ws/interceptor/types/messages';
+import {
+  WebSocketInterceptorClient,
+  WebSocketInterceptorConnectionError,
+  WebSocketInterceptorConnectionRequest,
+} from '@/ws/interceptor/types/messages';
 
 import WebSocketConnectionHandlerImplementation from '../WebSocketConnectionHandlerImplementation';
 import { WebSocketConnectionHandlerDelayFactory } from './connections';
@@ -30,17 +34,70 @@ export type WebSocketConnectionHandlerConnectionCallback<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A static handshake response declared with `handler.respond()`.
+ * A static handshake response declared with `handler.respond()`, accepting or rejecting matched connections.
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
  */
-export interface WebSocketConnectionHandlerResponseStaticDeclaration {
+export type WebSocketConnectionHandlerResponseStaticDeclaration<
+  Schema extends WebSocketSchema = WebSocketSchema,
+  Path extends string = string,
+> = WebSocketConnectionHandlerAcceptDeclaration | WebSocketConnectionHandlerRejectDeclaration<Schema, Path>;
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * A static handshake response declared with `handler.respond()` that accepts matched connections.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
+ */
+export interface WebSocketConnectionHandlerAcceptDeclaration {
   /**
-   * The action to apply to matched connections, opening them with `accept` or refusing them with `reject`.
+   * The action to apply to matched connections, opening them.
    *
    * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
    */
-  action: 'accept' | 'reject';
+  action: 'accept';
+}
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * A static handshake response declared with `handler.respond()` that rejects matched connections. `error` exists only
+ * if the schema declares it, as in Socket.IO schemas.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
+ */
+export type WebSocketConnectionHandlerRejectDeclaration<
+  Schema extends WebSocketSchema = WebSocketSchema,
+  Path extends string = string,
+> = IfNever<
+  WebSocketInterceptorConnectionError<Schema, Path>,
+  BaseWebSocketConnectionHandlerRejectDeclaration,
+  BaseWebSocketConnectionHandlerRejectDeclaration & {
+    /**
+     * The error sent to the rejected Socket.IO client, received as the `message` and `data` of its `connect_error`.
+     * Without one, the client receives the message `'Connection rejected'`.
+     *
+     * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
+     */
+    error?: WebSocketInterceptorConnectionError<Schema, Path>;
+  }
+>;
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * The members of {@link WebSocketConnectionHandlerRejectDeclaration} present in every schema.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
+ */
+export interface BaseWebSocketConnectionHandlerRejectDeclaration {
+  /**
+   * The action to apply to matched connections, refusing them before they open.
+   *
+   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
+   */
+  action: 'reject';
 }
 
 /**
@@ -56,7 +113,7 @@ export type WebSocketConnectionHandlerResponseComputedDeclaration<
   Path extends string = string,
 > = (
   request: WebSocketInterceptorConnectionRequest<Schema, Path>,
-) => PossiblePromise<WebSocketConnectionHandlerResponseStaticDeclaration>;
+) => PossiblePromise<WebSocketConnectionHandlerResponseStaticDeclaration<Schema, Path>>;
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -69,7 +126,7 @@ export type WebSocketConnectionHandlerResponseDeclaration<
   Schema extends WebSocketSchema = WebSocketSchema,
   Path extends string = string,
 > =
-  | WebSocketConnectionHandlerResponseStaticDeclaration
+  | WebSocketConnectionHandlerResponseStaticDeclaration<Schema, Path>
   | WebSocketConnectionHandlerResponseComputedDeclaration<Schema, Path>;
 
 /**
