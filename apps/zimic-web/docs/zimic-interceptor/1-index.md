@@ -10,13 +10,9 @@ slug: /interceptor
 
 ## Highlights
 
-- :globe_with_meridians: **HTTP interceptors**
+- :globe_with_meridians: **Typed interceptors**
 
-  Use your [`@zimic/http` schema](/docs/zimic-http/guides/1-schemas.md) to declare [local](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) and [remote](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md) HTTP interceptors. Mock external services and simulate success, loading, and error states with ease and type safety.
-
-- :zap: **WebSocket interceptors**
-
-  Use your [`@zimic/ws` schema](/docs/zimic-ws/guides/1-schemas.md) to declare [experimental WebSocket interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md). Mock typed message flows, observe connected clients, send server messages, and verify expected messages in development and tests.
+  Use your [`@zimic/http`](/docs/zimic-http/guides/1-schemas.md) and [`@zimic/ws`](/docs/zimic-ws/guides/1-schemas.md) schemas to declare interceptors that run [locally](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) or [through an interceptor server](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md). Mock external services and simulate success, loading, and error states with type safety. WebSocket support is experimental.
 
 - :link: **Network-level interception**
 
@@ -24,7 +20,7 @@ slug: /interceptor
 
 - :bulb: **Readability**
 
-  `@zimic/interceptor` was designed to encourage clarity and readability. Declare intuitive mocks, test with confidence, and verify that your application is making the expected requests with [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx).
+  `@zimic/interceptor` was designed to encourage clarity and readability. Verify that your application makes the expected requests and sends the expected messages with [declarative assertions](/docs/interceptor/guides).
 
 **Learn more**:
 
