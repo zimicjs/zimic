@@ -269,10 +269,14 @@ await handler.respond((request) => declaration);
 
    The handshake response or a factory to create it.
 
-   If declared as a static object, the declaration has the following property:
+   If declared as a static object, the declaration has the following properties:
    - **action**: `'accept' | 'reject'`
 
      If set to `'accept'`, the connection opens. If set to `'reject'`, the connection is refused before it opens. Both actions are supported by local and remote interceptors.
+
+   - **error**: `{ message: string; data?: unknown } | undefined`
+
+     The error sent to a rejected [Socket.IO](/docs/zimic-interceptor/guides/ws/9-socket-io.mdx#connections-and-clients) socket, which receives it as the `message` and `data` of its `connect_error`, as with `next(error)` in a Socket.IO server. Accepted only with `action: 'reject'` and in schemas that declare it, such as `SocketIOSchema`. If not set, the socket receives the message `'Connection rejected'`.
 
    A declaration can also be a function to dynamically decide how to respond to the connection:
 
@@ -281,7 +285,7 @@ await handler.respond((request) => declaration);
 
       The intercepted [connection request](#handlerwith) to respond to.
 
-   **Returns**: `Promise<WebSocketConnectionHandlerResponseStaticDeclaration> | WebSocketConnectionHandlerResponseStaticDeclaration`
+   **Returns**: `Promise<WebSocketConnectionHandlerResponseStaticDeclaration<Schema, Path>> | WebSocketConnectionHandlerResponseStaticDeclaration<Schema, Path>`
 
 **Returns**: `WebSocketConnectionHandler<Schema, Path>`
 

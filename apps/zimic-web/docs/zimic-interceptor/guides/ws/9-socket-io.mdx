@@ -261,7 +261,23 @@ interceptor
   .respond({ action: 'reject' });
 ```
 
-- A connection handler rejecting a socket fails it with a `connect_error` of message `'Connection rejected'`. Other namespaces on the same connection stay connected.
+A connection handler rejecting a socket fails it with a `connect_error` of message `'Connection rejected'`. To send another error, as `next(error)` does in a Socket.IO server, declare an `error` in [`handler.respond()`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerrespond). The socket receives its `message` and `data` in `connect_error`. Other namespaces on the same connection stay connected.
+
+```ts
+interceptor.connection().respond({
+  action: 'reject',
+  error: { message: 'Token has expired', data: { code: 'EXPIRED' } },
+});
+
+// In the client
+socket.on('connect_error', (error) => {
+  console.log(error.message); // 'Token has expired'
+  console.log(error.data); // { code: 'EXPIRED' }
+});
+```
+
+If the `error` is not an object with a string `message`, the interceptor logs a `ValidationError` and sends no reply, so the socket waits until its connection times out.
+
 - `socket.disconnect()` in the client removes its client from the interceptor of its namespace.
 - [`client.close()`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientclose) disconnects the socket from the namespace, as `socket.disconnect()` in a Socket.IO server. Socket.IO has no close codes, so the code and reason are ignored.
 - [`interceptor.clear()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclear) and [`interceptor.stop()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorstop) disconnect the sockets of the namespace and close the connections that no other namespace uses.
