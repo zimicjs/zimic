@@ -88,14 +88,21 @@ export namespace WebSocketClient {
 
 type WebSocketClientRawEventListener = (this: WebSocket, event: Event) => PossiblePromise<void>;
 
+interface WebSocketClientOpenAttempt {
+  socket: WebSocket;
+  opening: Promise<unknown>;
+  closing: Promise<void>;
+  // Whether the attempt was closed or failed, so a later `open()` starts a new attempt instead of joining this one.
+  isClosed: boolean;
+}
+
 /** @see {@link https://zimic.dev/docs/ws/api/websocket-client `WebSocketClient` API reference} */
 export class WebSocketClient<
   Schema extends WebSocketSchema,
   Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketClientDefaultPath<Schema>,
 > implements Omit<WebSocket, `${string}EventListener` | `on${string}`> {
   private socket?: WebSocket;
-  private openingSocket?: WebSocket;
-  private openingPromise?: Promise<void>;
+  private openAttempt?: WebSocketClientOpenAttempt;
 
   // A client created with a URL has not connected yet, which matches a native socket that is still connecting. After
   // an open attempt or a close, a client without a socket is closed.
@@ -191,7 +198,7 @@ export class WebSocketClient<
 
     // The socket being opened is not exposed yet, but it decodes the messages it receives as soon as it opens, so
     // it needs the binary type set while opening, such as in open listeners.
-    const socket = this.socket ?? this.openingSocket;
+    const socket = this.socket ?? this.openAttempt?.socket;
 
     if (socket) {
       socket.binaryType = value;
@@ -215,7 +222,7 @@ export class WebSocketClient<
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientreadystate `client.readyState` API reference} */
   get readyState(): WebSocketClient.ReadyState {
-    const socket = this.socket ?? this.openingSocket;
+    const socket = this.socket ?? this.openAttempt?.socket;
     return socket ? socket.readyState : this.#readyStateWithoutSocket;
   }
 
@@ -226,20 +233,13 @@ export class WebSocketClient<
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientopen `client.open()` API reference} */
   async open(options?: WebSocketClientOpenOptions) {
-    if (!this.openingPromise) {
-      const openingPromise = this.openSocket(options).finally(() => {
-        if (this.openingPromise === openingPromise) {
-          this.openingPromise = undefined;
-        }
-      });
+    const pendingAttempt = this.openAttempt;
 
-      this.openingPromise = openingPromise;
+    if (pendingAttempt && !pendingAttempt.isClosed) {
+      await pendingAttempt.opening;
+      return;
     }
 
-    await this.openingPromise;
-  }
-
-  private async openSocket(options?: WebSocketClientOpenOptions) {
     if (this.readyState === WebSocketClient.OPEN) {
       return;
     }
@@ -248,29 +248,61 @@ export class WebSocketClient<
     // socket being opened instead of only the previous one.
     const previousSocket = this.socket;
     this.socket = undefined;
-
-    const socket = new WebSocket(this.#url, this.#protocols);
-    this.openingSocket = socket;
     this.#readyStateWithoutSocket = WebSocketClient.CLOSED;
 
-    try {
-      if (socket.binaryType !== this.binaryType) {
-        socket.binaryType = this.binaryType;
-      }
+    const socket = new WebSocket(this.#url, this.#protocols);
 
-      this.applyListeners(socket);
-
-      await Promise.all([previousSocket && closeWebSocketClient(previousSocket), openWebSocketClient(socket, options)]);
-    } catch (error) {
-      socket.close();
-      throw error;
-    } finally {
-      if (this.openingSocket === socket) {
-        this.openingSocket = undefined;
-      }
+    if (socket.binaryType !== this.binaryType) {
+      socket.binaryType = this.binaryType;
     }
 
-    this.socket = socket;
+    this.applyListeners(socket);
+
+    const attempt: WebSocketClientOpenAttempt = {
+      socket,
+      opening: Promise.all([
+        previousSocket && closeWebSocketClient(previousSocket),
+        openWebSocketClient(socket, options),
+      ]),
+      closing: new Promise((resolve) => {
+        socket.addEventListener('close', () => resolve(), { once: true });
+      }),
+      isClosed: false,
+    };
+
+    this.openAttempt = attempt;
+
+    // An open listener of the client can close it and open it again, so only the current attempt adopts its socket.
+    socket.addEventListener(
+      'open',
+      () => {
+        if (this.openAttempt === attempt) {
+          this.socket = socket;
+          this.openAttempt = undefined;
+        }
+      },
+      { once: true },
+    );
+
+    // Some runtimes leave a socket closed while connecting in the `CLOSING` state after its `close` event, so the
+    // client stops reading the state of the attempt once its socket closes.
+    socket.addEventListener(
+      'close',
+      () => {
+        if (this.openAttempt === attempt) {
+          this.openAttempt = undefined;
+        }
+      },
+      { once: true },
+    );
+
+    try {
+      await attempt.opening;
+    } catch (error) {
+      attempt.isClosed = true;
+      socket.close();
+      throw error;
+    }
   }
 
   private applyListeners(socket: WebSocket) {
@@ -294,32 +326,38 @@ export class WebSocketClient<
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientclose `client.close()` API reference} */
   async close(code?: number, reason?: string, options?: WebSocketClientCloseOptions) {
-    if (!this.socket) {
-      const { openingSocket, openingPromise } = this;
+    const attempt = this.openAttempt;
 
-      if (openingSocket) {
-        // Like a native socket, closing while connecting fails the connection, so the pending `open()` rejects with
-        // the error and this waits only for it to settle. A later `open()` starts a new connection instead of
-        // joining the failing one.
-        this.openingPromise = undefined;
-        openingSocket.close(code, reason);
-        await Promise.allSettled([openingPromise]);
-      }
+    if (attempt) {
+      // Like a native socket, closing while connecting fails the connection, so the pending `open()` rejects and a
+      // later `open()` starts a new connection.
+      attempt.isClosed = true;
+      attempt.socket.close(code, reason);
+      await attempt.closing;
+      return;
+    }
 
+    const socket = this.socket;
+
+    if (!socket) {
       return;
     }
 
     try {
-      await closeWebSocketClient(this.socket, { ...options, code, reason });
+      await closeWebSocketClient(socket, { ...options, code, reason });
     } finally {
-      this.socket = undefined;
+      // An `open()` called while closing replaces the socket, which must stay.
+      if (this.socket === socket) {
+        this.socket = undefined;
+      }
+
       this.#readyStateWithoutSocket = WebSocketClient.CLOSED;
     }
   }
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientsend `client.send()` API reference} */
   send(data: WebSocketMessageData<WebSocketSchemaMessage<Schema, Path>>) {
-    const socket = this.socket ?? this.openingSocket;
+    const socket = this.socket ?? this.openAttempt?.socket;
 
     // Like a native socket, a client without a socket throws while connecting and discards the data once closed.
     if (socket) {
