@@ -95,7 +95,7 @@ type WebSocketClientRawEventListener = (this: WebSocket, event: Event) => Possib
 interface WebSocketClientOpenAttempt {
   socket: WebSocket;
   opening: Promise<unknown>;
-  closing: Promise<void>;
+  closing: Promise<CloseEvent>;
   // Whether the attempt was closed or failed, so a later `open()` starts a new attempt instead of joining this one.
   isClosed: boolean;
 }
@@ -211,17 +211,17 @@ export class WebSocketClient<
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clienturl `client.url` API reference} */
   get url() {
-    return this.socket?.url ?? this.#url;
+    return (this.socket ?? this.openAttempt?.socket)?.url ?? this.#url;
   }
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientprotocol `client.protocol` API reference} */
   get protocol() {
-    return this.socket?.protocol ?? '';
+    return (this.socket ?? this.openAttempt?.socket)?.protocol ?? '';
   }
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientextensions `client.extensions` API reference} */
   get extensions() {
-    return this.socket?.extensions ?? '';
+    return (this.socket ?? this.openAttempt?.socket)?.extensions ?? '';
   }
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientreadystate `client.readyState` API reference} */
@@ -232,7 +232,7 @@ export class WebSocketClient<
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientbufferedamount `client.bufferedAmount` API reference} */
   get bufferedAmount() {
-    return this.socket?.bufferedAmount ?? 0;
+    return (this.socket ?? this.openAttempt?.socket)?.bufferedAmount ?? 0;
   }
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientopen `client.open()` API reference} */
@@ -269,7 +269,7 @@ export class WebSocketClient<
         openWebSocketClient(socket, options),
       ]),
       closing: new Promise((resolve) => {
-        socket.addEventListener('close', () => resolve(), { once: true });
+        socket.addEventListener('close', resolve, { once: true });
       }),
       isClosed: false,
     };
@@ -296,11 +296,14 @@ export class WebSocketClient<
       throw error;
     }
 
-    // An open listener of the client can close it and open it again, so only the current attempt takes over its socket.
-    if (this.openAttempt === attempt) {
-      this.socket = socket;
-      this.openAttempt = undefined;
+    // A socket can open before `close()` closes it while the previous socket is still closing, so the open fails like
+    // a connection closed before opening.
+    if (attempt.isClosed) {
+      await attempt.closing.then((closeEvent) => Promise.reject(closeEvent));
     }
+
+    this.socket = socket;
+    this.openAttempt = undefined;
   }
 
   private applyListeners(socket: WebSocket) {
@@ -357,7 +360,11 @@ export class WebSocketClient<
     try {
       await closeWebSocketClient(socket, { ...options, code, reason });
     } finally {
-      this.socket = undefined;
+      // An `open()` started while closing may have already taken over a newer socket, which must stay.
+      if (this.socket === socket) {
+        this.socket = undefined;
+      }
+
       this.#readyStateWithoutSocket = WebSocketClient.CLOSED;
     }
   }
@@ -477,6 +484,6 @@ export class WebSocketClient<
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientdispatchevent `client.dispatchEvent()` API reference} */
   dispatchEvent<Type extends WebSocketClient.EventType>(event: WebSocketClient.Event<Schema, Type, Path>) {
-    return this.socket?.dispatchEvent(event) ?? false;
+    return (this.socket ?? this.openAttempt?.socket)?.dispatchEvent(event) ?? false;
   }
 }
