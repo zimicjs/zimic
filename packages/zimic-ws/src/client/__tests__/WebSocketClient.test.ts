@@ -1,21 +1,23 @@
+import {
+  createWebSocketInterceptor,
+  RemoteWebSocketInterceptor,
+  WebSocketInterceptorClient,
+} from '@zimic/interceptor/experimental/ws';
 import { createPromiseWithResolvers } from '@zimic/utils/data';
-import { startHttpServer, stopHttpServer } from '@zimic/utils/server';
 import { waitFor, waitForNot } from '@zimic/utils/time';
+import { joinURL } from '@zimic/utils/url';
 import { WebSocketCloseTimeoutError, WebSocketOpenTimeoutError } from '@zimic/utils/ws';
-import { createServer as createHttpServer, Server as HttpServer } from 'http';
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
-import { WebSocketServer } from '@/server';
 import { JSONStringified } from '@/types/json';
 import { WebSocketSchema, WebSocketSchemaMessage } from '@/types/schema';
+import { INTERCEPTOR_SERVER_URL } from '@tests/constants';
 
 import { openWebSocketClient } from '../utils/lifecycle';
 import { WebSocketClient } from '../WebSocketClient';
 import { delayWebSocketClose, delayWebSocketListenerTrigger } from './utils';
 
 describe('WebSocketClient', () => {
-  let httpServer: HttpServer;
-
   type Schema = WebSocketSchema<{
     '/': {
       message: { type: 'message'; data: string } | { type: 'count'; data: number };
@@ -28,30 +30,30 @@ describe('WebSocketClient', () => {
     };
   }>;
 
-  let webSocketServer: WebSocketServer<Schema>;
+  let baseURL: string;
+  let interceptor: RemoteWebSocketInterceptor<Schema>;
   let webSocketClient: WebSocketClient<Schema> | undefined;
 
   beforeEach(async () => {
-    httpServer = createHttpServer();
-    webSocketServer = new WebSocketServer({ httpServer });
+    // Remote interceptors serve sockets through a real server in both Node and browsers, so the clients use native
+    // sockets. Each test uses its own path to isolate its connections.
+    baseURL = joinURL(INTERCEPTOR_SERVER_URL, `path-${crypto.randomUUID()}`).replace(/^http/, 'ws');
+    interceptor = createWebSocketInterceptor<Schema>({ type: 'remote', baseURL });
 
-    await startHttpServer(httpServer, { hostname: '127.0.0.1' });
-    await webSocketServer.open();
-
-    expect(webSocketServer.isOpen).toBe(true);
+    await interceptor.start();
+    expect(interceptor.isRunning).toBe(true);
   });
 
   afterEach(async () => {
     await webSocketClient?.close();
     webSocketClient = undefined;
 
-    await webSocketServer.close();
-    await stopHttpServer(httpServer);
+    await interceptor.stop();
   });
 
   describe('Lifecycle', () => {
     it('should open and close correctly', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
       expect(webSocketClient.readyState).toBe(webSocketClient.CONNECTING);
 
       await webSocketClient.open();
@@ -62,7 +64,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should not throw an error if opened multiple times', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
       expect(webSocketClient.readyState).toBe(webSocketClient.CONNECTING);
 
       await webSocketClient.open();
@@ -73,10 +75,11 @@ describe('WebSocketClient', () => {
     });
 
     it('should open one socket if opened concurrently', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
-      const connectionListener = vi.fn();
-      webSocketServer.addEventListener('connection', connectionListener);
+      // The interceptor decides each connection before its handshake finishes, so every socket is counted once open.
+      const connectionListener = vi.fn(() => ({ action: 'accept' as const }));
+      await interceptor.connection().respond(connectionListener);
 
       await Promise.all([webSocketClient.open(), webSocketClient.open()]);
 
@@ -85,7 +88,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should fail opening if closed while connecting', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const openPromise = webSocketClient.open();
       expect(webSocketClient.readyState).toBe(webSocketClient.CONNECTING);
@@ -97,7 +100,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should wait for the socket to close if closed multiple times while connecting', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const openPromise = webSocketClient.open();
       const firstClosePromise = webSocketClient.close();
@@ -110,7 +113,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should fail opening if closed from an open listener', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       let closePromise: Promise<void> | undefined;
 
@@ -126,7 +129,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should fail joined opens if closed from an open listener', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       let closePromise: Promise<void> | undefined;
 
@@ -148,7 +151,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should open a new socket if reopened from an open listener after closing', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       let closePromise: Promise<void> | undefined;
       let reopenPromise: Promise<void> | undefined;
@@ -169,7 +172,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should open a new socket if reopened while closing and the previous socket closes first', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
       await webSocketClient.open();
 
       const previousSocketClosedPromise = createPromiseWithResolvers<void>();
@@ -212,7 +215,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should open a new socket if reopened while closing and the new socket opens first', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
       await webSocketClient.open();
 
       const reopenedPromise = createPromiseWithResolvers<void>();
@@ -255,7 +258,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should keep the newest socket if an earlier close finishes after it opens', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
       await webSocketClient.open();
 
       const newestSocketOpenedPromise = createPromiseWithResolvers<void>();
@@ -302,11 +305,11 @@ describe('WebSocketClient', () => {
     });
 
     it('should keep the newest socket if the server closed a reopened socket before the previous one closed', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
-      const serverWebSocketClients: WebSocketClient<Schema>[] = [];
+      const serverWebSocketClients: WebSocketInterceptorClient<Schema>[] = [];
 
-      webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
+      await interceptor.connection().effect((serverWebSocketClient) => {
         serverWebSocketClients.push(serverWebSocketClient);
       });
 
@@ -344,9 +347,11 @@ describe('WebSocketClient', () => {
         await waitFor(() => {
           expect(webSocketClient!.readyState).toBe(webSocketClient!.OPEN);
         });
-        expect(serverWebSocketClients).toHaveLength(2);
+        await waitFor(() => {
+          expect(serverWebSocketClients).toHaveLength(2);
+        });
 
-        await serverWebSocketClients[1].close();
+        serverWebSocketClients[1].close();
 
         await waitFor(() => {
           expect(webSocketClient!.readyState).toBe(webSocketClient!.CLOSED);
@@ -359,18 +364,21 @@ describe('WebSocketClient', () => {
         await reopenedExpectation;
 
         expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
-        expect(serverWebSocketClients).toHaveLength(3);
+
+        await waitFor(() => {
+          expect(serverWebSocketClients).toHaveLength(3);
+        });
       } finally {
         addEventListenerSpy.mockRestore();
       }
     });
 
     it('should fail joined opens if the server closed a reopened socket before the previous one closed', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
-      const serverWebSocketClients: WebSocketClient<Schema>[] = [];
+      const serverWebSocketClients: WebSocketInterceptorClient<Schema>[] = [];
 
-      webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
+      await interceptor.connection().effect((serverWebSocketClient) => {
         serverWebSocketClients.push(serverWebSocketClient);
       });
 
@@ -411,9 +419,11 @@ describe('WebSocketClient', () => {
         await waitFor(() => {
           expect(webSocketClient!.readyState).toBe(webSocketClient!.OPEN);
         });
-        expect(serverWebSocketClients).toHaveLength(2);
+        await waitFor(() => {
+          expect(serverWebSocketClients).toHaveLength(2);
+        });
 
-        await serverWebSocketClients[1].close();
+        serverWebSocketClients[1].close();
 
         await waitFor(() => {
           expect(webSocketClient!.readyState).toBe(webSocketClient!.CLOSED);
@@ -432,7 +442,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should open a new socket if opened after closed while connecting', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const openPromise = webSocketClient.open();
       await webSocketClient.close();
@@ -443,7 +453,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should open a new socket if opened before a close while connecting finishes', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const closedOpenPromise = webSocketClient.open();
       const closePromise = webSocketClient.close();
@@ -457,18 +467,21 @@ describe('WebSocketClient', () => {
     });
 
     it('should open a new socket if opened after the server closed the connection', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
-      const serverWebSocketClients: WebSocketClient<Schema>[] = [];
+      const serverWebSocketClients: WebSocketInterceptorClient<Schema>[] = [];
 
-      webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
+      await interceptor.connection().effect((serverWebSocketClient) => {
         serverWebSocketClients.push(serverWebSocketClient);
       });
 
       await webSocketClient.open();
-      expect(serverWebSocketClients).toHaveLength(1);
 
-      await serverWebSocketClients[0].close();
+      await waitFor(() => {
+        expect(serverWebSocketClients).toHaveLength(1);
+      });
+
+      serverWebSocketClients[0].close();
 
       await waitFor(() => {
         expect(webSocketClient!.readyState).toBe(webSocketClient!.CLOSED);
@@ -477,22 +490,28 @@ describe('WebSocketClient', () => {
       await webSocketClient.open();
 
       expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
-      expect(serverWebSocketClients).toHaveLength(2);
+
+      await waitFor(() => {
+        expect(serverWebSocketClients).toHaveLength(2);
+      });
     });
 
     it('should fail opening if closed while reopening after the server closed the connection', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
-      const serverWebSocketClients: WebSocketClient<Schema>[] = [];
+      const serverWebSocketClients: WebSocketInterceptorClient<Schema>[] = [];
 
-      webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
+      await interceptor.connection().effect((serverWebSocketClient) => {
         serverWebSocketClients.push(serverWebSocketClient);
       });
 
       await webSocketClient.open();
-      expect(serverWebSocketClients).toHaveLength(1);
 
-      await serverWebSocketClients[0].close();
+      await waitFor(() => {
+        expect(serverWebSocketClients).toHaveLength(1);
+      });
+
+      serverWebSocketClients[0].close();
 
       await waitFor(() => {
         expect(webSocketClient!.readyState).toBe(webSocketClient!.CLOSED);
@@ -508,7 +527,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should not throw an error if closed multiple times', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
       expect(webSocketClient.readyState).toBe(webSocketClient.CONNECTING);
 
       await webSocketClient.open();
@@ -522,7 +541,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should close with code and reason', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const closeListener = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'close'>>();
       webSocketClient.addEventListener('close', closeListener);
@@ -545,7 +564,7 @@ describe('WebSocketClient', () => {
     it('should support construction from a native socket', async () => {
       const protocols = ['protocol1'];
 
-      const nativeWebSocketClient = new WebSocket(webSocketServer.baseURL, protocols);
+      const nativeWebSocketClient = new WebSocket(baseURL, protocols);
       webSocketClient = new WebSocketClient<Schema>(nativeWebSocketClient);
 
       expect(nativeWebSocketClient.readyState).toBe(WebSocket.CONNECTING);
@@ -576,7 +595,7 @@ describe('WebSocketClient', () => {
     it('should be open if the native socket is already open when constructed', async () => {
       const protocols = ['protocol1'];
 
-      const nativeWebSocketClient = new WebSocket(webSocketServer.baseURL, protocols);
+      const nativeWebSocketClient = new WebSocket(baseURL, protocols);
       await openWebSocketClient(nativeWebSocketClient);
 
       expect(nativeWebSocketClient.readyState).toBe(WebSocket.OPEN);
@@ -611,7 +630,7 @@ describe('WebSocketClient', () => {
       expect(WebSocketClient.CLOSING).toBe(WebSocket.CLOSING);
       expect(WebSocketClient.CLOSED).toBe(WebSocket.CLOSED);
 
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       expect(webSocketClient.CONNECTING).toBe(WebSocket.CONNECTING);
       expect(webSocketClient.OPEN).toBe(WebSocket.OPEN);
@@ -621,7 +640,7 @@ describe('WebSocketClient', () => {
 
     it('should expose the protocol of the socket being opened to open listeners', async () => {
       const protocols = ['protocol1', 'protocol2'];
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL, protocols);
+      webSocketClient = new WebSocketClient<Schema>(baseURL, protocols);
 
       let protocolWhileOpening: string | undefined;
 
@@ -636,9 +655,9 @@ describe('WebSocketClient', () => {
 
     it('should expose URL, protocol, extensions, state, and buffer correctly', async () => {
       const protocols = ['protocol1', 'protocol2'];
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL, protocols);
+      webSocketClient = new WebSocketClient<Schema>(baseURL, protocols);
 
-      expect(webSocketClient.url).toBe(webSocketServer.baseURL);
+      expect(webSocketClient.url).toBe(baseURL);
       expect(webSocketClient.protocol).toBe('');
       expect(webSocketClient.extensions).toBe('');
       expect(webSocketClient.readyState).toBe(webSocketClient.CONNECTING);
@@ -653,7 +672,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should support setting binary type before and after opening', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       expect(webSocketClient.binaryType).toBe('blob');
 
@@ -668,15 +687,13 @@ describe('WebSocketClient', () => {
     });
 
     it('should apply the binary type set in an open listener to received messages', async () => {
-      webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
-        serverWebSocketClient.addEventListener('message', (event) => {
-          serverWebSocketClient.send(event.data);
-        });
-      });
-
-      const binaryWebSocketClient = new WebSocketClient<BinarySchema>(webSocketServer.baseURL);
+      const binaryInterceptor = createWebSocketInterceptor<BinarySchema>({ type: 'remote', baseURL });
+      const binaryWebSocketClient = new WebSocketClient<BinarySchema>(baseURL);
 
       try {
+        await binaryInterceptor.start();
+        await binaryInterceptor.message().respond((message) => message);
+
         expect(binaryWebSocketClient.binaryType).toBe('blob');
 
         binaryWebSocketClient.addEventListener('open', () => {
@@ -700,26 +717,29 @@ describe('WebSocketClient', () => {
         expect(receivedData).toEqual(new Uint8Array([1, 2, 3]).buffer);
       } finally {
         await binaryWebSocketClient.close();
+        await binaryInterceptor.stop();
       }
     });
 
     it('should apply the binary type set while opening to received messages', async () => {
-      const binaryWebSocketClient = new WebSocketClient<BinarySchema>(webSocketServer.baseURL);
+      const binaryInterceptor = createWebSocketInterceptor<BinarySchema>({ type: 'remote', baseURL });
+      const binaryWebSocketClient = new WebSocketClient<BinarySchema>(baseURL);
 
       let readyStateWhileSettingBinaryType: WebSocketClient.ReadyState | undefined;
 
-      // The server accepts the connection only after the client created its socket, so this sets the binary type
-      // while the client is still opening.
-      webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
-        readyStateWhileSettingBinaryType = binaryWebSocketClient.readyState;
-        binaryWebSocketClient.binaryType = 'arraybuffer';
-
-        serverWebSocketClient.addEventListener('message', (event) => {
-          serverWebSocketClient.send(event.data);
-        });
-      });
-
       try {
+        await binaryInterceptor.start();
+
+        // The interceptor decides the connection before finishing its handshake, so this sets the binary type while
+        // the client is still opening.
+        await binaryInterceptor.connection().respond(() => {
+          readyStateWhileSettingBinaryType = binaryWebSocketClient.readyState;
+          binaryWebSocketClient.binaryType = 'arraybuffer';
+          return { action: 'accept' };
+        });
+
+        await binaryInterceptor.message().respond((message) => message);
+
         expect(binaryWebSocketClient.binaryType).toBe('blob');
 
         const messageListener = vi.fn<WebSocketClient.EventListener<BinarySchema, 'message'>>();
@@ -740,13 +760,14 @@ describe('WebSocketClient', () => {
         expect(receivedData).toEqual(new Uint8Array([1, 2, 3]).buffer);
       } finally {
         await binaryWebSocketClient.close();
+        await binaryInterceptor.stop();
       }
     });
   });
 
   describe('Messaging', () => {
     it('should throw an invalid state error if sending before opened', () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
       expect(webSocketClient.readyState).toBe(webSocketClient.CONNECTING);
 
       expect(() => {
@@ -755,13 +776,13 @@ describe('WebSocketClient', () => {
     });
 
     it('should throw an invalid state error if sending while connecting', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       let readyStateWhileSending: WebSocketClient.ReadyState | undefined;
       let sendError: unknown;
 
-      // The server accepts the connection before the client receives the handshake, so the client is still connecting.
-      webSocketServer.addEventListener('connection', () => {
+      // The interceptor decides the connection before finishing its handshake, so the client is still connecting.
+      await interceptor.connection().respond(() => {
         readyStateWhileSending = webSocketClient!.readyState;
 
         try {
@@ -769,6 +790,8 @@ describe('WebSocketClient', () => {
         } catch (error) {
           sendError = error;
         }
+
+        return { action: 'accept' };
       });
 
       await webSocketClient.open();
@@ -779,7 +802,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should not throw if sending while closing', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
       await webSocketClient.open();
 
       const closePromise = webSocketClient.close();
@@ -793,7 +816,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should not throw if sending after closed', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
       await webSocketClient.open();
 
       await webSocketClient.close();
@@ -805,25 +828,23 @@ describe('WebSocketClient', () => {
     });
 
     it('should send and receive messages', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
-      webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
-        serverWebSocketClient.addEventListener('message', (event) => {
-          const message = JSON.parse(event.data);
+      await interceptor
+        .message()
+        .with({ type: 'message' })
+        .respond((message) => ({ type: 'message', data: `response: ${message.data}` }));
 
-          expectTypeOf(message).toEqualTypeOf<WebSocketSchemaMessage<Schema>>();
-          expectTypeOf(message.type).toEqualTypeOf<'message' | 'count'>();
-          expectTypeOf(message.data).toEqualTypeOf<string | number>();
+      const receivedMessages: WebSocketSchemaMessage<Schema>[] = [];
 
-          expect(message.type).toBe('message');
+      webSocketClient.addEventListener('message', (event) => {
+        const message = JSON.parse(event.data);
 
-          serverWebSocketClient.send(
-            JSON.stringify({
-              type: 'message',
-              data: `response: ${message.data}`,
-            }),
-          );
-        });
+        expectTypeOf(message).toEqualTypeOf<WebSocketSchemaMessage<Schema>>();
+        expectTypeOf(message.type).toEqualTypeOf<'message' | 'count'>();
+        expectTypeOf(message.data).toEqualTypeOf<string | number>();
+
+        receivedMessages.push(message);
       });
 
       const messageListener = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'message'>>();
@@ -848,18 +869,15 @@ describe('WebSocketClient', () => {
           }),
         );
       });
+
+      expect(receivedMessages).toEqual([{ type: 'message', data: 'response: hello' }]);
     });
 
     it('should send messages from an open listener', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
-      const serverMessageListener = vi.fn<(data: string) => void>();
-
-      webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
-        serverWebSocketClient.addEventListener('message', (event) => {
-          serverMessageListener(event.data);
-        });
-      });
+      const serverMessageListener = vi.fn();
+      await interceptor.message().effect(serverMessageListener);
 
       let readyStateWhileSending: WebSocketClient.ReadyState | undefined;
 
@@ -874,20 +892,20 @@ describe('WebSocketClient', () => {
       await waitFor(() => {
         expect(serverMessageListener).toHaveBeenCalledTimes(1);
       });
-      expect(serverMessageListener).toHaveBeenCalledWith(JSON.stringify({ type: 'message', data: 'hello' }));
+      expect(serverMessageListener).toHaveBeenCalledWith({ type: 'message', data: 'hello' }, expect.anything());
     });
   });
 
   describe('Listeners', () => {
     it('should support adding and removing non-unitary listeners', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const onOpen = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'open'>>();
       const onMessage = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'message'>>();
       const onClose = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'close'>>();
       const onError = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'error'>>();
 
-      webSocketServer.addEventListener('connection', (serverClient) => {
+      await interceptor.connection().effect((serverClient) => {
         serverClient.send(
           JSON.stringify({
             type: 'message',
@@ -962,14 +980,14 @@ describe('WebSocketClient', () => {
     });
 
     it('should support setting and removing unitary listeners', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const onOpen = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'open'>>();
       const onMessage = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'message'>>();
       const onClose = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'close'>>();
       const onError = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'error'>>();
 
-      webSocketServer.addEventListener('connection', (serverClient) => {
+      await interceptor.connection().effect((serverClient) => {
         serverClient.send(
           JSON.stringify({
             type: 'message',
@@ -1042,7 +1060,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should replace previous unitary listeners if reassigned', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const openListener = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'open'>>();
       const otherOpenListener = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'open'>>();
@@ -1068,7 +1086,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should not replace non-unitary listeners when assigning unitary listeners', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const onOpen = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'open'>>();
       const openListener = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'open'>>();
@@ -1083,7 +1101,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should not replace non-unitary listeners when multiple are added', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const openListener = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'open'>>();
       const otherOpenListener = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'open'>>();
@@ -1098,7 +1116,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should not throw when removing non-unitary listeners multiple times', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const openListener = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'open'>>();
 
@@ -1114,7 +1132,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should not throw when clearing unitary listeners multiple times', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const onOpen = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'open'>>();
 
@@ -1129,7 +1147,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should allow non-unitary listeners added after opened', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       await webSocketClient.open();
 
@@ -1142,7 +1160,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should allow unitary listeners added after opened', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       await webSocketClient.open();
 
@@ -1155,11 +1173,11 @@ describe('WebSocketClient', () => {
     });
 
     it('should apply listener changes made while connecting', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const message = JSON.stringify({ type: 'message' as const, data: 'hello' });
 
-      webSocketServer.addEventListener('connection', (serverClient) => {
+      await interceptor.connection().effect((serverClient) => {
         serverClient.send(message);
       });
 
@@ -1190,7 +1208,7 @@ describe('WebSocketClient', () => {
 
   describe('Dispatch Event', () => {
     it('should return false when dispatching with no socket', () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const errorListener = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'error'>>();
       webSocketClient.addEventListener('error', errorListener);
@@ -1202,7 +1220,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should dispatch events through the underlying socket when open', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const errorListener = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'error'>>();
       webSocketClient.addEventListener('error', errorListener);
@@ -1221,7 +1239,7 @@ describe('WebSocketClient', () => {
       const delayedListenerTrigger = delayWebSocketListenerTrigger(100);
 
       try {
-        webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+        webSocketClient = new WebSocketClient<Schema>(baseURL);
 
         const timeoutDuration = 5;
 
@@ -1240,7 +1258,7 @@ describe('WebSocketClient', () => {
       const delayedListenerTrigger = delayWebSocketListenerTrigger(100);
 
       try {
-        webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+        webSocketClient = new WebSocketClient<Schema>(baseURL);
 
         const timeoutDuration = 5;
 
@@ -1257,7 +1275,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should throw an open timeout error if reopening while closing does not close the previous socket before the timeout', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
       await webSocketClient.open();
 
       const closePromise = webSocketClient.close();
@@ -1294,8 +1312,32 @@ describe('WebSocketClient', () => {
       }
     });
 
+    it('should open a new socket if opened as soon as opening timed out', async () => {
+      const delayedListenerTrigger = delayWebSocketListenerTrigger(100);
+
+      try {
+        webSocketClient = new WebSocketClient<Schema>(baseURL);
+
+        const timeoutDuration = 5;
+        let openError: unknown;
+
+        // Reopening in the rejection handler runs before the socket of the timed out open emits its close event.
+        await webSocketClient.open({ timeout: timeoutDuration }).catch((error: unknown) => {
+          openError = error;
+          return webSocketClient!.open();
+        });
+
+        expect(openError).toEqual(new WebSocketOpenTimeoutError(timeoutDuration));
+        expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
+
+        await delayedListenerTrigger.asPromise();
+      } finally {
+        delayedListenerTrigger.restore();
+      }
+    });
+
     it('should throw a close timeout error if closing times out', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       await webSocketClient.open();
 
@@ -1316,7 +1358,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should throw a close timeout error if closing while opening times out', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const timeoutDuration = 5;
       let closeResultPromise: Promise<PromiseSettledResult<void>[]> | undefined;
@@ -1351,7 +1393,7 @@ describe('WebSocketClient', () => {
     });
 
     it('should throw an open timeout error if a socket closed while opening does not close before the timeout', async () => {
-      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       // The socket must open before the timeout, so this is longer than the local handshake and shorter than the
       // delayed close.
