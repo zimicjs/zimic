@@ -279,6 +279,70 @@ describe('WebSocketClient', () => {
       }
     });
 
+    it('should keep the newest socket if the server closed a reopened socket before the previous one closed', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+
+      const serverWebSocketClients: WebSocketClient<Schema>[] = [];
+
+      webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
+        serverWebSocketClients.push(serverWebSocketClient);
+      });
+
+      await webSocketClient.open();
+
+      const newestSocketOpenedPromise = createPromiseWithResolvers<void>();
+      const originalWebSocketAddEventListener = WebSocket.prototype.addEventListener;
+
+      // Delaying the close listeners added while the previous socket is closing until the newest socket opens keeps
+      // the reopened socket waiting for the previous one to close.
+      const addEventListenerSpy = vi.spyOn(WebSocket.prototype, 'addEventListener').mockImplementation(function (
+        this: WebSocket,
+        type,
+        listener,
+        options,
+      ) {
+        const delayedListener =
+          type === 'close' && this.readyState === WebSocket.CLOSING
+            ? (event: Event) => {
+                void newestSocketOpenedPromise.then(() => {
+                  (listener as EventListener)(event);
+                });
+              }
+            : listener;
+
+        originalWebSocketAddEventListener.call(this, type, delayedListener, options);
+      });
+
+      try {
+        const closePromise = webSocketClient.close();
+
+        const reopenedPromise = webSocketClient.open();
+        const reopenedExpectation = expect(reopenedPromise).rejects.toHaveProperty('type', 'close');
+
+        await waitFor(() => {
+          expect(webSocketClient!.readyState).toBe(webSocketClient!.OPEN);
+        });
+        expect(serverWebSocketClients).toHaveLength(2);
+
+        await serverWebSocketClients[1].close();
+
+        await waitFor(() => {
+          expect(webSocketClient!.readyState).toBe(webSocketClient!.CLOSED);
+        });
+
+        await webSocketClient.open();
+        newestSocketOpenedPromise.resolve();
+
+        await closePromise;
+        await reopenedExpectation;
+
+        expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
+        expect(serverWebSocketClients).toHaveLength(3);
+      } finally {
+        addEventListenerSpy.mockRestore();
+      }
+    });
+
     it('should open a new socket if opened after closed while connecting', async () => {
       webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
 
@@ -1154,6 +1218,36 @@ describe('WebSocketClient', () => {
         await delayedWebSocketClose.toPromise();
 
         await expect(openPromise).rejects.toHaveProperty('type', 'close');
+        expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
+      } finally {
+        delayedWebSocketClose.restore();
+      }
+    });
+
+    it('should throw an open timeout error if a socket closed while opening does not close before the timeout', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+
+      // The socket must open before the timeout, so this is longer than the local handshake and shorter than the
+      // delayed close.
+      const timeoutDuration = 50;
+      let closePromise: Promise<void> | undefined;
+
+      // An open listener closes the client before `open()` takes over its socket.
+      webSocketClient.addEventListener('open', () => {
+        closePromise = webSocketClient!.close();
+      });
+
+      const delayedWebSocketClose = delayWebSocketClose(100);
+
+      try {
+        const openPromise = webSocketClient.open({ timeout: timeoutDuration });
+        await expect(openPromise).rejects.toThrow(new WebSocketOpenTimeoutError(timeoutDuration));
+
+        await delayedWebSocketClose.toPromise();
+
+        expect(closePromise).toBeDefined();
+        await closePromise;
+
         expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
       } finally {
         delayedWebSocketClose.restore();

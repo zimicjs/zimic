@@ -3,6 +3,7 @@ import {
   closeWebSocketClient,
   DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT,
   WebSocketCloseTimeoutError,
+  WebSocketOpenTimeoutError,
 } from '@zimic/utils/ws';
 
 import { WebSocketMessageData, WebSocketSchema, WebSocketSchemaMessage, WebSocketSchemaPath } from '@/types/schema';
@@ -296,10 +297,21 @@ export class WebSocketClient<
       throw error;
     }
 
-    // A socket can open before `close()` closes it while the previous socket is still closing, so the open fails like
-    // a connection closed before opening.
-    if (attempt.isClosed) {
-      await attempt.closing.then((closeEvent) => Promise.reject(closeEvent));
+    // While the previous socket is still closing, this socket can open and then be closed by `close()` or by the
+    // server. The open then fails like a connection closed before opening, and leaves the state of newer attempts.
+    if (attempt.isClosed || this.openAttempt !== attempt) {
+      const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options ?? {};
+
+      await new Promise<never>((_resolve, reject) => {
+        const openTimeout = setTimeout(() => {
+          reject(new WebSocketOpenTimeoutError(timeoutDuration));
+        }, timeoutDuration);
+
+        void attempt.closing.then((closeEvent) => {
+          clearTimeout(openTimeout);
+          reject(closeEvent);
+        });
+      });
     }
 
     this.socket = socket;
