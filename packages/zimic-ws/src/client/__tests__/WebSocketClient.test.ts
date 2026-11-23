@@ -125,6 +125,28 @@ describe('WebSocketClient', () => {
       expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
     });
 
+    it('should fail joined opens if closed from an open listener', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+
+      let closePromise: Promise<void> | undefined;
+
+      webSocketClient.addEventListener('open', () => {
+        closePromise = webSocketClient!.close();
+      });
+
+      const openPromise = webSocketClient.open();
+      const joinedOpenPromise = webSocketClient.open();
+
+      const openExpectation = expect(openPromise).rejects.toHaveProperty('type', 'close');
+      const joinedOpenExpectation = expect(joinedOpenPromise).rejects.toHaveProperty('type', 'close');
+
+      await openExpectation;
+      await joinedOpenExpectation;
+
+      await closePromise;
+      expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
+    });
+
     it('should open a new socket if reopened from an open listener after closing', async () => {
       webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
 
@@ -338,6 +360,72 @@ describe('WebSocketClient', () => {
 
         expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
         expect(serverWebSocketClients).toHaveLength(3);
+      } finally {
+        addEventListenerSpy.mockRestore();
+      }
+    });
+
+    it('should fail joined opens if the server closed a reopened socket before the previous one closed', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+
+      const serverWebSocketClients: WebSocketClient<Schema>[] = [];
+
+      webSocketServer.addEventListener('connection', (serverWebSocketClient) => {
+        serverWebSocketClients.push(serverWebSocketClient);
+      });
+
+      await webSocketClient.open();
+
+      const reopenedSocketClosedPromise = createPromiseWithResolvers<void>();
+      const originalWebSocketAddEventListener = WebSocket.prototype.addEventListener;
+
+      // Delaying the close listeners added while the previous socket is closing until the reopened socket closes keeps
+      // the reopened socket waiting for the previous one to close.
+      const addEventListenerSpy = vi.spyOn(WebSocket.prototype, 'addEventListener').mockImplementation(function (
+        this: WebSocket,
+        type,
+        listener,
+        options,
+      ) {
+        const delayedListener =
+          type === 'close' && this.readyState === WebSocket.CLOSING
+            ? (event: Event) => {
+                void reopenedSocketClosedPromise.then(() => {
+                  (listener as EventListener)(event);
+                });
+              }
+            : listener;
+
+        originalWebSocketAddEventListener.call(this, type, delayedListener, options);
+      });
+
+      try {
+        const closePromise = webSocketClient.close();
+
+        const reopenedPromise = webSocketClient.open();
+        const joinedReopenedPromise = webSocketClient.open();
+
+        const reopenedExpectation = expect(reopenedPromise).rejects.toHaveProperty('type', 'close');
+        const joinedReopenedExpectation = expect(joinedReopenedPromise).rejects.toHaveProperty('type', 'close');
+
+        await waitFor(() => {
+          expect(webSocketClient!.readyState).toBe(webSocketClient!.OPEN);
+        });
+        expect(serverWebSocketClients).toHaveLength(2);
+
+        await serverWebSocketClients[1].close();
+
+        await waitFor(() => {
+          expect(webSocketClient!.readyState).toBe(webSocketClient!.CLOSED);
+        });
+
+        reopenedSocketClosedPromise.resolve();
+
+        await closePromise;
+        await reopenedExpectation;
+        await joinedReopenedExpectation;
+
+        expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
       } finally {
         addEventListenerSpy.mockRestore();
       }

@@ -1,3 +1,4 @@
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { PossiblePromise, UnionHasMoreThanOneType } from '@zimic/utils/types';
 import {
   closeWebSocketClient,
@@ -96,6 +97,8 @@ type WebSocketClientRawEventListener = (this: WebSocket, event: Event) => Possib
 interface WebSocketClientOpenAttempt {
   socket: WebSocket;
   opening: Promise<unknown>;
+  // The outcome of the `open()` that started the attempt, which later calls join.
+  opened: Promise<void>;
   closing: Promise<CloseEvent>;
   // Whether the attempt was closed or failed, so a later `open()` starts a new attempt instead of joining this one.
   isClosed: boolean;
@@ -241,7 +244,7 @@ export class WebSocketClient<
     const pendingAttempt = this.openAttempt;
 
     if (pendingAttempt && !pendingAttempt.isClosed) {
-      await pendingAttempt.opening;
+      await pendingAttempt.opened;
       return;
     }
 
@@ -263,12 +266,15 @@ export class WebSocketClient<
 
     this.applyListeners(socket);
 
+    const opened = createPromiseWithResolvers<void>();
+
     const attempt: WebSocketClientOpenAttempt = {
       socket,
       opening: Promise.all([
         previousSocket && closeWebSocketClient(previousSocket),
         openWebSocketClient(socket, options),
       ]),
+      opened,
       closing: new Promise((resolve) => {
         socket.addEventListener('close', resolve, { once: true });
       }),
@@ -288,6 +294,14 @@ export class WebSocketClient<
       },
       { once: true },
     );
+
+    void this.settleOpenAttempt(attempt, options).then(opened.resolve, opened.reject);
+
+    await opened;
+  }
+
+  private async settleOpenAttempt(attempt: WebSocketClientOpenAttempt, options?: WebSocketClientOpenOptions) {
+    const { socket } = attempt;
 
     try {
       await attempt.opening;
