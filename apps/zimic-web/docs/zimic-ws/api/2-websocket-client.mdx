@@ -89,7 +89,7 @@ URLs are plain strings, so they are not checked against the `Path` type argument
 
 ## `client.open()`
 
-Connects the client with a new native `WebSocket`. If the client is already open, the method returns without reconnecting. If the client is connecting, the method waits for the pending connection instead of creating another socket. Otherwise, it closes the current socket, if any, and creates a new one with the URL and protocols of the client. Listeners and the [binary type](#clientbinarytype) of the client are applied to the new socket.
+Connects the client with a new native `WebSocket`. If the client is already open, the method returns without reconnecting. If a connection started by `client.open()` is still connecting, the method waits for it instead of creating another socket. Otherwise, it closes the current socket, if any, and creates a new one with the URL and protocols of the client. Listeners and the [binary type](#clientbinarytype) of the client are applied to the new socket.
 
 ```ts
 client.open();
@@ -113,7 +113,7 @@ await client.open({ timeout: 5000 });
 
 ## `client.close()`
 
-Closes the connection and waits for the socket to close. If the client is connecting, the method fails the connection, like a native `WebSocket`. The pending `client.open()` then rejects with the `error` event of the socket. If the client has no socket, the method returns without throwing.
+Closes the connection and waits for the socket to close. If a connection started by `client.open()` is still connecting, the method fails it, like a native `WebSocket`. The pending `client.open()` then rejects with the `error` event of the socket. If the client has no socket, the method returns without throwing.
 
 ```ts
 client.close();

@@ -1,5 +1,9 @@
 import { PossiblePromise, UnionHasMoreThanOneType } from '@zimic/utils/types';
-import { closeWebSocketClient } from '@zimic/utils/ws';
+import {
+  closeWebSocketClient,
+  DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT,
+  WebSocketCloseTimeoutError,
+} from '@zimic/utils/ws';
 
 import { WebSocketMessageData, WebSocketSchema, WebSocketSchemaMessage, WebSocketSchemaPath } from '@/types/schema';
 
@@ -272,18 +276,6 @@ export class WebSocketClient<
 
     this.openAttempt = attempt;
 
-    // An open listener of the client can close it and open it again, so only the current attempt adopts its socket.
-    socket.addEventListener(
-      'open',
-      () => {
-        if (this.openAttempt === attempt) {
-          this.socket = socket;
-          this.openAttempt = undefined;
-        }
-      },
-      { once: true },
-    );
-
     // Some runtimes leave a socket closed while connecting in the `CLOSING` state after its `close` event, so the
     // client stops reading the state of the attempt once its socket closes.
     socket.addEventListener(
@@ -302,6 +294,12 @@ export class WebSocketClient<
       attempt.isClosed = true;
       socket.close();
       throw error;
+    }
+
+    // An open listener of the client can close it and open it again, so only the current attempt takes over its socket.
+    if (this.openAttempt === attempt) {
+      this.socket = socket;
+      this.openAttempt = undefined;
     }
   }
 
@@ -333,7 +331,20 @@ export class WebSocketClient<
       // later `open()` starts a new connection.
       attempt.isClosed = true;
       attempt.socket.close(code, reason);
-      await attempt.closing;
+
+      const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options ?? {};
+
+      await new Promise<void>((resolve, reject) => {
+        const closeTimeout = setTimeout(() => {
+          reject(new WebSocketCloseTimeoutError(timeoutDuration));
+        }, timeoutDuration);
+
+        void attempt.closing.then(() => {
+          clearTimeout(closeTimeout);
+          resolve();
+        });
+      });
+
       return;
     }
 
@@ -346,11 +357,7 @@ export class WebSocketClient<
     try {
       await closeWebSocketClient(socket, { ...options, code, reason });
     } finally {
-      // An `open()` called while closing replaces the socket, which must stay.
-      if (this.socket === socket) {
-        this.socket = undefined;
-      }
-
+      this.socket = undefined;
       this.#readyStateWithoutSocket = WebSocketClient.CLOSED;
     }
   }
@@ -375,7 +382,9 @@ export class WebSocketClient<
   ) {
     const rawListener = listener.bind(this) as WebSocketClientRawEventListener;
 
-    this.socket?.addEventListener(type, rawListener, options);
+    const socket = this.socket ?? this.openAttempt?.socket;
+    socket?.addEventListener(type, rawListener, options);
+
     this.listenerToRawListener[type].set(listener, rawListener);
   }
 
@@ -388,7 +397,9 @@ export class WebSocketClient<
     const rawListener = this.listenerToRawListener[type].get(listener);
 
     if (rawListener) {
-      this.socket?.removeEventListener(type, rawListener, options);
+      const socket = this.socket ?? this.openAttempt?.socket;
+      socket?.removeEventListener(type, rawListener, options);
+
       this.listenerToRawListener[type].delete(listener);
     }
   }
@@ -433,13 +444,14 @@ export class WebSocketClient<
     Type extends WebSocketClient.EventType,
     Listener extends WebSocketClient.EventListener<Schema, Type, Path> | null,
   >(type: Type, listener: Listener) {
+    const socket = this.socket ?? this.openAttempt?.socket;
     const currentListener = this.unitaryListeners[type];
 
     if (currentListener) {
       const rawListener = this.listenerToRawListener[type].get(currentListener);
 
-      if (this.socket && rawListener) {
-        this.socket[`on${type}`] = null;
+      if (socket && rawListener) {
+        socket[`on${type}`] = null;
       }
 
       this.listenerToRawListener[type].delete(currentListener);
@@ -449,14 +461,14 @@ export class WebSocketClient<
       const rawListener = listener.bind(this) as WebSocketClientRawEventListener;
       this.listenerToRawListener[type].set(listener, rawListener);
 
-      if (this.socket) {
-        this.socket[`on${type}`] = rawListener;
+      if (socket) {
+        socket[`on${type}`] = rawListener;
       }
 
       (this.unitaryListeners[type] as Listener) = listener;
     } else {
-      if (this.socket) {
-        this.socket[`on${type}`] = null;
+      if (socket) {
+        socket[`on${type}`] = null;
       }
 
       (this.unitaryListeners[type] as Listener | null) = null;

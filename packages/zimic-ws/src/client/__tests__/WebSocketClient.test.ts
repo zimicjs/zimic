@@ -940,6 +940,39 @@ describe('WebSocketClient', () => {
 
       expect(onClose).toHaveBeenCalledTimes(1);
     });
+
+    it('should apply listener changes made while connecting', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+
+      const message = JSON.stringify({ type: 'message' as const, data: 'hello' });
+
+      webSocketServer.addEventListener('connection', (serverClient) => {
+        serverClient.send(message);
+      });
+
+      const openPromise = webSocketClient.open();
+      expect(webSocketClient.readyState).toBe(webSocketClient.CONNECTING);
+
+      const onMessage = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'message'>>();
+      const messageListener = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'message'>>();
+      const removedMessageListener = vi.fn<WebSocketClient.EventListener<WebSocketSchema, 'message'>>();
+
+      webSocketClient.onmessage = onMessage;
+      webSocketClient.addEventListener('message', messageListener);
+      webSocketClient.addEventListener('message', removedMessageListener);
+      webSocketClient.removeEventListener('message', removedMessageListener);
+
+      await openPromise;
+
+      await waitFor(() => {
+        expect(onMessage).toHaveBeenCalledTimes(1);
+        expect(messageListener).toHaveBeenCalledTimes(1);
+      });
+
+      expect(onMessage).toHaveBeenCalledWith(expect.objectContaining({ data: message }));
+      expect(messageListener).toHaveBeenCalledWith(expect.objectContaining({ data: message }));
+      expect(removedMessageListener).not.toHaveBeenCalled();
+    });
   });
 
   describe('Dispatch Event', () => {
@@ -1026,6 +1059,33 @@ describe('WebSocketClient', () => {
         await delayedWebSocketClose.toPromise();
 
         expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
+      } finally {
+        delayedWebSocketClose.restore();
+      }
+    });
+
+    it('should throw a close timeout error if closing while opening times out', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+
+      const timeoutDuration = 5;
+      let closePromise: Promise<void> | undefined;
+
+      // An open listener closes the client before `open()` takes over its socket.
+      webSocketClient.addEventListener('open', () => {
+        closePromise = webSocketClient!.close(undefined, undefined, { timeout: timeoutDuration });
+      });
+
+      const delayedWebSocketClose = delayWebSocketClose(100);
+
+      try {
+        await webSocketClient.open();
+        await expect(closePromise).rejects.toThrow(new WebSocketCloseTimeoutError(timeoutDuration));
+
+        await delayedWebSocketClose.toPromise();
+
+        await waitFor(() => {
+          expect(webSocketClient!.readyState).toBe(webSocketClient!.CLOSED);
+        });
       } finally {
         delayedWebSocketClose.restore();
       }
