@@ -268,11 +268,21 @@ export class WebSocketClient<
 
     const opened = createPromiseWithResolvers<void>();
 
+    const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options ?? {};
+
+    // One timeout covers the whole open, including closing the previous socket. It starts before the timeouts of each
+    // step, so it fires first when they have the same duration.
+    const timedOut = createPromiseWithResolvers<never>();
+
+    const openTimeout = setTimeout(() => {
+      timedOut.reject(new WebSocketOpenTimeoutError(timeoutDuration));
+    }, timeoutDuration);
+
     const attempt: WebSocketClientOpenAttempt = {
       socket,
       opening: Promise.all([
-        previousSocket && closeWebSocketClient(previousSocket),
-        openWebSocketClient(socket, options),
+        previousSocket && closeWebSocketClient(previousSocket, { timeout: timeoutDuration }),
+        openWebSocketClient(socket, { timeout: timeoutDuration }),
       ]),
       opened,
       closing: new Promise((resolve) => {
@@ -295,16 +305,20 @@ export class WebSocketClient<
       { once: true },
     );
 
-    void this.settleOpenAttempt(attempt, options).then(opened.resolve, opened.reject);
+    void this.settleOpenAttempt(attempt, timedOut)
+      .finally(() => {
+        clearTimeout(openTimeout);
+      })
+      .then(opened.resolve, opened.reject);
 
     await opened;
   }
 
-  private async settleOpenAttempt(attempt: WebSocketClientOpenAttempt, options?: WebSocketClientOpenOptions) {
+  private async settleOpenAttempt(attempt: WebSocketClientOpenAttempt, timedOut: Promise<never>) {
     const { socket } = attempt;
 
     try {
-      await attempt.opening;
+      await Promise.race([attempt.opening, timedOut]);
     } catch (error) {
       attempt.isClosed = true;
       socket.close();
@@ -314,18 +328,11 @@ export class WebSocketClient<
     // While the previous socket is still closing, this socket can open and then be closed by `close()` or by the
     // server. The open then fails like a connection closed before opening, and leaves the state of newer attempts.
     if (attempt.isClosed || this.openAttempt !== attempt) {
-      const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options ?? {};
-
-      await new Promise<never>((_resolve, reject) => {
-        const openTimeout = setTimeout(() => {
-          reject(new WebSocketOpenTimeoutError(timeoutDuration));
-        }, timeoutDuration);
-
-        void attempt.closing.then((closeEvent) => {
-          clearTimeout(openTimeout);
-          reject(closeEvent);
-        });
+      const closedBeforeOpening = new Promise<never>((_resolve, reject) => {
+        void attempt.closing.then(reject);
       });
+
+      await Promise.race([closedBeforeOpening, timedOut]);
     }
 
     this.socket = socket;

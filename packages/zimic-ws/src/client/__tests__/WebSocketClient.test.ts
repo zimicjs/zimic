@@ -1256,6 +1256,44 @@ describe('WebSocketClient', () => {
       }
     });
 
+    it('should throw an open timeout error if reopening while closing does not close the previous socket before the timeout', async () => {
+      webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
+      await webSocketClient.open();
+
+      const closePromise = webSocketClient.close();
+
+      const originalWebSocketAddEventListener = WebSocket.prototype.addEventListener;
+
+      // Dropping the close listeners of the closing socket keeps its close from ever finishing for the reopen.
+      const addEventListenerSpy = vi.spyOn(WebSocket.prototype, 'addEventListener').mockImplementation(function (
+        this: WebSocket,
+        type,
+        listener,
+        options,
+      ) {
+        if (type === 'close' && this.readyState === WebSocket.CLOSING) {
+          return;
+        }
+
+        originalWebSocketAddEventListener.call(this, type, listener, options);
+      });
+
+      try {
+        const timeoutDuration = 5;
+
+        const openPromise = webSocketClient.open({ timeout: timeoutDuration });
+        await expect(openPromise).rejects.toThrow(new WebSocketOpenTimeoutError(timeoutDuration));
+
+        await closePromise;
+
+        await waitFor(() => {
+          expect(webSocketClient!.readyState).toBe(webSocketClient!.CLOSED);
+        });
+      } finally {
+        addEventListenerSpy.mockRestore();
+      }
+    });
+
     it('should throw a close timeout error if closing times out', async () => {
       webSocketClient = new WebSocketClient<Schema>(webSocketServer.baseURL);
 

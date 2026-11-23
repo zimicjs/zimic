@@ -101,7 +101,7 @@ client.open(options);
 1. **options**: `WebSocketClientOpenOptions | undefined`
    - **timeout**: `number | undefined` (default `60000`)
 
-     The maximum time, in milliseconds, to wait for the connection to open.
+     The maximum time, in milliseconds, to wait for the connection to open, including closing the previous connection of the client.
 
 **Returns**: `Promise<void>`
 
