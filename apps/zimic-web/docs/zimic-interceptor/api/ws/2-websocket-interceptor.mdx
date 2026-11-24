@@ -94,7 +94,7 @@ Configures if intercepted connections are saved and how they are handled.
 
 - **safeLimit**: `number | undefined` (default: `1000`)
 
-  The safe number of connections to save in memory before logging warnings in the console. If `connectionSaving.enabled` is `true` and the interceptor is not regularly cleared with [`interceptor.clear()`](#interceptorclear), the connections may accumulate in memory and cause performance issues. This option does not limit the number of connections saved in memory, only when to log a `ConnectionSavingSafeLimitExceededError` warning.
+  The safe number of connections to save in memory before logging warnings in the console. If `connectionSaving.enabled` is `true` and the interceptor is not regularly cleared with [`interceptor.clear()`](#interceptorclear), the connections may accumulate in memory and cause performance issues. This option does not limit the number of connections saved in memory, only when to log warnings.
 
 **Related**:
 
