@@ -126,7 +126,7 @@ import {
   createWebSocketInterceptor,
 } from '@zimic/interceptor/experimental/ws';
 
-import { Schema } from './schema';
+import { Schema } from './chat';
 
 const interceptor = createWebSocketInterceptor<Schema>({
   baseURL: 'ws://localhost:3000',
