@@ -366,7 +366,7 @@ Declares a number of intercepted connections that the handler will be able to ma
 
 If only one argument is provided, the handler will match exactly that number of connections. With two arguments, the handler will consider an inclusive range, matching at least the minimum and at most the maximum number of connections.
 
-Once the handler receives more connections than the maximum declared, it will stop matching connections. In this case, Zimic will try other handlers until one eligible is found; otherwise the connection will be accepted. Handlers whose restrictions are not met are also skipped in favor of older handlers.
+Once the handler receives more connections than the maximum declared, it will stop matching connections. In this case, Zimic will try other handlers until one eligible is found. If none is found, the connection will be accepted. Handlers whose restrictions are not met are also skipped in favor of older handlers.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">

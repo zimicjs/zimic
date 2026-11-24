@@ -375,7 +375,7 @@ Declares a number of intercepted messages that the handler will be able to match
 
 If only one argument is provided, the handler will match exactly that number of messages. With two arguments, the handler will consider an inclusive range, matching at least the minimum and at most the maximum number of messages.
 
-Once the handler receives more messages than the maximum declared, it will stop matching messages. In this case, Zimic will try other handlers until one eligible is found; otherwise the message will be [unhandled](/docs/zimic-interceptor/guides/ws/7-unhandled-messages.md).
+Once the handler receives more messages than the maximum declared, it will stop matching messages. In this case, Zimic will try other handlers until one eligible is found. If none is found, the message will be [unhandled](/docs/zimic-interceptor/guides/ws/7-unhandled-messages.md).
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
