@@ -86,7 +86,7 @@ The client-to-server messages sent by this client that matched a [message handle
 
 **Type**: `readonly InterceptedWebSocketInterceptorMessage<Schema, Path>[]`
 
-Calling [`handler.clear()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerclear), [`handler.respond()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerrespond), or [`handler.effect()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlereffect) on a message handler removes the messages it saved from `client.messages`. Messages sent with [`client.send()`](#clientsend) are not saved, because they go from the server to the client.
+Clearing or redeclaring a message handler [removes the messages it saved](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages) from `client.messages`. Messages sent with [`client.send()`](#clientsend) are [server messages](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorserver), which are not saved.
 
 Messages are saved only if [`messageSaving.enabled`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptormessagesaving) is `true` in the interceptor. Otherwise, `client.messages` stays empty.
 

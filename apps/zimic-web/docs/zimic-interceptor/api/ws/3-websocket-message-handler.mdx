@@ -363,7 +363,7 @@ await handler.effect((message, context) => {
 
 The same handler, now including the declared effect.
 
-Handlers with an effect and no response are valid. They can observe messages, save them when message saving is enabled, and count toward [`handler.times()`](#handlertimes).
+Handlers without a response are valid, with or without an effect. They observe matching messages, save them when message saving is enabled, and count toward [`handler.times()`](#handlertimes).
 
 **Related**:
 
@@ -504,18 +504,3 @@ Each message has the following properties:
 Calling [`handler.clear()`](#handlerclear), [`handler.respond()`](#handlerrespond), or [`handler.effect()`](#handlereffect) empties `handler.messages` and removes the same messages from the sender client and the receiver server.
 
 Accessing `handler.messages` throws a `DisabledMessageSavingError` unless [`messageSaving.enabled`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptormessagesaving) is `true` in the interceptor.
-
-## Passive handlers
-
-Handlers without [`handler.respond()`](#handlerrespond) or [`handler.effect()`](#handlereffect) are valid passive handlers. They observe matching messages, save them when message saving is enabled, and count toward [`handler.times()`](#handlertimes) without sending a response or running an effect.
-
-```ts
-const handler = interceptor.message('/rooms/:roomId').with({ type: 'typing' }).times(1);
-```
-
-**Related**:
-
-- [Using local WebSocket interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md)
-- [Using remote WebSocket interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md)
-- [`WebSocketInterceptor`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx)
-- [WebSocket schemas](/docs/zimic-ws/guides/1-schemas.md)

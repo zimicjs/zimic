@@ -74,7 +74,7 @@ createWebSocketInterceptor<Schema>(options);
 
    - **onUnhandledMessage**: `UnhandledMessageStrategy<Schema> | undefined`
 
-     The strategy to use for [unhandled messages](/docs/zimic-interceptor/guides/ws/7-unhandled-messages.md). If a client message reaches the interceptor, but no matching handler exists, this strategy will be used. If a function is provided, it will be called with the unhandled message. Unhandled messages are dropped and their connection stays open.
+     The strategy to use for [unhandled messages](/docs/zimic-interceptor/guides/ws/7-unhandled-messages.md). If a client message reaches the interceptor, but no matching handler exists, this strategy will be used. If a function is provided, it will be called with the unhandled message.
      - **log**: `boolean | undefined` (default: `true`)
 
        Whether to log unhandled messages to the console.

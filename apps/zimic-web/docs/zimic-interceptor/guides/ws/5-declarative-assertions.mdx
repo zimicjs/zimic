@@ -332,7 +332,7 @@ await interceptor
 
 ## Number of messages and connections
 
-Another form of checking the behavior of your application is to assert the number of messages it sends and connections it opens. To achieve this, use `handler.times()` in [message handlers](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlertimes) and [connection handlers](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlertimes), which takes a number or a range of numbers as an argument and specifies how many messages or connections the handler should match. Accepted and rejected connections both count.
+Another form of checking the behavior of your application is to assert the number of messages it sends and connections it opens. To achieve this, use `handler.times()` in [message handlers](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlertimes) and [connection handlers](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlertimes), which takes a number or a range of numbers as an argument and specifies how many messages or connections the handler should match.
 
 If the application sends more messages than expected, they may be handled by the next handler in the chain or unhandled. To learn more about how unhandled messages are processed, check our [unhandled messages guide](/docs/zimic-interceptor/guides/ws/7-unhandled-messages.md). If the application opens more connections than expected, they may be handled by the next handler in the chain or accepted.
 
