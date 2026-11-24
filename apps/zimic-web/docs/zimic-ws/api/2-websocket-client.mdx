@@ -139,7 +139,7 @@ client.close(code, reason, options);
 
 **Returns**: `Promise<void>`
 
-The promise rejects with a [`WebSocketCloseTimeoutError`](#websocketclosetimeouterror) if the connection does not close before the timeout. If the client is open, it also rejects with the `error` event of the socket if closing fails.
+The promise rejects with a [`WebSocketCloseTimeoutError`](#websocketclosetimeouterror) if the connection does not close before the timeout. If the client is open, it also rejects with the `error` event of the socket if closing fails. Like the native `WebSocket.close()`, it rejects with a `DOMException` for an invalid code or reason, and the client keeps its connection.
 
 ```ts
 await client.close(1000, 'Done');
