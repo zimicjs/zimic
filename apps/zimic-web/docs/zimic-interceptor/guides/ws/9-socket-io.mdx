@@ -239,6 +239,10 @@ The interceptors of a base URL share each Engine.IO connection, so their protoco
 
 As with the `connection` event of a Socket.IO server, an interceptor lists a [client](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx) in [`interceptor.clients`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclients) and runs its [connection handlers](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx) when a socket joins its namespace.
 
+- `socket.disconnect()` in the client removes its client from the interceptor of its namespace.
+- [`client.close()`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientclose) disconnects the socket from the namespace, as `socket.disconnect()` in a Socket.IO server. Socket.IO has no close codes, so the code and reason are ignored.
+- [`interceptor.clear()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclear) and [`interceptor.stop()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorstop) disconnect the sockets of the namespace and close the connections that no other namespace uses.
+
 The `auth` option of the socket is available as `request.auth` in connection handlers, as [`client.auth`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientauth), and in saved [`handler.connections`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerconnections), as `socket.handshake.auth` in a Socket.IO server. It is `{}` if the socket sends none. Each namespace a socket joins has its own `auth`. Declare its type as the third parameter of `SocketIOSchema`, which defaults to `Record<string, unknown>`.
 
 ```ts
@@ -288,10 +292,6 @@ socket.on('connect_error', (error) => {
 ```
 
 If the `error` is not an object with a string `message`, the interceptor logs a `ValidationError` and sends no reply, so the socket waits until its connection times out.
-
-- `socket.disconnect()` in the client removes its client from the interceptor of its namespace.
-- [`client.close()`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientclose) disconnects the socket from the namespace, as `socket.disconnect()` in a Socket.IO server. Socket.IO has no close codes, so the code and reason are ignored.
-- [`interceptor.clear()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorclear) and [`interceptor.stop()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorstop) disconnect the sockets of the namespace and close the connections that no other namespace uses.
 
 An interceptor with a Socket.IO protocol takes the WebSocket connections to its base URL alone, ahead of interceptors without a protocol, even ones started later. Those interceptors cannot serve Engine.IO packets, so they do not receive these connections and their connection handlers are not tried. Among Socket.IO interceptors, the newest one that claims a connection takes it. Connections to other paths under the base URL, such as `ws://localhost:3000/socket.io/chat`, are left to other interceptors.
 
