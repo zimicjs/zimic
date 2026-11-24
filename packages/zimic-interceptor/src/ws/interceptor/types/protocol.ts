@@ -40,12 +40,12 @@ export interface WebSocketInterceptorProtocolClientOptions<Message> {
   /** Aborting it releases the client, at any time, removing it from `interceptor.clients`. */
   signal: AbortSignal;
 
-  // Those senders also accept the JSON text of a message, and user code may bypass their types, so the protocol
-  // validates each message before sending it.
+  // Handlers, `client.send`, and `server.send` also accept the JSON text of a message, and user code may bypass their
+  // types, so the protocol validates each message before sending it.
   /** Called with each message sent to the client by a handler, `client.send`, or `server.send`, as given. */
   send: (message: Message) => void;
 
-  // It does not remove the client from `interceptor.clients`; aborting the signal does.
+  // `close` does not remove the client from `interceptor.clients`. Aborting the signal does.
   /** Called by `client.close()`. */
   close: (code?: number, reason?: string) => void;
 
