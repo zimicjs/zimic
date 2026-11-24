@@ -22,7 +22,7 @@ You can override the logging behavior per interceptor with `onUnhandledMessage` 
 
 :::info INFO: <span>How `@zimic/interceptor` treats unhandled messages</span>
 
-A client message is tried against the handlers of every running interceptor [sharing its connection](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorbaseurl), from the last handler created to the first. If none handles it, the strategy of the last started interceptor still sharing the connection is used, or the default strategy if none was defined.
+A client message is tried against the handlers of every running interceptor [sharing its connection](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorbaseurl), from the last handler created to the first. The first handler that matches the message handles it. If a restriction, delay, effect, or response of a handler throws an error, the error is logged, the message is unhandled, and older handlers are not tried. If none handles it, the strategy of the last started interceptor still sharing the connection is used, or the default strategy if none was defined.
 
 If the strategy is a function and it throws, the error is logged and the default strategy is used.
 
