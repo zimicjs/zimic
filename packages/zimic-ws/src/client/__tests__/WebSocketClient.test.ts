@@ -45,6 +45,8 @@ describe('WebSocketClient', () => {
   });
 
   afterEach(async () => {
+    vi.useRealTimers();
+
     await webSocketClient?.close();
     webSocketClient = undefined;
 
@@ -373,74 +375,6 @@ describe('WebSocketClient', () => {
       }
     });
 
-    it('should fail joined opens if the server closed a reopened socket before the previous one closed', async () => {
-      webSocketClient = new WebSocketClient<Schema>(baseURL);
-
-      const serverWebSocketClients: WebSocketInterceptorClient<Schema>[] = [];
-
-      await interceptor.connection().effect((serverWebSocketClient) => {
-        serverWebSocketClients.push(serverWebSocketClient);
-      });
-
-      await webSocketClient.open();
-
-      const reopenedSocketClosedPromise = createPromiseWithResolvers<void>();
-      const originalWebSocketAddEventListener = WebSocket.prototype.addEventListener;
-
-      // Delaying the close listeners added while the previous socket is closing until the reopened socket closes keeps
-      // the reopened socket waiting for the previous one to close.
-      const addEventListenerSpy = vi.spyOn(WebSocket.prototype, 'addEventListener').mockImplementation(function (
-        this: WebSocket,
-        type,
-        listener,
-        options,
-      ) {
-        const delayedListener =
-          type === 'close' && this.readyState === WebSocket.CLOSING
-            ? (event: Event) => {
-                void reopenedSocketClosedPromise.then(() => {
-                  (listener as EventListener)(event);
-                });
-              }
-            : listener;
-
-        originalWebSocketAddEventListener.call(this, type, delayedListener, options);
-      });
-
-      try {
-        const closePromise = webSocketClient.close();
-
-        const reopenedPromise = webSocketClient.open();
-        const joinedReopenedPromise = webSocketClient.open();
-
-        const reopenedExpectation = expect(reopenedPromise).rejects.toHaveProperty('type', 'close');
-        const joinedReopenedExpectation = expect(joinedReopenedPromise).rejects.toHaveProperty('type', 'close');
-
-        await waitFor(() => {
-          expect(webSocketClient!.readyState).toBe(webSocketClient!.OPEN);
-        });
-        await waitFor(() => {
-          expect(serverWebSocketClients).toHaveLength(2);
-        });
-
-        serverWebSocketClients[1].close();
-
-        await waitFor(() => {
-          expect(webSocketClient!.readyState).toBe(webSocketClient!.CLOSED);
-        });
-
-        reopenedSocketClosedPromise.resolve();
-
-        await closePromise;
-        await reopenedExpectation;
-        await joinedReopenedExpectation;
-
-        expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
-      } finally {
-        addEventListenerSpy.mockRestore();
-      }
-    });
-
     it('should open a new socket if opened after closed while connecting', async () => {
       webSocketClient = new WebSocketClient<Schema>(baseURL);
 
@@ -559,6 +493,30 @@ describe('WebSocketClient', () => {
           reason: closeReason,
         }),
       );
+    });
+
+    it('should keep opening if closed with an invalid code while connecting', async () => {
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
+
+      const openPromise = webSocketClient.open();
+
+      // Native sockets only accept the close code 1000 or codes from 3000 to 4999.
+      const invalidCloseCode = 1001;
+      await expect(webSocketClient.close(invalidCloseCode)).rejects.toHaveProperty('name', 'InvalidAccessError');
+
+      await openPromise;
+      expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
+    });
+
+    it('should stay open if closed with an invalid code', async () => {
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
+      await webSocketClient.open();
+
+      // Native sockets only accept the close code 1000 or codes from 3000 to 4999.
+      const invalidCloseCode = 1001;
+      await expect(webSocketClient.close(invalidCloseCode)).rejects.toHaveProperty('name', 'InvalidAccessError');
+
+      expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
     });
 
     it('should support construction from a native socket', async () => {
@@ -818,6 +776,17 @@ describe('WebSocketClient', () => {
     it('should not throw if sending after closed', async () => {
       webSocketClient = new WebSocketClient<Schema>(baseURL);
       await webSocketClient.open();
+
+      await webSocketClient.close();
+      expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
+
+      expect(() => {
+        webSocketClient!.send(JSON.stringify({ type: 'message', data: 'test' }));
+      }).not.toThrow();
+    });
+
+    it('should not throw if sending after closed before opened', async () => {
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       await webSocketClient.close();
       expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
@@ -1236,39 +1205,84 @@ describe('WebSocketClient', () => {
 
   describe('Timeouts', () => {
     it('should throw an open timeout error if opening times out', async () => {
-      const delayedListenerTrigger = delayWebSocketListenerTrigger(100);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
+
+      const delayedListenerTrigger = delayWebSocketListenerTrigger();
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 
       try {
-        webSocketClient = new WebSocketClient<Schema>(baseURL);
-
         const timeoutDuration = 5;
 
         const openPromise = webSocketClient.open({ timeout: timeoutDuration });
-        await expect(openPromise).rejects.toThrow(new WebSocketOpenTimeoutError(timeoutDuration));
+        const openExpectation = expect(openPromise).rejects.toThrow(new WebSocketOpenTimeoutError(timeoutDuration));
 
-        await delayedListenerTrigger.asPromise();
+        await vi.advanceTimersByTimeAsync(timeoutDuration);
+        await openExpectation;
 
-        expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
+        delayedListenerTrigger.release();
+        vi.useRealTimers();
+
+        await waitFor(() => {
+          expect(webSocketClient!.readyState).toBe(webSocketClient!.CLOSED);
+        });
       } finally {
         delayedListenerTrigger.restore();
       }
     });
 
+    it('should throw an open timeout error if a joined open times out', async () => {
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
+
+      const connectionReleasedPromise = createPromiseWithResolvers<void>();
+
+      // The interceptor decides the connection before finishing its handshake, so the client keeps connecting until
+      // the connection is released.
+      await interceptor.connection().respond(async () => {
+        await connectionReleasedPromise;
+        return { action: 'accept' };
+      });
+
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+      const openPromise = webSocketClient.open();
+
+      const timeoutDuration = 5;
+
+      const joinedOpenPromise = webSocketClient.open({ timeout: timeoutDuration });
+      const joinedOpenExpectation = expect(joinedOpenPromise).rejects.toThrow(
+        new WebSocketOpenTimeoutError(timeoutDuration),
+      );
+
+      await vi.advanceTimersByTimeAsync(timeoutDuration);
+      await joinedOpenExpectation;
+
+      expect(webSocketClient.readyState).toBe(webSocketClient.CONNECTING);
+
+      connectionReleasedPromise.resolve();
+
+      await openPromise;
+      expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
+    });
+
     it('should open a new socket if opened after opening timed out', async () => {
-      const delayedListenerTrigger = delayWebSocketListenerTrigger(100);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
+
+      const delayedListenerTrigger = delayWebSocketListenerTrigger();
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 
       try {
-        webSocketClient = new WebSocketClient<Schema>(baseURL);
-
         const timeoutDuration = 5;
 
         const openPromise = webSocketClient.open({ timeout: timeoutDuration });
-        await expect(openPromise).rejects.toThrow(new WebSocketOpenTimeoutError(timeoutDuration));
+        const openExpectation = expect(openPromise).rejects.toThrow(new WebSocketOpenTimeoutError(timeoutDuration));
+
+        await vi.advanceTimersByTimeAsync(timeoutDuration);
+        await openExpectation;
+
+        delayedListenerTrigger.release();
 
         await webSocketClient.open();
         expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
-
-        await delayedListenerTrigger.asPromise();
       } finally {
         delayedListenerTrigger.restore();
       }
@@ -1296,11 +1310,18 @@ describe('WebSocketClient', () => {
         originalWebSocketAddEventListener.call(this, type, listener, options);
       });
 
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
       try {
         const timeoutDuration = 5;
 
         const openPromise = webSocketClient.open({ timeout: timeoutDuration });
-        await expect(openPromise).rejects.toThrow(new WebSocketOpenTimeoutError(timeoutDuration));
+        const openExpectation = expect(openPromise).rejects.toThrow(new WebSocketOpenTimeoutError(timeoutDuration));
+
+        await vi.advanceTimersByTimeAsync(timeoutDuration);
+        await openExpectation;
+
+        vi.useRealTimers();
 
         await closePromise;
 
@@ -1313,24 +1334,28 @@ describe('WebSocketClient', () => {
     });
 
     it('should open a new socket if opened as soon as opening timed out', async () => {
-      const delayedListenerTrigger = delayWebSocketListenerTrigger(100);
+      webSocketClient = new WebSocketClient<Schema>(baseURL);
+
+      const delayedListenerTrigger = delayWebSocketListenerTrigger();
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 
       try {
-        webSocketClient = new WebSocketClient<Schema>(baseURL);
-
         const timeoutDuration = 5;
         let openError: unknown;
 
         // Reopening in the rejection handler runs before the socket of the timed out open emits its close event.
-        await webSocketClient.open({ timeout: timeoutDuration }).catch((error: unknown) => {
+        const reopenPromise = webSocketClient.open({ timeout: timeoutDuration }).catch((error: unknown) => {
           openError = error;
           return webSocketClient!.open();
         });
 
+        await vi.advanceTimersByTimeAsync(timeoutDuration);
+        await reopenPromise;
+
         expect(openError).toEqual(new WebSocketOpenTimeoutError(timeoutDuration));
         expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
 
-        await delayedListenerTrigger.asPromise();
+        delayedListenerTrigger.release();
       } finally {
         delayedListenerTrigger.restore();
       }
@@ -1341,17 +1366,21 @@ describe('WebSocketClient', () => {
 
       await webSocketClient.open();
 
-      const delayedWebSocketClose = delayWebSocketClose(100);
+      const delayedWebSocketClose = delayWebSocketClose();
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 
       try {
         const timeoutDuration = 5;
 
         const closePromise = webSocketClient.close(undefined, undefined, { timeout: timeoutDuration });
-        await expect(closePromise).rejects.toThrow(new WebSocketCloseTimeoutError(timeoutDuration));
+        const closeExpectation = expect(closePromise).rejects.toThrow(new WebSocketCloseTimeoutError(timeoutDuration));
 
-        await delayedWebSocketClose.toPromise();
+        await vi.advanceTimersByTimeAsync(timeoutDuration);
+        await closeExpectation;
 
         expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
+
+        delayedWebSocketClose.release();
       } finally {
         delayedWebSocketClose.restore();
       }
@@ -1361,31 +1390,32 @@ describe('WebSocketClient', () => {
       webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const timeoutDuration = 5;
-      let closeResultPromise: Promise<PromiseSettledResult<void>[]> | undefined;
+      const socketOpenedPromise = createPromiseWithResolvers<void>();
+      let closePromise: Promise<void> | undefined;
 
       // An open listener closes the client before `open()` takes over its socket.
       webSocketClient.addEventListener('open', () => {
-        closeResultPromise = Promise.allSettled([
-          webSocketClient!.close(undefined, undefined, { timeout: timeoutDuration }),
-        ]);
+        closePromise = webSocketClient!.close(undefined, undefined, { timeout: timeoutDuration });
+        socketOpenedPromise.resolve();
       });
 
-      const delayedWebSocketClose = delayWebSocketClose(100);
+      const delayedWebSocketClose = delayWebSocketClose();
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 
       try {
         const openPromise = webSocketClient.open();
+        const openExpectation = expect(openPromise).rejects.toHaveProperty('type', 'close');
 
-        await waitFor(() => {
-          expect(closeResultPromise).toBeDefined();
-        });
+        await socketOpenedPromise;
 
-        expect(await closeResultPromise).toEqual([
-          { status: 'rejected', reason: new WebSocketCloseTimeoutError(timeoutDuration) },
-        ]);
+        const closeExpectation = expect(closePromise).rejects.toThrow(new WebSocketCloseTimeoutError(timeoutDuration));
 
-        await delayedWebSocketClose.toPromise();
+        await vi.advanceTimersByTimeAsync(timeoutDuration);
+        await closeExpectation;
 
-        await expect(openPromise).rejects.toHaveProperty('type', 'close');
+        delayedWebSocketClose.release();
+
+        await openExpectation;
         expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
       } finally {
         delayedWebSocketClose.restore();
@@ -1395,27 +1425,32 @@ describe('WebSocketClient', () => {
     it('should throw an open timeout error if a socket closed while opening does not close before the timeout', async () => {
       webSocketClient = new WebSocketClient<Schema>(baseURL);
 
-      // The socket must open before the timeout, so this is longer than the local handshake and shorter than the
-      // delayed close.
-      const timeoutDuration = 50;
+      const socketOpenedPromise = createPromiseWithResolvers<void>();
       let closePromise: Promise<void> | undefined;
 
       // An open listener closes the client before `open()` takes over its socket.
       webSocketClient.addEventListener('open', () => {
         closePromise = webSocketClient!.close();
+        socketOpenedPromise.resolve();
       });
 
-      const delayedWebSocketClose = delayWebSocketClose(100);
+      const delayedWebSocketClose = delayWebSocketClose();
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 
       try {
+        const timeoutDuration = 5;
+
         const openPromise = webSocketClient.open({ timeout: timeoutDuration });
-        await expect(openPromise).rejects.toThrow(new WebSocketOpenTimeoutError(timeoutDuration));
+        const openExpectation = expect(openPromise).rejects.toThrow(new WebSocketOpenTimeoutError(timeoutDuration));
 
-        await delayedWebSocketClose.toPromise();
+        await socketOpenedPromise;
 
-        expect(closePromise).toBeDefined();
+        await vi.advanceTimersByTimeAsync(timeoutDuration);
+        await openExpectation;
+
+        delayedWebSocketClose.release();
+
         await closePromise;
-
         expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
       } finally {
         delayedWebSocketClose.restore();

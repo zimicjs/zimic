@@ -241,10 +241,24 @@ export class WebSocketClient<
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientopen `client.open()` API reference} */
   async open(options?: WebSocketClientOpenOptions) {
+    const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options ?? {};
+
     const pendingAttempt = this.openAttempt;
 
     if (pendingAttempt && !pendingAttempt.isAbandoned) {
-      await pendingAttempt.opened;
+      // A joined open only stops waiting on its timeout. The attempt keeps connecting for the call that started it.
+      const timedOut = createPromiseWithResolvers<never>();
+
+      const openTimeout = setTimeout(() => {
+        timedOut.reject(new WebSocketOpenTimeoutError(timeoutDuration));
+      }, timeoutDuration);
+
+      try {
+        await Promise.race([pendingAttempt.opened, timedOut]);
+      } finally {
+        clearTimeout(openTimeout);
+      }
+
       return;
     }
 
@@ -267,8 +281,6 @@ export class WebSocketClient<
     this.applyListeners(socket);
 
     const opened = createPromiseWithResolvers<void>();
-
-    const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options ?? {};
 
     // One timeout covers the whole open, including closing the previous socket. It starts before the timeouts of each
     // step, so it fires first when they have the same duration.
@@ -364,9 +376,10 @@ export class WebSocketClient<
 
     if (attempt) {
       // Like a native socket, closing while connecting fails the connection, so the pending `open()` rejects and a
-      // later `open()` starts a new connection.
-      attempt.isAbandoned = true;
+      // later `open()` starts a new connection. A native close that throws on an invalid code or reason leaves the
+      // socket connecting, so the attempt is abandoned only after it succeeds.
       attempt.socket.close(code, reason);
+      attempt.isAbandoned = true;
 
       const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options ?? {};
 
@@ -387,18 +400,25 @@ export class WebSocketClient<
     const socket = this.socket;
 
     if (!socket) {
+      this.#readyStateWithoutSocket = WebSocketClient.CLOSED;
       return;
     }
 
     try {
       await closeWebSocketClient(socket, { ...options, code, reason });
     } finally {
-      // An `open()` started while closing may have already taken over a newer socket, which must stay.
-      if (this.socket === socket) {
-        this.socket = undefined;
-      }
+      // A native close that throws on an invalid code or reason leaves the socket unchanged, so the client keeps it.
+      const isClosingOrClosed =
+        socket.readyState === WebSocketClient.CLOSING || socket.readyState === WebSocketClient.CLOSED;
 
-      this.#readyStateWithoutSocket = WebSocketClient.CLOSED;
+      if (isClosingOrClosed) {
+        // An `open()` started while closing may have already taken over a newer socket, which must stay.
+        if (this.socket === socket) {
+          this.socket = undefined;
+        }
+
+        this.#readyStateWithoutSocket = WebSocketClient.CLOSED;
+      }
     }
   }
 
