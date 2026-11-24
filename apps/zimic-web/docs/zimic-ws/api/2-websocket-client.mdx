@@ -113,7 +113,7 @@ await client.open({ timeout: 5000 });
 
 ## `client.close()`
 
-Closes the connection and waits for the socket to close. If a connection started by `client.open()` is still connecting, the method fails it, like a native `WebSocket`. The pending `client.open()` then rejects with the `error` event of the socket. If the client has no socket, the method returns without throwing.
+Closes the connection and waits for the socket to close. If a connection started by `client.open()` is still connecting, the method fails it, like a native `WebSocket`. The pending `client.open()` then rejects with the `error` or `close` event of the socket. If the client has no socket, the method returns without throwing.
 
 ```ts
 client.close();
@@ -139,7 +139,7 @@ client.close(code, reason, options);
 
 **Returns**: `Promise<void>`
 
-The promise rejects with a [`WebSocketCloseTimeoutError`](#websocketclosetimeouterror) if the connection does not close before the timeout, or with the `error` event of the socket if closing fails.
+The promise rejects with a [`WebSocketCloseTimeoutError`](#websocketclosetimeouterror) if the connection does not close before the timeout. If the client is open, it also rejects with the `error` event of the socket if closing fails.
 
 ```ts
 await client.close(1000, 'Done');
