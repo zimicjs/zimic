@@ -100,8 +100,8 @@ interface WebSocketClientOpenAttempt {
   // The outcome of the `open()` that started the attempt, which later calls join.
   opened: Promise<void>;
   closing: Promise<CloseEvent>;
-  // Whether the attempt was closed or failed, so a later `open()` starts a new attempt instead of joining this one.
-  isClosed: boolean;
+  // A later `open()` starts a new attempt instead of joining an abandoned one.
+  isAbandoned: boolean;
 }
 
 /** @see {@link https://zimic.dev/docs/ws/api/websocket-client `WebSocketClient` API reference} */
@@ -243,7 +243,7 @@ export class WebSocketClient<
   async open(options?: WebSocketClientOpenOptions) {
     const pendingAttempt = this.openAttempt;
 
-    if (pendingAttempt && !pendingAttempt.isClosed) {
+    if (pendingAttempt && !pendingAttempt.isAbandoned) {
       await pendingAttempt.opened;
       return;
     }
@@ -288,7 +288,7 @@ export class WebSocketClient<
       closing: new Promise((resolve) => {
         socket.addEventListener('close', resolve, { once: true });
       }),
-      isClosed: false,
+      isAbandoned: false,
     };
 
     this.openAttempt = attempt;
@@ -305,7 +305,7 @@ export class WebSocketClient<
       { once: true },
     );
 
-    void this.settleOpenAttempt(attempt, timedOut)
+    void this.adoptOpenAttemptSocket(attempt, timedOut)
       .finally(() => {
         clearTimeout(openTimeout);
       })
@@ -314,25 +314,25 @@ export class WebSocketClient<
     await opened;
   }
 
-  private async settleOpenAttempt(attempt: WebSocketClientOpenAttempt, timedOut: Promise<never>) {
+  private async adoptOpenAttemptSocket(attempt: WebSocketClientOpenAttempt, timedOut: Promise<never>) {
     const { socket } = attempt;
 
     try {
       await Promise.race([attempt.opening, timedOut]);
     } catch (error) {
-      attempt.isClosed = true;
+      attempt.isAbandoned = true;
       socket.close();
       throw error;
     }
 
     // While the previous socket is still closing, this socket can open and then be closed by `close()` or by the
     // server. The open then fails like a connection closed before opening, and leaves the state of newer attempts.
-    if (attempt.isClosed || this.openAttempt !== attempt) {
-      const closedBeforeOpening = new Promise<never>((_resolve, reject) => {
+    if (attempt.isAbandoned || this.openAttempt !== attempt) {
+      const closedAfterOpening = new Promise<never>((_resolve, reject) => {
         void attempt.closing.then(reject);
       });
 
-      await Promise.race([closedBeforeOpening, timedOut]);
+      await Promise.race([closedAfterOpening, timedOut]);
     }
 
     this.socket = socket;
@@ -365,7 +365,7 @@ export class WebSocketClient<
     if (attempt) {
       // Like a native socket, closing while connecting fails the connection, so the pending `open()` rejects and a
       // later `open()` starts a new connection.
-      attempt.isClosed = true;
+      attempt.isAbandoned = true;
       attempt.socket.close(code, reason);
 
       const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options ?? {};
