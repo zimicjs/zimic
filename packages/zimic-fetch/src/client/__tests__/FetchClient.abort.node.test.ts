@@ -31,7 +31,6 @@ describe('FetchClient > Abort (Node.js)', () => {
           // Collect garbage while the request is pending, so the abort below checks that the signal still reaches the
           // request. undici 7, bundled by Node.js 24, links cloned requests to their source signal only through a
           // WeakRef, which a garbage collection can clear.
-          // `gc` is exposed by the `--expose-gc` flag in the Node.js Vitest project.
           globalThis.gc!();
 
           controller.abort(abortReason);
