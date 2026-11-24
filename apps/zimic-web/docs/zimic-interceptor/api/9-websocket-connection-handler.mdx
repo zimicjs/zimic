@@ -511,7 +511,7 @@ The connection attempts that matched this handler, whether accepted or rejected.
 
 **Type**: `readonly WebSocketInterceptorConnectionRequest<Schema, Path>[]`
 
-Each attempt is a [connection request](#handlerwith), with its `url`, `protocols`, `searchParams`, and `pathParams`.
+Each attempt is a [connection request](#handlerwith).
 
 This array is readonly and keeps the same reference for the handler lifetime. Calling [`handler.clear()`](#handlerclear), [`handler.respond()`](#handlerrespond), or [`handler.effect()`](#handlereffect) empties this array in place.
 
