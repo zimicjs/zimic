@@ -7,6 +7,7 @@ import type {
 } from '@/ws/messageHandler/types/public';
 
 import { createWebSocketInterceptor } from '../factory';
+import { UnhandledWebSocketInterceptorMessage } from '../types/messages';
 import { UnhandledMessageStrategy, WebSocketInterceptorOptions, WebSocketInterceptorType } from '../types/options';
 import { LocalWebSocketInterceptor, RemoteWebSocketInterceptor } from '../types/public';
 import { InferWebSocketInterceptorSchema } from '../types/schema';
@@ -116,10 +117,17 @@ describe('WebSocketInterceptor > Types', () => {
 
     it('should type unhandled message factories with the messages of the schema', () => {
       function declareInterceptor(baseURL: string) {
-        createWebSocketInterceptor<MessageSchema>({
+        type Schema = WebSocketSchema<{
+          '/': {
+            message: Message | Blob | number;
+          };
+        }>;
+
+        createWebSocketInterceptor<Schema>({
           baseURL,
           onUnhandledMessage(message) {
-            expectTypeOf(message).toEqualTypeOf<Message>();
+            expectTypeOf(message).toEqualTypeOf<UnhandledWebSocketInterceptorMessage<Schema>>();
+            expectTypeOf(message).toEqualTypeOf<Message | ArrayBuffer | `${number}`>();
             return { log: true };
           },
         });

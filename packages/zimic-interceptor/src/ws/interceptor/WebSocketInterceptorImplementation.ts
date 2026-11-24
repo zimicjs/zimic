@@ -20,7 +20,11 @@ import {
 import ConnectionSavingSafeLimitExceededError from './errors/ConnectionSavingSafeLimitExceededError';
 import NotRunningWebSocketInterceptorError from './errors/NotRunningWebSocketInterceptorError';
 import RunningWebSocketInterceptorError from './errors/RunningWebSocketInterceptorError';
-import type { ReceivedWebSocketMessageData, WebSocketInterceptorConnectionRequest } from './types/messages';
+import type {
+  ReceivedWebSocketMessageData,
+  UnhandledWebSocketInterceptorMessage,
+  WebSocketInterceptorConnectionRequest,
+} from './types/messages';
 import type { UnhandledMessageStrategy, WebSocketInterceptorType } from './types/options';
 import type { WebSocketInterceptorProtocol, WebSocketInterceptorProtocolContext } from './types/protocol';
 import type { WebSocketInterceptorConnectionSaving, WebSocketInterceptorMessageSaving } from './types/public';
@@ -435,10 +439,7 @@ class WebSocketInterceptorImplementation<
 
   // Unlike HTTP, unhandled messages have no bypass or reject action. WebSocket is not request-response, so a message
   // needs no reply and the connection stays open.
-  async logUnhandledMessageIfNecessary(
-    message: ReceivedWebSocketMessageData<WebSocketSchemaMessage<Schema>>,
-    url: string,
-  ) {
+  async logUnhandledMessageIfNecessary(message: UnhandledWebSocketInterceptorMessage<Schema>, url: string) {
     const strategy = await this.getUnhandledMessageStrategy(message);
 
     if (strategy.log ?? DEFAULT_UNHANDLED_MESSAGE_STRATEGY.log) {
@@ -447,7 +448,7 @@ class WebSocketInterceptorImplementation<
   }
 
   private async getUnhandledMessageStrategy(
-    message: ReceivedWebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+    message: UnhandledWebSocketInterceptorMessage<Schema>,
   ): Promise<UnhandledMessageStrategy.Declaration> {
     try {
       if (typeof this.onUnhandledMessage === 'function') {
