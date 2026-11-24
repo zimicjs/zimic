@@ -11,8 +11,6 @@ import createFetch from '../factory';
 describe('FetchClient > Abort (Node.js)', () => {
   const baseURL = 'http://localhost:3000';
 
-  // undici 7, bundled by Node.js 24, links a cloned request to the signal of its source only through a WeakRef. If the
-  // clone is garbage collected while the request is pending, aborting the signal no longer reaches the request.
   it('should reject with the signal reason if the signal is aborted after a garbage collection while the request is pending', async () => {
     type Schema = HttpSchema<{
       '/users': {
@@ -34,6 +32,10 @@ describe('FetchClient > Abort (Node.js)', () => {
         .respond(async () => {
           // Weak references are only cleared after the current job finishes.
           await waitForDelay(0);
+
+          // Collect garbage while the request is pending, so the abort below checks that the signal still reaches the
+          // request. undici 7, bundled by Node.js 24, links cloned requests to their source signal only through a
+          // WeakRef, which a garbage collection can clear.
           collectGarbage();
 
           controller.abort(abortReason);
