@@ -240,7 +240,7 @@ await interceptor
 interceptor.server.send({ type: 'user:created', data: { id: '1' } });
 ```
 
-Sends accept message objects only and throw a `ValidationError` for the JSON text of a message. Only ack messages carry an `ackId`, so sending an event message with an `ackId` also throws a `ValidationError`.
+Sends accept message objects only and throw an error for the JSON text of a message. Only ack messages carry an `ackId`, so sending an event message with an `ackId` also throws an error.
 
 ## Namespaces
 
