@@ -206,6 +206,8 @@ import { ChatSchema } from './schema';
 
 const client = new WebSocketClient<ChatSchema, '/rooms/:roomId'>('ws://localhost:3000/rooms/1?token=secret', 'chat');
 
+await client.open();
+
 client.send(JSON.stringify({ type: 'typing', data: { username: 'diego' } }));
 ```
 
