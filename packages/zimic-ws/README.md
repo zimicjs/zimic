@@ -50,7 +50,7 @@ A [WebSocket schema](https://zimic.dev/docs/ws/guides/schemas) declares the mess
 
 - :star: **WebSocket schemas**
 
-  Declare the messages exchanged by your WebSocket connection in a `WebSocketSchema` and use it to type clients, servers, and WebSocket interceptors. Share the schema between both sides to keep them in sync.
+  Declare the messages exchanged by your WebSocket connection in a `WebSocketSchema` and use it to type clients, servers, and WebSocket interceptors. Share the schema between client and server to keep them in sync.
 
 - :zap: **Typed clients**
 
