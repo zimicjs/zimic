@@ -1,7 +1,5 @@
 import { HttpSchema } from '@zimic/http';
 import { waitForDelay } from '@zimic/utils/time';
-import v8 from 'node:v8';
-import vm from 'node:vm';
 import { describe, expect, it } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -20,9 +18,6 @@ describe('FetchClient > Abort (Node.js)', () => {
       };
     }>;
 
-    v8.setFlagsFromString('--expose-gc');
-    const collectGarbage = vm.runInNewContext('gc') as () => void;
-
     await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const controller = new AbortController();
       const abortReason = new Error('Request aborted');
@@ -36,7 +31,8 @@ describe('FetchClient > Abort (Node.js)', () => {
           // Collect garbage while the request is pending, so the abort below checks that the signal still reaches the
           // request. undici 7, bundled by Node.js 24, links cloned requests to their source signal only through a
           // WeakRef, which a garbage collection can clear.
-          collectGarbage();
+          // `gc` is exposed by the `--expose-gc` flag in the Node.js Vitest project.
+          globalThis.gc!();
 
           controller.abort(abortReason);
           return { status: 204 };
