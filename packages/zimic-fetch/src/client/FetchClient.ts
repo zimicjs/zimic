@@ -67,8 +67,6 @@ class FetchClient<Schema extends HttpSchema> implements Omit<Fetch<Schema>, 'loo
     ) => {
       const fetchRequest = await this.createFetchRequest<Method, Path>(input, init);
 
-      // undici 7 links a cloned request to the original signal only through a WeakRef, so the abort link is lost if
-      // the clone is garbage collected while the request is pending. Passing the signal keeps a strong link.
       const response = await globalThis.fetch(fetchRequest.raw.clone(), { signal: fetchRequest.signal });
       const fetchResponse = await this.createFetchResponse<
         Method,

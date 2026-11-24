@@ -31,7 +31,8 @@ describe('FetchClient > Abort', () => {
 
       const fetch = createFetch<Schema>({ baseURL });
 
-      await expect(fetch('/users', { method: 'GET', signal: controller.signal })).rejects.toBe(abortReason);
+      const responsePromise = fetch('/users', { method: 'GET', signal: controller.signal });
+      await expect(responsePromise).rejects.toBe(abortReason);
     });
   });
 });
