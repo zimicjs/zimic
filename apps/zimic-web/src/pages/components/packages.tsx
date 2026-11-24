@@ -25,7 +25,7 @@ export interface PackageInfo {
 const httpSchemaLink = <Link href="/docs/http/guides/schemas">HTTP schema</Link>;
 const webSocketSchemaLink = <Link href="/docs/ws/guides/schemas">WebSocket schema</Link>;
 
-export const httpPackage: PackageInfo = {
+const httpPackage: PackageInfo = {
   id: 'http',
   name: '@zimic/http',
   href: '/docs/http',
@@ -72,7 +72,7 @@ export const httpPackage: PackageInfo = {
   ],
 };
 
-export const fetchPackage: PackageInfo = {
+const fetchPackage: PackageInfo = {
   id: 'fetch',
   name: '@zimic/fetch',
   href: '/docs/fetch',
@@ -120,7 +120,7 @@ export const fetchPackage: PackageInfo = {
   ],
 };
 
-export const webSocketPackage: PackageInfo = {
+const webSocketPackage: PackageInfo = {
   id: 'ws',
   name: '@zimic/ws',
   href: '/docs/ws',
@@ -166,7 +166,7 @@ export const webSocketPackage: PackageInfo = {
   ],
 };
 
-export const interceptorPackage: PackageInfo = {
+const interceptorPackage: PackageInfo = {
   id: 'interceptor',
   name: '@zimic/interceptor',
   href: '/docs/interceptor',
