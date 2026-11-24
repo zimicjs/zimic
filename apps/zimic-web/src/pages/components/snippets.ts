@@ -1,4 +1,4 @@
-// Keep lines under 56 characters, so that the snippets do not scroll horizontally on desktop.
+// Keep lines at most 56 characters long, so that the snippets do not scroll horizontally on desktop.
 
 export const httpSchema = `
 import { HttpSchema } from '@zimic/http';
@@ -60,7 +60,10 @@ const user = await response.json(); // User
 `;
 
 export const webSocket = `
-import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+import {
+  WebSocketClient,
+  WebSocketSchema,
+} from '@zimic/ws';
 
 export type Schema = WebSocketSchema<{
   '/chat': {
@@ -112,7 +115,10 @@ test('searches users', async () => {
   interceptor
     .get('/users')
     .with({ searchParams: { query: 'u' } })
-    .respond({ status: 200, body: [{ username: 'me' }] })
+    .respond({
+      status: 200,
+      body: [{ username: 'me' }],
+    })
     .times(1);
   // highlight-end
 
