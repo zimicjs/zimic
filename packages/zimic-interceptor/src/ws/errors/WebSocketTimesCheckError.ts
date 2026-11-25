@@ -150,7 +150,12 @@ function createTimesCheckUnmatchedDiffs(options: WebSocketTimesCheckErrorOptions
 }
 
 function createTimesCheckErrorFooter({ subject }: WebSocketTimesCheckErrorOptions) {
-  return `Learn more: https://zimic.dev/docs/interceptor/api/websocket-${subject}-handler#handlertimes`;
+  const learnMoreURL =
+    subject === 'message'
+      ? 'https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertimes'
+      : 'https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlertimes';
+
+  return `Learn more: ${learnMoreURL}`;
 }
 
 function createTimesCheckErrorMessage(options: WebSocketTimesCheckErrorOptions) {

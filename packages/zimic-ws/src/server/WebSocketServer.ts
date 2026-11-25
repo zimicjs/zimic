@@ -52,7 +52,7 @@ type WebSocketServerRawEventListener<Type extends WebSocketServer.EventType> = (
   ...parameters: WebSocketServerRawEventListenerParameters[Type]
 ) => void;
 
-/** @see {@link https://zimic.dev/docs/ws/api/websocket-server#websocketserver `WebSocketServer` API reference} */
+/** @see {@link https://zimic.dev/docs/ws/api/websocket-server `WebSocketServer` API reference} */
 export class WebSocketServer<Schema extends WebSocketSchema> {
   #httpServer: HttpServer | HttpsServer;
   #webSocketServer?: NodeWebSocketServer;

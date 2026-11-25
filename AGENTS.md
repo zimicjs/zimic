@@ -27,8 +27,9 @@
 These rules apply to packages intended for direct external use.
 
 - Write JSDoc for every public export and its public members, including re-exported declarations, overloads, option fields, and types reachable through public signatures even when not exported by name. Audit all of them when adding or changing a public API.
-- When an existing page or section of the website docs covers the resource, write only a `@see {@link https://zimic.dev/docs/<route>#<anchor> <label>}` to the closest one, leaving descriptions, examples, option behavior, defaults, and caveats to that page. Link members to their heading anchor, not the page root. Do not add `@example`, `@param`, `@returns`, or `@throws` when the page covers them. Describe the resource in one sentence when no suitable page or section exists.
+- When an existing page or section of the website docs covers the resource, write only a `@see {@link https://zimic.dev/docs/<route>#<anchor> <label>}` to the closest one, leaving descriptions, examples, option behavior, defaults, and caveats to that page. Link members to their heading anchor, not the page root. When the resource is the page's own H1 title, link the page root without an anchor, because Docusaurus gives the H1 no `id`. Never link an anchor the rendered page lacks. Do not add `@example`, `@param`, `@returns`, or `@throws` when the page covers them. Describe the resource in one sentence when no suitable page or section exists.
 - Take routes from the `slug` frontmatter of pages under `apps/zimic-web/docs` and anchors from their headings. Update the JSDoc links in the same change when a route or heading moves.
+- Write each `zimic.dev` URL as a literal string, without template interpolation, so `apps/zimic-web/scripts/check-links.sh` can check it. Run that script after adding or changing doc links.
 
 ## Runtime and behavior coverage
 
