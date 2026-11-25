@@ -1,10 +1,10 @@
 ---
-title: Using remote interceptors | @zimic/interceptor
+title: Using remote HTTP interceptors | @zimic/interceptor
 sidebar_label: Using remote interceptors
 slug: /interceptor/guides/http/remote-interceptors
 ---
 
-# Using remote interceptors
+# Using remote HTTP interceptors
 
 HTTP interceptors allow you to handle requests and return custom responses. Their primary use is to mock HTTP requests in development or testing environments, especially when the backend is unavailable or when you want to have more control over the responses.
 
@@ -49,7 +49,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-With the schema defined, you can now create your interceptor with [`createHttpInterceptor`](/docs/zimic-interceptor/api/1-create-http-interceptor.mdx). It takes the schema as a type parameter and returns an interceptor instance. The `baseURL` option represents the scope of the interceptor and points to the URL that your application will use to make requests.
+With the schema defined, you can now create your interceptor with [`createHttpInterceptor`](/docs/zimic-interceptor/api/http/1-create-http-interceptor.mdx). It takes the schema as a type parameter and returns an interceptor instance. The `baseURL` option represents the scope of the interceptor and points to the URL that your application will use to make requests.
 
 In the case of a remote interceptor, the `baseURL` should point to an [interceptor server](/docs/zimic-interceptor/cli/1-server.md), which is configured by the interceptor to handle requests.
 
@@ -63,7 +63,7 @@ const interceptor = createHttpInterceptor<Schema>({
 });
 ```
 
-You can also set other options, such as the interceptor type and how unhandled requests should be treated. Refer to the [`createHttpInterceptor` API reference](/docs/zimic-interceptor/api/1-create-http-interceptor.mdx) for more details.
+You can also set other options, such as the interceptor type and how unhandled requests should be treated. Refer to the [`createHttpInterceptor` API reference](/docs/zimic-interceptor/api/http/1-create-http-interceptor.mdx) for more details.
 
 ### Path discriminators
 
@@ -134,7 +134,7 @@ Although authentication is optional for private development servers, we strongly
 
 :::
 
-Once the server is running, you can start the interceptor [`interceptor.start()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorstart). This is usually done in a `beforeAll` hook in your test suite.
+Once the server is running, you can start the interceptor [`interceptor.start()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorstart). This is usually done in a `beforeAll` hook in your test suite.
 
 ```ts
 beforeAll(async () => {
@@ -147,7 +147,7 @@ During the start up, the interceptor will connect to the server and get ready to
 
 ### Clearing an interceptor
 
-When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another. This is performed with [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorclear), which resets the interceptor and handlers to their initial states.
+When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another. This is performed with [`interceptor.clear()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorclear), which resets the interceptor and handlers to their initial states.
 
 ```ts
 beforeEach(async () => {
@@ -158,7 +158,7 @@ beforeEach(async () => {
 
 ### Checking expectations
 
-After each test, you can check if your application has made all of the expected requests with [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes). Learn more about how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) to keep your tests clean and readable.
+After each test, you can check if your application has made all of the expected requests with [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorchecktimes). Learn more about how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) to keep your tests clean and readable.
 
 ```ts
 afterEach(async () => {
@@ -169,7 +169,7 @@ afterEach(async () => {
 
 ### Stopping an interceptor
 
-After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with [`interceptor.stop()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorstop).
+After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with [`interceptor.stop()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorstop).
 
 ```ts
 afterAll(async () => {
@@ -212,7 +212,7 @@ If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy ru
 
 :::
 
-If you need to access the requests processed by the interceptor, use [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrequests).
+If you need to access the requests processed by the interceptor, use [`handler.requests`](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx#handlerrequests).
 
 ```ts
 // highlight-next-line
@@ -242,11 +242,11 @@ console.log(handler.requests[0].body); // null
 
 ## Interceptor server authentication
 
-While authentication is optional for private development servers, we strongly recommend enabling authentication when the server is not bound to one of those loopback hostnames or is shared over a network. Authentication prevents unauthorized remote interceptors from connecting to the server.
+While authentication is optional for private development servers, we strongly recommend enabling authentication when the server is bound to a hostname other than `localhost`, `127.0.0.1`, or `::1`, or is shared over a network. Authentication prevents unauthorized remote interceptors from connecting to the server.
 
 Without authentication, browser remote interceptors can connect only when both the interceptor server and the web application use a loopback hostname: `localhost`, `127.0.0.1`, or `::1`. Configure authentication if either one uses another hostname. This restriction does not apply to remote interceptors running outside a browser.
 
-Starting an unauthenticated server through the CLI or [`createInterceptorServer`](/docs/zimic-interceptor/api/4-create-interceptor-server.md) logs a warning when the server uses a non-loopback hostname or runs with `NODE_ENV=production`. The warning does not stop the server in v1.
+Starting an unauthenticated server through the CLI or [`createInterceptorServer`](/docs/zimic-interceptor/api/server/1-create-interceptor-server.md) logs a warning when the server uses a non-loopback hostname or runs with `NODE_ENV=production`. The warning does not stop the server in v1.
 
 In `@zimic/interceptor` v2, unauthenticated servers will refuse to start on non-loopback hostnames.
 
@@ -275,13 +275,15 @@ Make sure to keep the tokens directory private. Do not commit it to version cont
 Once the server is running, remote interceptors can use the `auth.token` option to provide a token.
 
 ```ts
-import { createHttpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor, type HttpInterceptorAuthOptions } from '@zimic/interceptor/http';
+
+const auth: HttpInterceptorAuthOptions = { token: '<token>' };
 
 const interceptor = createHttpInterceptor<Schema>({
   type: 'remote',
   baseURL: 'http://localhost:3000',
   // highlight-next-line
-  auth: { token: '<token>' },
+  auth,
 });
 ```
 

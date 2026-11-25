@@ -1,0 +1,433 @@
+---
+title: Declarative assertions | @zimic/interceptor
+sidebar_label: Declarative assertions
+slug: /interceptor/guides/ws/declarative-assertions
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Declarative assertions
+
+:::warning EXPERIMENTAL
+
+WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. Their API may change before becoming stable.
+
+:::
+
+`@zimic/interceptor` provides a way to declaratively check if your application is sending the expected WebSocket messages and opening the expected connections, using [restriction](#restrictions) and [number of messages and connections](#number-of-messages-and-connections) assertions. They make it possible to have robust tests with declarative conditions verifying your application, without having to write complex logic to manually check all messages and connections.
+
+The examples on this page use the following [schema](/docs/zimic-ws/guides/1-schemas.md):
+
+```ts title='schema.ts'
+import { WebSocketSchema } from '@zimic/ws';
+
+type ChatMessage =
+  | { type: 'message'; data: { text: string } }
+  | { type: 'typing'; data: { username: string } }
+  | { type: 'presence'; data: { online: boolean } };
+
+type Schema = WebSocketSchema<{
+  '/chat': {
+    connection: {
+      searchParams: { token: string };
+      protocols: 'chat' | 'json';
+    };
+    message: ChatMessage;
+  };
+}>;
+```
+
+## Restrictions
+
+Restrictions can be declared using `handler.with()` in [message handlers](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerwith) and [connection handlers](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerwith), and specify conditions expected for the intercepted messages and connections. Message restrictions check the [message data](/docs/zimic-interceptor/guides/ws/3-messages.mdx), and connection restrictions check the search params and subprotocols of the connection. A handler can have multiple restrictions, and all of them must be met for the message or connection to be matched by the handler.
+
+Message handlers can also be restricted to the messages of a specific client with [`handler.from()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerfrom), as described in [Using connected clients](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#using-connected-clients).
+
+Restrictions are available in two forms: static and computed.
+
+### Static restrictions
+
+Static restrictions are defined by passing data to `handler.with()`. Message handlers receive the partial message itself, and connection handlers receive an object that can contain the properties `searchParams` and `protocols`.
+
+#### Static message restrictions
+
+To create static restrictions for messages, first declare the client messages in your [schema](/docs/zimic-ws/guides/1-schemas.md#declaring-messages). Then, pass the message data that the client message must contain.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .message('/chat')
+  // highlight-next-line
+  .with({ type: 'message' })
+  .respond({ type: 'presence', data: { online: true } });
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .message('/chat')
+  // highlight-next-line
+  .with({ type: 'message' })
+  .respond({ type: 'presence', data: { online: true } });
+```
+
+  </TabItem>
+</Tabs>
+
+JSON restrictions match messages that contain the declared properties and values, text restrictions match text messages that include the declared text, and binary restrictions match binary messages with the same bytes. For more details on using message types, such as JSON, text, and binary, visit our [messages guide](/docs/zimic-interceptor/guides/ws/3-messages.mdx#using-client-messages).
+
+#### Static search param restrictions
+
+To restrict connections by their search params, declare the connection search params in your [schema](/docs/zimic-ws/guides/1-schemas.md). Then, use the `searchParams` property with the search params that the connection URL must contain.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .connection('/chat')
+  .with({
+    // highlight-next-line
+    searchParams: { token: 'invalid' },
+  })
+  .respond({ action: 'reject' });
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .connection('/chat')
+  .with({
+    // highlight-next-line
+    searchParams: { token: 'invalid' },
+  })
+  .respond({ action: 'reject' });
+```
+
+  </TabItem>
+</Tabs>
+
+#### Static subprotocol restrictions
+
+Similarly, declare the connection subprotocols in your [schema](/docs/zimic-ws/guides/1-schemas.md) and use the `protocols` property with the subprotocols that the client must request, in any order.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .connection('/chat')
+  .with({
+    // highlight-next-line
+    protocols: ['chat'],
+  })
+  .effect((client) => {
+    client.send({ type: 'presence', data: { online: true } });
+  });
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .connection('/chat')
+  .with({
+    // highlight-next-line
+    protocols: ['chat'],
+  })
+  .effect((client) => {
+    client.send({ type: 'presence', data: { online: true } });
+  });
+```
+
+  </TabItem>
+</Tabs>
+
+### Computed restrictions
+
+Computed restrictions support more complex or dynamic conditions. They are defined by passing a function to `handler.with()`. In message handlers, the function receives the intercepted message data. In connection handlers, it receives the [connection request](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerwith), with its `url`, `protocols`, `searchParams`, and `pathParams`. The function returns a boolean value indicating whether the message or connection matches the restriction.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .message('/chat')
+  .with((message) => {
+    // Expect the message to be a non-empty chat message
+    // highlight-next-line
+    return message.type === 'message' && message.data.text.length > 0;
+  })
+  .respond({ type: 'presence', data: { online: true } });
+
+interceptor
+  .connection('/chat')
+  .with((request) => {
+    // Expect the token to start with 'expired-'
+    // highlight-next-line
+    return request.searchParams.get('token')?.startsWith('expired-') ?? false;
+  })
+  .respond({ action: 'reject' });
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .message('/chat')
+  .with((message) => {
+    // Expect the message to be a non-empty chat message
+    // highlight-next-line
+    return message.type === 'message' && message.data.text.length > 0;
+  })
+  .respond({ type: 'presence', data: { online: true } });
+
+await interceptor
+  .connection('/chat')
+  .with((request) => {
+    // Expect the token to start with 'expired-'
+    // highlight-next-line
+    return request.searchParams.get('token')?.startsWith('expired-') ?? false;
+  })
+  .respond({ action: 'reject' });
+```
+
+  </TabItem>
+</Tabs>
+
+If a message restriction is a type guard, such as `(message) => message is Message`, the message type of the handler is narrowed to the guarded type.
+
+:::tip TIP: <span>Combining restrictions</span>
+
+A restriction acts as a self-contained condition and can be combined in a single handler. Each connection restriction can also have multiple properties at once.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .connection('/chat')
+  .with({
+    // highlight-start
+    searchParams: { token: 'invalid' },
+    protocols: ['chat'],
+    // highlight-end
+  })
+  .with((request) => {
+    // highlight-next-line
+    return request.url.startsWith('wss:');
+  })
+  .respond({ action: 'reject' });
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .connection('/chat')
+  .with({
+    // highlight-start
+    searchParams: { token: 'invalid' },
+    protocols: ['chat'],
+    // highlight-end
+  })
+  .with((request) => {
+    // highlight-next-line
+    return request.url.startsWith('wss:');
+  })
+  .respond({ action: 'reject' });
+```
+
+  </TabItem>
+</Tabs>
+
+:::
+
+### Exact matching
+
+By default, restrictions are partial (`exact: false`), so messages and connections having additional data still match the handler as long as **at least** the restrictions are met. If you want to enforce exact matching, use `exact: true`.
+
+In message handlers, `exact` is an option passed as the second argument of [`handler.with()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerwith). JSON messages must be equal to the restriction and text messages must be identical to it. Binary restrictions always compare whole bytes.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .message('/chat')
+  .with(
+    { type: 'message', data: { text: 'Hello!' } },
+    // highlight-next-line
+    { exact: true }, // If the message has other properties, it will not match
+  )
+  .respond({ type: 'presence', data: { online: true } });
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .message('/chat')
+  .with(
+    { type: 'message', data: { text: 'Hello!' } },
+    // highlight-next-line
+    { exact: true }, // If the message has other properties, it will not match
+  )
+  .respond({ type: 'presence', data: { online: true } });
+```
+
+  </TabItem>
+</Tabs>
+
+In connection handlers, `exact` is a property of the restriction in [`handler.with()`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerwith). The connection must have exactly the declared search params, and the client must request exactly the declared subprotocols, in the same order.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor
+  .connection('/chat')
+  .with({
+    // highlight-next-line
+    protocols: ['chat', 'json'],
+    exact: true, // If other subprotocols are requested, the connection will not match
+  })
+  .respond({ action: 'reject' });
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor
+  .connection('/chat')
+  .with({
+    // highlight-next-line
+    protocols: ['chat', 'json'],
+    exact: true, // If other subprotocols are requested, the connection will not match
+  })
+  .respond({ action: 'reject' });
+```
+
+  </TabItem>
+</Tabs>
+
+## Number of messages and connections
+
+Another form of checking the behavior of your application is to assert the number of messages it sends and connections it opens. To achieve this, use `handler.times()` in [message handlers](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlertimes) and [connection handlers](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlertimes), which takes a number or a range of numbers as an argument and specifies how many messages or connections the handler should match.
+
+If the application sends more messages than expected, they may be handled by the next handler in the chain or unhandled. To learn more about how unhandled messages are processed, check our [unhandled messages guide](/docs/zimic-interceptor/guides/ws/7-unhandled-messages.md). If the application opens more connections than expected, they may be handled by the next handler in the chain or accepted.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+interceptor.connection('/chat').times(1); // Expect exactly one connection
+
+interceptor
+  .message('/chat')
+  .with({ type: 'message' })
+  .respond({ type: 'presence', data: { online: true } })
+  // highlight-next-line
+  .times(1, 3); // Expect from one to three messages
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+await interceptor.connection('/chat').times(1); // Expect exactly one connection
+
+await interceptor
+  .message('/chat')
+  .with({ type: 'message' })
+  .respond({ type: 'presence', data: { online: true } })
+  // highlight-next-line
+  .times(1, 3); // Expect from one to three messages
+```
+
+  </TabItem>
+</Tabs>
+
+`handler.times()` on its own only restricts how many messages or connections the handler should match. To really validate the number of messages and connections, use `handler.checkTimes()` in [message handlers](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerchecktimes) and [connection handlers](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerchecktimes), or [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes), at a point when your application should have sent the messages and opened the connections, such as after a specific action or at the end of a test.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+const handler = interceptor
+  .message('/chat')
+  .with({ type: 'message' })
+  .respond({ type: 'presence', data: { online: true } })
+  .times(1);
+
+// Run application...
+
+// Check that exactly one message was sent
+handler.checkTimes();
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+const handler = await interceptor
+  .message('/chat')
+  .with({ type: 'message' })
+  .respond({ type: 'presence', data: { online: true } })
+  .times(1);
+
+// Run application...
+
+// Check that exactly one message was sent
+await handler.checkTimes();
+```
+
+  </TabItem>
+</Tabs>
+
+A common strategy is to call [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes) in an `afterEach` test hook. This way, you can declare how many messages and connections you expect in each handler and have them validated automatically without needing to call `handler.checkTimes()` in each test.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+afterEach(() => {
+  //  highlight-next-line
+  interceptor.checkTimes();
+});
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+afterEach(async () => {
+  //  highlight-next-line
+  await interceptor.checkTimes();
+});
+```
+
+  </TabItem>
+</Tabs>

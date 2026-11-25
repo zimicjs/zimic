@@ -40,8 +40,20 @@
 
 ## Highlights
 
-🚧 TODO
+- :star: **WebSocket schemas**
+
+  Declare the messages of your WebSocket paths in a [WebSocket schema](https://zimic.dev/docs/ws/guides/schemas) and use it to type your clients, servers, and messages.
+
+- :zap: **Typed clients**
+
+  Open typed [`WebSocketClient`](https://zimic.dev/docs/ws/api/websocket-client) connections, compatible with the native `WebSocket`.
+
+- :satellite: **Typed servers**
+
+  Attach a typed [`WebSocketServer`](https://zimic.dev/docs/ws/api/websocket-server) to a Node.js HTTP server, compatible with the `ws` package.
 
 **Learn more**:
 
-🚧 TODO
+- [`@zimic/ws` - Getting started](https://zimic.dev/docs/ws/getting-started)
+- [`@zimic/ws` - Guides](https://zimic.dev/docs/ws/guides)
+- [`@zimic/ws` - API](https://zimic.dev/docs/ws/api)

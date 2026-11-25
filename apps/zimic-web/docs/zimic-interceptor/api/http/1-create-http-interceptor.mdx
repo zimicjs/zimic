@@ -19,33 +19,33 @@ createHttpInterceptor<Schema>(options);
 
 1. **options**: `HttpInterceptorOptions`
 
-   The options to create an [HTTP interceptor](/docs/zimic-interceptor/api/2-http-interceptor.mdx).
+   The options to create an [HTTP interceptor](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx).
    - **type**: `'local' | 'remote' | undefined` (default: `'local'`)
 
      The type of the HTTP interceptor, either [local](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) or [remote](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md).
 
    - **baseURL**: `string`
 
-     Represents the URL that should be matched by the interceptor. A request matches the base URL when its URL starts with the base URL and has the same origin. Matching requests will be intercepted if a matching [handler](/docs/zimic-interceptor/api/3-http-request-handler.mdx) exists. For [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md), this base URL should point to an [interceptor server](/docs/zimic-interceptor/cli/1-server.md), optionally including [path discriminators](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#path-discriminators).
+     Represents the URL that should be matched by the interceptor. A request matches the base URL when its URL starts with the base URL and has the same origin. Matching requests will be intercepted if a matching [handler](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx) exists. For [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md), this base URL should point to an [interceptor server](/docs/zimic-interceptor/cli/1-server.md), optionally including [path discriminators](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#path-discriminators).
 
    - **requestSaving**: `Partial<HttpInterceptorRequestSaving> | undefined`
 
      Configures if the intercepted requests are saved and how they are handled.
      - **enabled**: `boolean | undefined` (default: `process.env.NODE_ENV === 'test'`)
 
-       Whether [request handlers](/docs/zimic-interceptor/api/3-http-request-handler.mdx) should save their intercepted requests in memory and make them accessible through [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrequests).
+       Whether [request handlers](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx) should save their intercepted requests in memory and make them accessible through [`handler.requests`](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx#handlerrequests).
 
-       If you are using [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes) or [`handler.checkTimes()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerchecktimes) during tests, consider enabling this option to get more detailed information in `TimesCheckError` errors.
+       If you are using [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorchecktimes) or [`handler.checkTimes()`](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx#handlerchecktimes) during tests, consider enabling this option to get more detailed information in `TimesCheckError` errors.
 
        :::info INFO: <span>Clearing the interceptor when saving requests</span>
 
-       If request saving is enabled, make sure to regularly clear the interceptor to avoid requests accumulating in memory. A common practice is to call [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorclear) after each test.
+       If request saving is enabled, make sure to regularly clear the interceptor to avoid requests accumulating in memory. A common practice is to call [`interceptor.clear()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorclear) after each test.
 
        :::
 
      - **safeLimit**: `number | undefined` (default: `1000`)
 
-       The safe number of requests to save in memory before logging warnings in the console. If `requestSaving.enabled` is `true` and the interceptor is not regularly cleared with [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorclear), the requests may accumulate in memory and cause performance issues. This option does not limit the number of requests saved in memory, only when to log warnings.
+       The safe number of requests to save in memory before logging warnings in the console. If `requestSaving.enabled` is `true` and the interceptor is not regularly cleared with [`interceptor.clear()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorclear), the requests may accumulate in memory and cause performance issues. This option does not limit the number of requests saved in memory, only when to log warnings.
 
    - **onUnhandledRequest**: `UnhandledRequestStrategy | undefined`
 
@@ -73,7 +73,7 @@ createHttpInterceptor<Schema>(options);
 
 **Returns**: `HttpInterceptor<Schema>`
 
-An [HTTP interceptor](/docs/zimic-interceptor/api/2-http-interceptor.mdx) typed with the provided schema.
+An [HTTP interceptor](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx) typed with the provided schema.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">

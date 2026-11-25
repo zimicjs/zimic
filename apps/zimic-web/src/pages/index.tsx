@@ -67,7 +67,7 @@ function HomePage() {
         <HomeSection
           title="Highlights"
           titleId="highlights"
-          description="Zimic is a collection of type-safe HTTP integration libraries."
+          description="Zimic is a collection of type-safe HTTP and WebSocket integration libraries."
           className="mx-auto max-w-[96rem]"
         >
           <div className="grid grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-6">
