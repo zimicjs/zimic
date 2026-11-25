@@ -23,4 +23,24 @@ export type MyServiceSchema = HttpSchema<{
       };
     };
   };
+  '/binary-component': {
+    GET: {
+      response: {
+        /** Success */
+        200: {
+          headers: {
+            'content-type': 'application/octet-stream';
+          };
+          body: MyServiceComponents['schemas']['File'];
+        };
+      };
+    };
+  };
 }>;
+
+export interface MyServiceComponents {
+  schemas: {
+    /** Format: binary */
+    File: Blob;
+  };
+}

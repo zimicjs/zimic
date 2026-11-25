@@ -280,13 +280,22 @@ export default [
         { selector: 'default', format: ['camelCase', 'PascalCase'], filter: { regex: '^.+-.+$', match: false } },
         { selector: 'variable', format: ['camelCase', 'PascalCase', 'UPPER_CASE'], leadingUnderscore: 'allow' },
         { selector: 'parameter', format: ['camelCase', 'PascalCase'], leadingUnderscore: 'allow' },
-        { selector: 'parameterProperty', format: ['camelCase', 'PascalCase'], leadingUnderscore: 'allow' },
-        { selector: 'classProperty', format: ['camelCase', 'PascalCase'], leadingUnderscore: 'allow' },
+        // Private class members use `#` instead of a leading underscore.
+        { selector: 'parameterProperty', format: ['camelCase', 'PascalCase'], leadingUnderscore: 'forbid' },
+        // `_schema` is a type-only brand read through indexed access types, such as `this['_schema']`, which `#`
+        // members do not support.
+        {
+          selector: 'classProperty',
+          modifiers: ['readonly'],
+          filter: { regex: '^_schema$', match: true },
+          format: null,
+        },
+        { selector: 'classProperty', format: ['camelCase', 'PascalCase'], leadingUnderscore: 'forbid' },
         {
           selector: 'classProperty',
           modifiers: ['static'],
           format: ['camelCase', 'UPPER_CASE'],
-          leadingUnderscore: 'allow',
+          leadingUnderscore: 'forbid',
         },
         { selector: 'classMethod', format: ['camelCase'] },
         { selector: 'enumMember', format: ['UPPER_CASE'] },

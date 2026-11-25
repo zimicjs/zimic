@@ -10,6 +10,7 @@ interface WebSocketClientOptions {
   url: string;
   socketTimeout?: number;
   messageTimeout?: number;
+  onUnexpectedClose?: () => void;
 }
 
 class WebSocketClient<Schema extends WebSocketSchema> extends WebSocketHandler<Schema> {
@@ -17,11 +18,15 @@ class WebSocketClient<Schema extends WebSocketSchema> extends WebSocketHandler<S
 
   private socket?: ClientSocket;
 
+  private onUnexpectedClose?: () => void;
+
   constructor(options: WebSocketClientOptions) {
     super({
       socketTimeout: options.socketTimeout,
       messageTimeout: options.messageTimeout,
     });
+
+    this.onUnexpectedClose = options.onUnexpectedClose;
 
     this.url = new URL(options.url);
     validateURLProtocol(this.url, SUPPORTED_WEB_SOCKET_PROTOCOLS);
@@ -38,24 +43,33 @@ class WebSocketClient<Schema extends WebSocketSchema> extends WebSocketHandler<S
           .map(encodeURIComponent)
       : [];
 
-    this.socket = new ClientSocket(this.url, parametersAsString);
+    const socket = new ClientSocket(this.url, parametersAsString);
+    this.socket = socket;
 
     try {
-      await super.registerSocket(this.socket, options);
+      await super.registerSocket(socket, options);
     } catch (error) {
       await this.stop();
       throw error;
     }
+
+    socket.addEventListener('close', () => {
+      // Stopping or restarting the client replaces its socket before closing the previous one.
+      if (this.socket === socket) {
+        this.onUnexpectedClose?.();
+      }
+    });
   }
 
   async stop() {
     super.offAny();
 
-    if (this.socket) {
-      await super.closeClientSockets([this.socket]);
-    }
-
+    const socket = this.socket;
     this.socket = undefined;
+
+    if (socket) {
+      await super.closeClientSockets([socket]);
+    }
   }
 }
 

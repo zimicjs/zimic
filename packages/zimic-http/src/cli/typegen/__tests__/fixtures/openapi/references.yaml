@@ -1,0 +1,43 @@
+openapi: 3.1.0
+
+info:
+  title: References
+  version: 1.0.0
+
+paths:
+  /configs:
+    get:
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    $ref: '#/components/schemas/Config/properties/title'
+                  pointerEndingInProperties:
+                    $ref: '#/components/schemas/Config/properties'
+                  propertyNamedProperties:
+                    $ref: '#/components/schemas/Config/properties/properties'
+                  propertyInsidePropertyNamedProperties:
+                    $ref: '#/components/schemas/Config/properties/properties/properties/name'
+
+components:
+  schemas:
+    Config:
+      type: object
+      required:
+        - title
+        - properties
+      properties:
+        title:
+          type: string
+        properties:
+          type: object
+          required:
+            - name
+          properties:
+            name:
+              type: string

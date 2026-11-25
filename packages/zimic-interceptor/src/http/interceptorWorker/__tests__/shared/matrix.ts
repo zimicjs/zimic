@@ -1,10 +1,9 @@
-import { HttpInterceptorWorkerOptions } from '../../types/options';
+import { HttpInterceptorType } from '@/http/interceptor/types/options';
 
-type TestMatrixCase = HttpInterceptorWorkerOptions;
+interface TestMatrixCase {
+  type: HttpInterceptorType;
+}
 
-const testMatrix: TestMatrixCase[] = [
-  { type: 'local' },
-  { type: 'remote', serverURL: new URL('http://localhost/temporary') },
-];
+const testMatrix: TestMatrixCase[] = [{ type: 'local' }, { type: 'remote' }];
 
 export default testMatrix;

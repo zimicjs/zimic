@@ -45,7 +45,7 @@ const DEFAULT_NUMBER_OF_REQUEST_LIMITS: Range<number> = Object.freeze({
 
 export type HttpRequestHandlerRequestMatch =
   | { success: true }
-  | { success: false; cause: 'missingResponseDeclaration' | 'exceededNumberOfRequests' }
+  | { success: false; cause: 'clearedHandler' | 'missingResponseDeclaration' | 'exceededNumberOfRequests' }
   | { success: false; cause: 'unmatchedRestrictions'; diff: RestrictionDiffs };
 
 class HttpRequestHandlerImplementation<
@@ -77,6 +77,8 @@ class HttpRequestHandlerImplementation<
   >;
 
   private createResponseDelay?: HttpRequestHandlerResponseDelayFactory<Path, Default<Schema[Path][Method]>>;
+
+  #clearGeneration = {};
 
   constructor(
     private interceptor: HttpInterceptorImplementation<Schema>,
@@ -168,7 +170,13 @@ class HttpRequestHandlerImplementation<
     }
   }
 
+  get clearGeneration() {
+    return this.#clearGeneration;
+  }
+
   clear(): this {
+    this.#clearGeneration = {};
+
     this.restrictions.length = 0;
 
     this.limits = {
@@ -191,7 +199,15 @@ class HttpRequestHandlerImplementation<
   async matchesRequest(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
   ): Promise<HttpRequestHandlerRequestMatch> {
+    const clearGeneration = this.#clearGeneration;
+
     const restrictionsMatch = await this.matchesRestrictions(request);
+
+    // Checked after the restrictions because the handler may be cleared while they are matched asynchronously, even if
+    // it is redeclared afterward.
+    if (clearGeneration !== this.#clearGeneration) {
+      return { success: false, cause: 'clearedHandler' };
+    }
 
     if (!restrictionsMatch.success) {
       return { success: false, cause: 'unmatchedRestrictions', diff: restrictionsMatch.diff };
@@ -203,16 +219,29 @@ class HttpRequestHandlerImplementation<
       return { success: false, cause: 'missingResponseDeclaration' };
     }
 
-    const canAcceptMoreRequests = this.numberOfMatchedRequests < this.limits.numberOfRequests.max;
-
-    if (!canAcceptMoreRequests) {
+    if (!this.canAcceptMoreRequests()) {
       return { success: false, cause: 'exceededNumberOfRequests' };
     }
 
     return { success: true };
   }
 
-  markRequestAsMatched(_request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) {
+  // Concurrent requests can reach the limit while this one is matched asynchronously, so the limit is checked again in
+  // the same synchronous step that counts the request.
+  reserveRequest(): HttpRequestHandlerRequestMatch {
+    if (!this.canAcceptMoreRequests()) {
+      return { success: false, cause: 'exceededNumberOfRequests' };
+    }
+
+    this.numberOfMatchedRequests++;
+    return { success: true };
+  }
+
+  private canAcceptMoreRequests() {
+    return this.numberOfMatchedRequests < this.limits.numberOfRequests.max;
+  }
+
+  markRequestAsMatched() {
     this.numberOfMatchedRequests++;
   }
 
@@ -431,6 +460,8 @@ class HttpRequestHandlerImplementation<
   }
 
   async applyResponseDeclaration(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) {
+    const clearGeneration = this.#clearGeneration;
+
     if (this.createResponseDelay) {
       const delay = await this.createResponseDelay(request);
 
@@ -439,7 +470,18 @@ class HttpRequestHandlerImplementation<
       }
     }
 
+    // A request whose handler was cleared during its delay is not handled, even if the handler was redeclared.
+    if (clearGeneration !== this.#clearGeneration) {
+      return undefined;
+    }
+
     const appliedDeclaration = await this.createResponseDeclaration?.(request);
+
+    // A response that outlives a clear is not returned or saved into the cleared handler.
+    if (clearGeneration !== this.#clearGeneration) {
+      return undefined;
+    }
+
     return appliedDeclaration;
   }
 

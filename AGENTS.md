@@ -20,27 +20,27 @@
 - Diverge from native behavior only with explicit user approval. Add the divergence to the package's approved list, state the reason in a comment next to the code, and document it in the website docs.
 - Check parity against the WHATWG specs, MDN, and TypeScript `lib.dom` declarations, or against the reference package that the package's `AGENTS.md` names.
 - When adding or changing a member with a native counterpart, add type tests proving the class is assignable to the native type and runtime tests asserting the native behavior.
-- `@zimic/interceptor` interceptor and handler APIs may favor test ergonomics. The requests, responses, headers, search params, and form data it exposes keep native parity.
+- `@zimic/interceptor` interceptor and handler APIs may favor test ergonomics. The requests, responses, headers, search params, form data, and sockets it exposes keep native parity.
 
 ## Public JSDoc
 
 These rules apply to packages intended for direct external use.
 
 - Write JSDoc for every public export and its public members, including re-exported declarations, overloads, option fields, and types reachable through public signatures even when not exported by name. Audit all of them when adding or changing a public API.
-- When an existing page or section of the website docs covers the resource, write a concise `@see {@link https://zimic.dev/docs/<route>#<anchor> <label>}` to the closest one instead of copying its explanation. Describe the resource inline when no suitable page or section exists.
+- When an existing page or section of the website docs covers the resource, write one sentence and a `@see {@link https://zimic.dev/docs/<route>#<anchor> <label>}` to the closest one, leaving examples, option behavior, and caveats to that page. Describe the resource inline when no suitable page or section exists.
 - Take routes from the `slug` frontmatter of pages under `apps/zimic-web/docs` and anchors from their headings. Update the JSDoc links in the same change when a route or heading moves.
 
 ## Runtime and behavior coverage
 
 - Many packages are expected to work in both Node and browser environments. Keep changes runtime-safe unless the target code is clearly environment-specific.
-- `@zimic/interceptor` has local and remote implementations behind shared APIs. Changes that affect shared behavior should account for both modes.
 - Match the test dimensions already used by the target package.
 - Do not weaken coverage expectations for core packages.
+- Coverage thresholds also count test files. A line in a test that a passing run never reaches fails the 100% threshold.
 
 ## Implementation conventions
 
 - Before changing a module, review analogous modules in the same package and follow their structure, naming, data flow, and error-handling patterns unless there is a clear reason to diverge.
-- Prefer type-safe designs over broad unions, loose public/internal type mixing, or casts. If narrowing is unavoidable, keep it isolated behind a small, named boundary that reflects a real runtime guarantee.
+- Prefer type-safe designs over broad unions, loose public/internal type mixing, or casts. If narrowing is unavoidable, keep it isolated behind a small, named boundary that reflects a real runtime guarantee. Do not silence a type error with `as unknown as` or `as never`. Fix the types, and in tests assert an intended type error with `// @ts-expect-error <reason>`.
 - Avoid reaching through public wrappers into internal implementation details from production code unless that is already the established internal contract for the module.
 - Published packages include `@zimic/utils/types/globals`, which narrows built-ins such as `Object.keys`. Rely on those types instead of casting.
 - Create deferred promises with `createPromiseWithResolvers` from `@zimic/utils/data` instead of `Promise.withResolvers`, which older supported runtimes lack.
@@ -55,7 +55,7 @@ These rules apply to packages intended for direct external use.
 - When a scenario cannot be reached publicly, inject the fault at one narrow boundary, comment on why no public path triggers it, and assert the resulting public outcome.
 - Mock only boundaries the project does not own, such as platform APIs, timers, randomness, or missing peer dependencies. Control time with fake timers instead of waiting in real time or measuring elapsed time.
 - Make each test prove its name with an outcome a user can observe. Synchronize on that observable state, not on intermediate internal callbacks.
-- Run every applicable case in every mode and runtime of the test matrix. Do not skip cases through conditionals or optional options; place a case that genuinely applies to one mode or runtime only in that mode's or runtime's file.
+- Run every applicable case in every mode and runtime of the test matrix, in the shared suite. Prefer cases that run in all modes without distinction. When a case genuinely applies to one mode or runtime only, wrap it in an `if` on the `type`/`platform` condition with a comment stating why, instead of a separate file or an optional option. When a case needs APIs that exist only in one runtime, such as Node built-in modules, put it in a `*.node.test.ts` or `*.browser.test.ts` file instead of importing them dynamically behind an `if`. Do not use `it.runIf`, `describe.runIf`, or `skipIf`, which report inapplicable cases as skipped.
 - When adding tests for a module with a close analogue, mirror the analogue's test file split, shared test modules, describe blocks, and test-case naming. Keep equivalent behaviors easy to compare across modules.
 - Cover each scenario once, at one level, in the file where the closest analogue keeps it. Keep one behavior per test and one top-level `describe` per file. Use `it.each` instead of branching inside a test.
 - Search existing shared test utilities before writing a helper. Add a helper only when it matches an existing test pattern or removes meaningful repeated setup without hiding the behavior under test. Place helpers used by several modules in a shared location, not inside one module's tests.
@@ -64,7 +64,7 @@ These rules apply to packages intended for direct external use.
 
 - Do not hand-edit generated declaration files, except top-level entry points that are intentionally kept in source control.
 - Update docs and examples when a user-facing public API or documented behavior changes.
-- Keep the `rules` in `context7.json` consistent with the docs. Context7 serves them to coding agents with the docs from `main`. Update or remove a rule when the behavior it describes changes, and add one when a change introduces behavior agents are likely to get wrong.
+- Keep the `rules` in `context7.json` consistent with the docs. Context7 serves them to coding agents with the docs from the `branch` set in `context7.json`, the website release branch `zimic-web@<major>`. Update or remove a rule when the behavior it describes changes, and add one when a change introduces behavior agents are likely to get wrong.
 - Treat breaking public API changes as intentional work. Keep code, tests, exports, and docs consistent.
 
 ## Before finishing a change

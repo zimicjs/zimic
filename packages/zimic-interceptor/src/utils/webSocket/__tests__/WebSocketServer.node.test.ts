@@ -1,14 +1,13 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { startHttpServer, stopHttpServer } from '@zimic/utils/server';
-import { waitFor, waitForNot } from '@zimic/utils/time';
-import { closeWebSocketClient, WebSocketCloseTimeoutError } from '@zimic/utils/ws';
+import { waitFor } from '@zimic/utils/time';
+import { closeWebSocketClient, WEB_SOCKET_CLOSE_CODES, WebSocketCloseTimeoutError } from '@zimic/utils/ws';
 import { createServer } from 'http';
 import ClientSocket from 'isomorphic-ws';
 import { AddressInfo } from 'net';
 import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 
 import { waitForOpenClientSocket, WebSocketMessageAbortError, WebSocketMessageTimeoutError } from '@/utils/webSocket';
-import { WEB_SOCKET_CLOSE_CODES } from '@/utils/webSocket/constants';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
 import InvalidWebSocketMessageError from '../errors/InvalidWebSocketMessageError';
@@ -253,9 +252,14 @@ describe('Web socket server', () => {
 
       server.send('no-reply', { message: 'test' });
 
-      await waitForNot(() => {
-        expect(receivedMessages.length).toBeGreaterThan(0);
+      // Frames on one socket arrive in order, so a message sent to a registered socket would arrive before this probe.
+      const serverSocket = handleConnection.mock.calls[0][0];
+      serverSocket.send('probe');
+
+      await waitFor(() => {
+        expect(receivedMessages).toHaveLength(1);
       });
+      expect(receivedMessages[0].data).toBe('probe');
     });
 
     it('should throw an error if a client socket close timeout is reached', async () => {
@@ -340,6 +344,7 @@ describe('Web socket server', () => {
         id: expect.any(String) as string,
         channel: 'with-reply',
         data: requestMessage,
+        expectsReply: true,
       });
 
       type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
@@ -411,6 +416,7 @@ describe('Web socket server', () => {
           id: crypto.randomUUID(),
           channel: 'with-reply',
           data: requestMessage,
+          expectsReply: true,
         } satisfies RequestMessage),
       );
 
@@ -421,6 +427,7 @@ describe('Web socket server', () => {
         id: expect.any(String) as string,
         channel: 'with-reply',
         data: requestMessage,
+        expectsReply: true,
       });
 
       await waitFor(() => {
@@ -432,6 +439,49 @@ describe('Web socket server', () => {
         requestId: requestMessages[0].id,
         data: { response: 'answer' },
       });
+    });
+
+    it('should not reply to event messages from clients that do not expect a reply', async () => {
+      server = new WebSocketServer({ httpServer });
+      server.start();
+
+      rawClient = new ClientSocket(`ws://localhost:${port}`);
+      await waitForOpenClientSocket(rawClient);
+
+      type EventMessage = WebSocketEventMessage<Schema, 'no-reply'>;
+      const eventMessages: EventMessage[] = [];
+
+      server.onChannel('event', 'no-reply', (message) => {
+        eventMessages.push(message);
+      });
+      server.onChannel('event', 'with-reply', () => ({ response: 'answer' }));
+
+      type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
+      const replyMessages = collectClientSocketJSONMessages<ReplyMessage>(rawClient);
+
+      const eventMessage: EventMessage = { id: crypto.randomUUID(), channel: 'no-reply', data: { message: 'test' } };
+      rawClient.send(JSON.stringify(eventMessage));
+
+      // Frames on one socket arrive in order, so a reply to the event would arrive before the reply to this request.
+      const requestMessage: WebSocketEventMessage<Schema, 'with-reply'> = {
+        id: crypto.randomUUID(),
+        channel: 'with-reply',
+        data: { question: 'test' },
+        expectsReply: true,
+      };
+      rawClient.send(JSON.stringify(requestMessage));
+
+      await waitFor(() => {
+        expect(replyMessages).toHaveLength(1);
+      });
+      expect(replyMessages[0]).toEqual<ReplyMessage>({
+        id: expect.any(String) as string,
+        channel: 'with-reply',
+        requestId: requestMessage.id,
+        data: { response: 'answer' },
+      });
+
+      expect(eventMessages).toEqual([eventMessage]);
     });
   });
 
@@ -502,9 +552,25 @@ describe('Web socket server', () => {
         } satisfies WebSocketEventMessage<Schema, 'no-reply'>),
       );
 
-      await waitForNot(() => {
-        expect(eventMessages.length).toBeGreaterThan(0);
+      server.onChannel('event', 'with-reply', () => ({ response: 'answer' }));
+
+      type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
+      const replyMessages = collectClientSocketJSONMessages<ReplyMessage>(rawClient);
+
+      // Frames on one socket arrive in order, so the event is handled before the reply to this request is sent.
+      const requestMessage: WebSocketEventMessage<Schema, 'with-reply'> = {
+        id: crypto.randomUUID(),
+        channel: 'with-reply',
+        data: { question: 'test' },
+        expectsReply: true,
+      };
+      rawClient.send(JSON.stringify(requestMessage));
+
+      await waitFor(() => {
+        expect(replyMessages).toHaveLength(1);
       });
+
+      expect(eventMessages).toHaveLength(0);
       expect(eventListener).not.toHaveBeenCalled();
     });
 
@@ -535,11 +601,10 @@ describe('Web socket server', () => {
         id: expect.any(String) as string,
         channel: 'with-reply',
         data: requestMessage,
+        expectsReply: true,
       });
 
-      await waitForNot(() => {
-        expect(replyMessages.length).toBeGreaterThan(0);
-      });
+      expect(replyMessages).toHaveLength(0);
 
       const replyMessage: ReplyMessage['data'] = { response: 'answer' };
 
@@ -596,11 +661,10 @@ describe('Web socket server', () => {
         id: expect.any(String) as string,
         channel: 'with-reply',
         data: requestMessage,
+        expectsReply: true,
       });
 
-      await waitForNot(() => {
-        expect(replyMessages.length).toBeGreaterThan(0);
-      });
+      expect(replyMessages).toHaveLength(0);
 
       server.offChannel('reply', 'with-reply', replyListener);
 
@@ -618,9 +682,8 @@ describe('Web socket server', () => {
       const receivedReplyMessage = await replyPromise;
       expect(receivedReplyMessage).toEqual(replyMessage);
 
-      await waitForNot(() => {
-        expect(replyMessages.length).toBeGreaterThan(0);
-      });
+      // Reply listeners are notified together, so the request resolving means the removed listener would have run.
+      expect(replyMessages).toHaveLength(0);
       expect(replyListener).not.toHaveBeenCalled();
     });
   });
@@ -682,6 +745,75 @@ describe('Web socket server', () => {
 
         expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.INTERNAL_ERROR);
         expect(console.error).toHaveBeenCalledWith(error);
+      });
+    });
+
+    it('should refuse handshakes that are not verified', async () => {
+      const handleConnection = vi.fn(() => ({ handled: false }));
+
+      server = new WebSocketServer({
+        httpServer,
+        verifyUpgrade: () => Promise.resolve(false),
+        handleConnection,
+      });
+      server.start();
+
+      rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+      const errorPromise = new Promise<Error>((resolve) => {
+        rawClient?.once('error', resolve);
+      });
+
+      const closeEvent = await waitForClientSocketClose(rawClient);
+      expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
+
+      const error = await errorPromise;
+      expect(error.message).toBe('Unexpected server response: 403');
+
+      expect(handleConnection).not.toHaveBeenCalled();
+    });
+
+    it('should log thrown upgrade verification failures', async () => {
+      const error = new Error('Upgrade verification failed.');
+
+      server = new WebSocketServer({
+        httpServer,
+        verifyUpgrade: () => Promise.reject(error),
+      });
+      server.start();
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+        const clientErrorPromise = new Promise<Error>((resolve) => {
+          rawClient?.once('error', resolve);
+        });
+
+        await clientErrorPromise;
+
+        expect(console.error).toHaveBeenCalledWith(error);
+      });
+    });
+
+    it('should refuse handshakes as internal errors if upgrade verification throws', async () => {
+      server = new WebSocketServer({
+        httpServer,
+        verifyUpgrade: () => Promise.reject(new Error('Upgrade verification failed.')),
+      });
+      server.start();
+
+      await usingIgnoredConsole(['error'], async () => {
+        rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+        const clientErrorPromise = new Promise<Error>((resolve) => {
+          rawClient?.once('error', resolve);
+        });
+
+        const closeEvent = await waitForClientSocketClose(rawClient);
+        expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
+
+        const clientError = await clientErrorPromise;
+        expect(clientError.message).toBe('Unexpected server response: 500');
       });
     });
 

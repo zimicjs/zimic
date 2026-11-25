@@ -1,9 +1,24 @@
-import { PossiblePromise } from '@zimic/utils/types';
+import { PossiblePromise, UnionHasMoreThanOneType } from '@zimic/utils/types';
 import { closeWebSocketClient } from '@zimic/utils/ws';
 
-import { WebSocketMessageData, WebSocketSchema } from '@/types/schema';
+import { WebSocketMessageData, WebSocketSchema, WebSocketSchemaMessage, WebSocketSchemaPath } from '@/types/schema';
 
 import { openWebSocketClient, WebSocketClientCloseOptions, WebSocketClientOpenOptions } from './utils/lifecycle';
+
+/**
+ * The path of a client when no path type argument is given: the only path of the schema, or `never` if the schema has
+ * multiple paths and the client cannot tell which one it connects to.
+ */
+export type WebSocketClientDefaultPath<Schema extends WebSocketSchema> =
+  UnionHasMoreThanOneType<WebSocketSchemaPath.Literal<Schema>> extends true
+    ? never
+    : WebSocketSchemaPath.Literal<Schema>;
+
+// URLs are plain strings, so a client cannot infer its path from them. Replacing the type of the first constructor
+// argument makes the compiler show this text when the path is missing.
+type WebSocketClientConstructorArgument<Path extends string, Argument> = [Path] extends [never]
+  ? "This schema has multiple paths. Declare the path of the client: new WebSocketClient<Schema, '/path'>(url)."
+  : Argument;
 
 export namespace WebSocketClient {
   export type ReadyState =
@@ -16,7 +31,10 @@ export namespace WebSocketClient {
   // eslint-disable-next-line @typescript-eslint/naming-convention
   export type OpenEvent<_Schema extends WebSocketSchema> = globalThis.Event;
 
-  export type MessageEvent<Schema extends WebSocketSchema> = globalThis.MessageEvent<WebSocketMessageData<Schema>>;
+  export type MessageEvent<
+    Schema extends WebSocketSchema,
+    Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketClientDefaultPath<Schema>,
+  > = globalThis.MessageEvent<WebSocketMessageData<WebSocketSchemaMessage<Schema, Path>>>;
 
   // The schema is not used in the event types, but it's included for consistency and future extensibility.
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -26,47 +44,60 @@ export namespace WebSocketClient {
   // eslint-disable-next-line @typescript-eslint/naming-convention
   export type ErrorEvent<_Schema extends WebSocketSchema> = globalThis.Event;
 
-  interface Events<Schema extends WebSocketSchema = WebSocketSchema> {
+  interface Events<
+    Schema extends WebSocketSchema = WebSocketSchema,
+    Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketClientDefaultPath<Schema>,
+  > {
     open: OpenEvent<Schema>;
-    message: MessageEvent<Schema>;
+    message: MessageEvent<Schema, Path>;
     close: CloseEvent<Schema>;
     error: ErrorEvent<Schema>;
   }
 
-  export type EventType = keyof Events<WebSocketSchema>;
+  export type EventType = keyof Events;
 
   export type Event<
     Schema extends WebSocketSchema = WebSocketSchema,
     Type extends EventType = EventType,
-  > = Events<Schema>[Type];
+    Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketClientDefaultPath<Schema>,
+  > = Events<Schema, Path>[Type];
 
-  interface EventListenerParameters<Schema extends WebSocketSchema> {
-    open: [event: Event<Schema, 'open'>];
-    message: [event: Event<Schema, 'message'>];
-    close: [event: Event<Schema, 'close'>];
-    error: [event: Event<Schema, 'error'>];
+  interface EventListenerParameters<Schema extends WebSocketSchema, Path extends WebSocketSchemaPath.Literal<Schema>> {
+    open: [event: Event<Schema, 'open', Path>];
+    message: [event: Event<Schema, 'message', Path>];
+    close: [event: Event<Schema, 'close', Path>];
+    error: [event: Event<Schema, 'error', Path>];
   }
 
-  export type EventListener<Schema extends WebSocketSchema, Type extends EventType> = (
-    this: WebSocketClient<Schema>,
-    ...parameters: EventListenerParameters<Schema>[Type]
+  export type EventListener<
+    Schema extends WebSocketSchema,
+    Type extends EventType,
+    Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketClientDefaultPath<Schema>,
+  > = (
+    this: WebSocketClient<Schema, Path>,
+    ...parameters: EventListenerParameters<Schema, Path>[Type]
   ) => PossiblePromise<void>;
 }
 
 type WebSocketClientRawEventListener = (this: WebSocket, event: Event) => PossiblePromise<void>;
 
-export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
-  WebSocket,
-  `${string}EventListener` | `on${string}`
-> {
+/**
+ * A native-like `WebSocket` client typed with a {@link WebSocketSchema}. Schemas with multiple paths require the path of
+ * the client as the second type argument, such as `new WebSocketClient<Schema, '/rooms/:roomId'>(url)`.
+ */
+export class WebSocketClient<
+  Schema extends WebSocketSchema,
+  Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketClientDefaultPath<Schema>,
+> implements Omit<WebSocket, `${string}EventListener` | `on${string}`> {
   private socket?: WebSocket;
+  private openingSocket?: WebSocket;
 
   #url: string;
   #protocols?: string | string[];
   #binaryType: BinaryType = 'blob';
 
   private unitaryListeners: {
-    [Type in WebSocketClient.EventType]: WebSocketClient.EventListener<Schema, Type> | null;
+    [Type in WebSocketClient.EventType]: WebSocketClient.EventListener<Schema, Type, Path> | null;
   } = {
     open: null,
     message: null,
@@ -76,7 +107,7 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
 
   private listenerToRawListener: {
     [Type in WebSocketClient.EventType]: Map<
-      WebSocketClient.EventListener<Schema, Type>,
+      WebSocketClient.EventListener<Schema, Type, Path>,
       WebSocketClientRawEventListener
     >;
   } = {
@@ -86,8 +117,8 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     error: new Map(),
   };
 
-  constructor(socket: WebSocket);
-  constructor(_url: string, protocols?: string | string[]);
+  constructor(socket: WebSocketClientConstructorArgument<Path, WebSocket>);
+  constructor(_url: WebSocketClientConstructorArgument<Path, string>, protocols?: string | string[]);
   constructor(urlOrSocket: WebSocket | string, protocols?: string | string[]) {
     if (typeof urlOrSocket === 'string') {
       this.#url = urlOrSocket;
@@ -138,8 +169,12 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
   set binaryType(value: 'blob' | 'arraybuffer') {
     this.#binaryType = value;
 
-    if (this.socket) {
-      this.socket.binaryType = value;
+    // The socket being opened is not exposed yet, but it decodes the messages it receives as soon as it opens, so
+    // it needs the binary type set while opening, such as in open listeners.
+    const socket = this.socket ?? this.openingSocket;
+
+    if (socket) {
+      socket.binaryType = value;
     }
   }
 
@@ -172,6 +207,7 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     await this.close();
 
     const socket = new WebSocket(this.#url, this.#protocols);
+    this.openingSocket = socket;
 
     try {
       if (socket.binaryType !== this.binaryType) {
@@ -184,6 +220,8 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     } catch (error) {
       socket.close();
       throw error;
+    } finally {
+      this.openingSocket = undefined;
     }
 
     this.socket = socket;
@@ -191,7 +229,7 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
 
   private applyListeners(socket: WebSocket) {
     for (const type of ['open', 'message', 'close', 'error'] as const) {
-      const unitaryListener = this[`on${type}`] as WebSocketClient.EventListener<Schema, typeof type> | null;
+      const unitaryListener = this[`on${type}`] as WebSocketClient.EventListener<Schema, typeof type, Path> | null;
       const rawUnitaryListener = unitaryListener ? this.listenerToRawListener[type].get(unitaryListener) : undefined;
 
       if (rawUnitaryListener) {
@@ -220,13 +258,13 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     }
   }
 
-  send(data: WebSocketMessageData<Schema>) {
+  send(data: WebSocketMessageData<WebSocketSchemaMessage<Schema, Path>>) {
     this.socket?.send(data);
   }
 
   addEventListener<Type extends WebSocketClient.EventType>(
     type: Type,
-    listener: WebSocketClient.EventListener<Schema, Type>,
+    listener: WebSocketClient.EventListener<Schema, Type, Path>,
     options?: boolean | AddEventListenerOptions,
   ) {
     const rawListener = listener.bind(this) as WebSocketClientRawEventListener;
@@ -237,7 +275,7 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
 
   removeEventListener<Type extends WebSocketClient.EventType>(
     type: Type,
-    listener: WebSocketClient.EventListener<Schema, Type>,
+    listener: WebSocketClient.EventListener<Schema, Type, Path>,
     options?: boolean | EventListenerOptions,
   ) {
     const rawListener = this.listenerToRawListener[type].get(listener);
@@ -252,7 +290,7 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     return this.unitaryListeners.open;
   }
 
-  set onopen(listener: WebSocketClient.EventListener<Schema, 'open'> | null) {
+  set onopen(listener: WebSocketClient.EventListener<Schema, 'open', Path> | null) {
     this.setEventListener('open', listener);
   }
 
@@ -260,7 +298,7 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     return this.unitaryListeners.message;
   }
 
-  set onmessage(listener: WebSocketClient.EventListener<Schema, 'message'> | null) {
+  set onmessage(listener: WebSocketClient.EventListener<Schema, 'message', Path> | null) {
     this.setEventListener('message', listener);
   }
 
@@ -268,7 +306,7 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     return this.unitaryListeners.close;
   }
 
-  set onclose(listener: WebSocketClient.EventListener<Schema, 'close'> | null) {
+  set onclose(listener: WebSocketClient.EventListener<Schema, 'close', Path> | null) {
     this.setEventListener('close', listener);
   }
 
@@ -276,13 +314,13 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     return this.unitaryListeners.error;
   }
 
-  set onerror(listener: WebSocketClient.EventListener<Schema, 'error'> | null) {
+  set onerror(listener: WebSocketClient.EventListener<Schema, 'error', Path> | null) {
     this.setEventListener('error', listener);
   }
 
   private setEventListener<
     Type extends WebSocketClient.EventType,
-    Listener extends WebSocketClient.EventListener<Schema, Type> | null,
+    Listener extends WebSocketClient.EventListener<Schema, Type, Path> | null,
   >(type: Type, listener: Listener) {
     const currentListener = this.unitaryListeners[type];
 
@@ -314,7 +352,7 @@ export class WebSocketClient<Schema extends WebSocketSchema> implements Omit<
     }
   }
 
-  dispatchEvent<Type extends WebSocketClient.EventType>(event: WebSocketClient.Event<Schema, Type>) {
+  dispatchEvent<Type extends WebSocketClient.EventType>(event: WebSocketClient.Event<Schema, Type, Path>) {
     return this.socket?.dispatchEvent(event) ?? false;
   }
 }

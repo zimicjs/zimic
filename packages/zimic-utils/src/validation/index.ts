@@ -7,3 +7,4 @@ export {
   type AssertTypeOfOptions,
 } from './assertTypeOf';
 export { default as assertEnum } from './assertEnum';
+export { default as createInvalidTypeOfCases, type InvalidTypeOfCase } from './createInvalidTypeOfCases';

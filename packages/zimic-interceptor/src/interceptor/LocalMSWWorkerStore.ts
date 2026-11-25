@@ -1,4 +1,3 @@
-import { createCachedDynamicImport } from '@zimic/utils/import';
 import type { SharedOptions as MSWWorkerSharedOptions } from 'msw';
 
 import { isClientSide, isServerSide } from '@/utils/environment';
@@ -6,8 +5,15 @@ import { isClientSide, isServerSide } from '@/utils/environment';
 import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
 import type { BrowserMSWWorker, MSWWorker } from './types/msw';
 
-const importMSWNode = createCachedDynamicImport(() => import('msw/node'));
-const importMSWBrowser = createCachedDynamicImport(() => import('msw/browser'));
+// The MSW modules are imported by each caller instead of this store, which is shared across package entry points.
+// Vitest browser mode keeps MSW external when pre-bundling dependencies with Vite, and Vite resolves external imports
+// in shared chunks from the consumer root, where MSW may not be installed. Only imports in entry-specific modules are
+// resolved from this package.
+interface MSWWorkerCreationOptions {
+  importMSWNode: () => Promise<typeof import('msw/node')>;
+  importMSWBrowser: () => Promise<typeof import('msw/browser')>;
+  createUnknownPlatformError: () => Error;
+}
 
 class LocalMSWWorkerStore {
   private static mswWorker?: MSWWorker;
@@ -17,6 +23,11 @@ class LocalMSWWorkerStore {
 
   private static numberOfRunningWorkers = 0;
 
+  private static globalWebSocketDescriptors?: {
+    native: PropertyDescriptor | undefined;
+    intercepted: PropertyDescriptor | undefined;
+  };
+
   static isMSWWorkerRunning = false;
 
   private class = LocalMSWWorkerStore;
@@ -25,7 +36,7 @@ class LocalMSWWorkerStore {
     return this.class.mswWorker;
   }
 
-  async getMSWWorkerOrCreate(options: { createUnknownPlatformError: () => Error }) {
+  async getMSWWorkerOrCreate(options: MSWWorkerCreationOptions) {
     if (this.class.mswWorker) {
       return this.class.mswWorker;
     }
@@ -42,9 +53,9 @@ class LocalMSWWorkerStore {
     return this.class.creatingMSWWorkerPromise;
   }
 
-  private async createMSWWorker(options: { createUnknownPlatformError: () => Error }) {
+  private async createMSWWorker(options: MSWWorkerCreationOptions) {
     if (isServerSide()) {
-      const mswNode = await importMSWNode();
+      const mswNode = await options.importMSWNode();
 
       /* istanbul ignore else -- @preserve */
       if ('setupServer' in mswNode) {
@@ -54,7 +65,7 @@ class LocalMSWWorkerStore {
 
     /* istanbul ignore else -- @preserve */
     if (isClientSide()) {
-      const mswBrowser = await importMSWBrowser();
+      const mswBrowser = await options.importMSWBrowser();
 
       /* istanbul ignore else -- @preserve */
       if ('setupWorker' in mswBrowser) {
@@ -83,6 +94,19 @@ class LocalMSWWorkerStore {
   }
 
   private async startMSWWorkerOnce(mswWorker: MSWWorker, sharedOptions: MSWWorkerSharedOptions) {
+    const nativeWebSocketDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'WebSocket');
+
+    await this.startMSWWorkerOnPlatform(mswWorker, sharedOptions);
+
+    this.class.globalWebSocketDescriptors = {
+      native: nativeWebSocketDescriptor,
+      intercepted: Object.getOwnPropertyDescriptor(globalThis, 'WebSocket'),
+    };
+
+    this.restoreNativeWebSocket();
+  }
+
+  private async startMSWWorkerOnPlatform(mswWorker: MSWWorker, sharedOptions: MSWWorkerSharedOptions) {
     if (this.isInternalBrowserWorker(mswWorker)) {
       try {
         await mswWorker.start({ ...sharedOptions, quiet: true });
@@ -112,6 +136,25 @@ class LocalMSWWorkerStore {
     } else {
       mswWorker.close();
       this.class.isMSWWorkerRunning = false;
+    }
+  }
+
+  // MSW replaces the global WebSocket when its worker starts, and browser workers are never stopped. Its replacement
+  // copies `binaryType` to passthrough sockets only when they connect, so the global stays native unless a local
+  // WebSocket interceptor is running.
+  applyWebSocketInterception() {
+    this.defineGlobalWebSocket(this.class.globalWebSocketDescriptors?.intercepted);
+  }
+
+  restoreNativeWebSocket() {
+    this.defineGlobalWebSocket(this.class.globalWebSocketDescriptors?.native);
+  }
+
+  private defineGlobalWebSocket(descriptor: PropertyDescriptor | undefined) {
+    /* istanbul ignore else -- @preserve
+     * Every supported runtime defines a global WebSocket, which MSW replaces when the worker starts. */
+    if (descriptor) {
+      Object.defineProperty(globalThis, 'WebSocket', descriptor);
     }
   }
 

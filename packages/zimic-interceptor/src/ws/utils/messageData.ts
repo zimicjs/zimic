@@ -1,12 +1,12 @@
-import { assertTypeOf, ValidationError } from '@zimic/utils/validation';
-import { WebSocketMessageData, WebSocketSchema } from '@zimic/ws';
+import { assertTypeOf } from '@zimic/utils/validation';
+import { WebSocketMessageData, WebSocketMessageSchema } from '@zimic/ws';
 
 import { convertArrayBufferToBase64, convertBase64ToArrayBuffer } from '@/utils/data';
+import { ReceivedWebSocketMessageData } from '@/ws/interceptor/types/messages';
 
 import {
   SerializedWebSocketBinaryMessageData,
   SerializedWebSocketMessageData,
-  SerializedWebSocketTextMessageData,
 } from '../interceptorWorker/types/messages';
 
 export function isWebSocketBinaryMessageData(data: unknown): data is Blob | BufferSource {
@@ -25,7 +25,16 @@ export function normalizeBufferSource(bufferSource: BufferSource): ArrayBuffer {
   return normalizedBytes.buffer;
 }
 
+// Unlike HTTP bodies without a content type, which are parsed as any JSON value, only objects and arrays are parsed.
+// WebSocket frames have no content type to declare JSON, and string schema members are sent as raw text, so text such
+// as `'42'`, `'true'`, `'null'`, or `'"message"'` stays a string.
 function tryParseJSONMessageData(data: string): unknown {
+  const firstCharacter = data.trimStart()[0];
+
+  if (firstCharacter !== '{' && firstCharacter !== '[') {
+    return data;
+  }
+
   try {
     return JSON.parse(data);
   } catch {
@@ -40,36 +49,65 @@ export function normalizeWebSocketBinaryMessageData(data: Blob | BufferSource): 
   return normalizeBufferSource(data);
 }
 
-export function normalizeWebSocketMessageData<Schema extends WebSocketSchema>(
-  data: Schema | WebSocketMessageData<Schema>,
-): Schema {
-  if (typeof data === 'string') {
-    const normalizedStringData = tryParseJSONMessageData(data);
-    return normalizedStringData as Schema;
+// A real socket delivers binary frames as its current `binaryType`, whatever binary type the server sent.
+export function convertWebSocketMessageDataToBinaryType(
+  data: string | Blob | BufferSource,
+  binaryType: 'arraybuffer',
+): Promise<string | ArrayBuffer>;
+export function convertWebSocketMessageDataToBinaryType(
+  data: string | Blob | BufferSource,
+  binaryType: BinaryType,
+): Promise<string | Blob | ArrayBuffer>;
+export async function convertWebSocketMessageDataToBinaryType(
+  data: string | Blob | BufferSource,
+  binaryType: BinaryType,
+): Promise<string | Blob | ArrayBuffer> {
+  if (!isWebSocketBinaryMessageData(data)) {
+    return data;
   }
 
-  return data as Schema;
+  if (binaryType === 'blob') {
+    return data instanceof Blob ? data : new Blob([data]);
+  }
+
+  return data instanceof Blob ? data.arrayBuffer() : normalizeBufferSource(data);
 }
 
-export function serializeWebSocketMessageDataForSocket<Schema extends WebSocketSchema>(
-  data: Schema | WebSocketMessageData<Schema> | undefined,
-): WebSocketMessageData<Schema> {
+export async function normalizeWebSocketMessageData<Message extends WebSocketMessageSchema>(
+  data: Message | WebSocketMessageData<Message>,
+): Promise<ReceivedWebSocketMessageData<Message>> {
+  if (typeof data === 'string') {
+    const normalizedStringData = tryParseJSONMessageData(data);
+    return normalizedStringData as ReceivedWebSocketMessageData<Message>;
+  }
+
+  // WebSocket binary frames carry only raw bytes, so a real server never receives a `Blob` or a typed array view.
+  if (data instanceof Blob) {
+    return (await data.arrayBuffer()) as ReceivedWebSocketMessageData<Message>;
+  }
+
+  if (isWebSocketBinaryMessageData(data)) {
+    return normalizeBufferSource(data as BufferSource) as ReceivedWebSocketMessageData<Message>;
+  }
+
+  return data as ReceivedWebSocketMessageData<Message>;
+}
+
+export function serializeWebSocketMessageDataForSocket<Message extends WebSocketMessageSchema>(
+  data: Message | WebSocketMessageData<Message> | undefined,
+): WebSocketMessageData<Message> {
   if (isWebSocketBinaryMessageData(data) || typeof data === 'string') {
-    return data as WebSocketMessageData<Schema>;
+    return data as WebSocketMessageData<Message>;
   }
 
   const serializedData = JSON.stringify(data);
   assertTypeOf('serialized WebSocket message data', serializedData, 'string');
-  return serializedData as unknown as WebSocketMessageData<Schema>;
+  return serializedData as unknown as WebSocketMessageData<Message>;
 }
 
 export async function serializeWebSocketMessageDataForTransport(
-  data: WebSocketMessageData<WebSocketSchema> | undefined,
+  data: WebSocketMessageData<WebSocketMessageSchema>,
 ): Promise<SerializedWebSocketMessageData> {
-  if (data === undefined) {
-    throw new ValidationError('WebSocket message data must not be undefined.');
-  }
-
   if (isWebSocketBinaryMessageData(data)) {
     const normalizedData = normalizeWebSocketBinaryMessageData(data);
     const arrayBuffer = normalizedData instanceof Blob ? await normalizedData.arrayBuffer() : normalizedData;
@@ -94,21 +132,6 @@ export function isSerializedWebSocketBinaryMessageData(data: unknown): data is S
     'data' in data &&
     typeof data.data === 'string'
   );
-}
-
-export function isSerializedWebSocketTextMessageData(data: unknown): data is SerializedWebSocketTextMessageData {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    'type' in data &&
-    data.type === 'text' &&
-    'data' in data &&
-    typeof data.data === 'string'
-  );
-}
-
-export function isSerializedWebSocketMessageData(data: unknown): data is SerializedWebSocketMessageData {
-  return isSerializedWebSocketBinaryMessageData(data) || isSerializedWebSocketTextMessageData(data);
 }
 
 export function deserializeWebSocketMessageDataFromTransport(

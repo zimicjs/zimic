@@ -12,7 +12,7 @@
     "api",
     "static"
   ],
-  "version": "1.4.2",
+  "version": "1.5.0-canary.0",
   "homepage": "https://zimic.dev/docs/http",
   "repository": {
     "type": "git",
@@ -33,7 +33,7 @@
     "provenance": true
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   },
   "license": "MIT",
   "files": [
@@ -76,8 +76,8 @@
     "dev": "tsup --watch",
     "cli": "node --enable-source-maps ./dist/cli.js",
     "build": "tsup",
-    "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
-    "lint:turbo": "pnpm lint . --max-warnings 0",
+    "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --max-warnings 0 --fix",
+    "lint:turbo": "pnpm lint .",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write",
@@ -87,13 +87,13 @@
     "typegen:fixtures": "tsx ./scripts/typegen/generateFixtureTypes.ts"
   },
   "dependencies": {
-    "openapi-typescript": "7.13.0",
+    "@redocly/openapi-core": "2.72.1",
     "picocolors": "^1.1.1",
     "yargs": "18.2.0"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "@types/yargs": "^17.0.35",
     "@typescript/native": "npm:typescript@^7.0.2",
     "@vitest/browser": "^5.0.5",
@@ -104,14 +104,15 @@
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
-    "dotenv-cli": "^11.0.0",
-    "eslint": "^10.12.0",
+    "dotenv-cli": "^11.1.0",
+    "eslint": "^10.14.0",
     "js-yaml": "^5.5.0",
     "playwright": "^1.64.1",
     "prettier": "^3.9.10",
     "tsup": "^9.0.0",
     "tsx": "^4.23.15",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "vite": "^8.3.5",
     "vitest": "^5.0.5"
   },
   "peerDependencies": {

@@ -1,42 +1,90 @@
-import { HttpMethod } from '@zimic/http';
+import type { SerializedHttpRequest, SerializedResponse } from '@/utils/fetch';
+import type { WebSocketSchema } from '@/utils/webSocket/types';
+import type { SerializedWebSocketMessageData } from '@/ws/interceptorWorker/types/messages';
 
-import { SerializedHttpRequest, SerializedResponse } from '@/utils/fetch';
-import { WebSocketSchema } from '@/utils/webSocket/types';
+export interface HttpWorkerReset {
+  interceptorBaseURLs: string[];
+}
 
-export interface HttpHandlerCommit {
+export interface WebSocketInterceptorRegistration {
   id: string;
   baseURL: string;
-  method: HttpMethod;
-  path: string;
+}
+
+export interface WebSocketWorkerReset {
+  interceptors: WebSocketInterceptorRegistration[];
+  clearedInterceptorIds?: string[];
+}
+
+export type WebSocketClientConnectionReply =
+  { action: 'accept'; acceptedInterceptorIds: string[] } | { action: 'claim' } | { action: 'reject' };
+
+export interface WebSocketClientDisconnection {
+  clientId: string;
+  code?: number;
+  reason?: string;
 }
 
 export type InterceptorServerWebSocketSchema = WebSocketSchema<{
-  'interceptors/workers/commit': {
-    event: HttpHandlerCommit;
+  'interceptors/http/workers/reset': {
+    event: HttpWorkerReset;
     reply: {};
   };
 
-  'interceptors/workers/reset': {
-    event: HttpHandlerCommit[];
-    reply: {};
-  };
-
-  'interceptors/responses/create': {
+  'interceptors/http/requests/handle': {
     event: {
-      handlerId: string;
       request: SerializedHttpRequest;
     };
     reply: {
       response: SerializedResponse | null;
+      matchedSomeHandler: boolean;
+      wasUnhandledRequestLogged: boolean;
     };
   };
 
-  'interceptors/responses/unhandled': {
+  'interceptors/ws/workers/reset': {
+    event: WebSocketWorkerReset;
+    reply: {};
+  };
+
+  // Sent before the server answers the handshake of a client connection, so the worker can reject it.
+  'interceptors/ws/clients/connect': {
     event: {
-      request: SerializedHttpRequest;
+      interceptorIds: string[];
+      clientId: string;
+      url: string;
+      protocols: string[];
+      // The number of resets the server had processed from the worker when it sent the connection.
+      numberOfResets: number;
     };
-    reply: {
-      wasLogged: boolean;
+    reply: WebSocketClientConnectionReply;
+  };
+
+  'interceptors/ws/clients/close': {
+    event: {
+      clientId: string;
+    };
+  };
+
+  // Sent by workers to close a client connection, unlike `interceptors/ws/clients/close`, which the server sends after
+  // a client connection closes.
+  'interceptors/ws/clients/disconnect': {
+    event: WebSocketClientDisconnection;
+  };
+
+  'interceptors/ws/messages/handle': {
+    event: {
+      // Kept in the order of the worker's interceptors, so the last holder is the newest.
+      interceptorIds: string[];
+      clientId: string;
+      data: SerializedWebSocketMessageData;
+    };
+  };
+
+  'interceptors/ws/messages/send': {
+    event: {
+      clientId: string;
+      data: SerializedWebSocketMessageData;
     };
   };
 }>;

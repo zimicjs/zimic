@@ -106,6 +106,41 @@ export type MyServiceSchema = HttpSchema<{
       };
     };
   };
+  '/users-with-cookies': {
+    GET: {
+      response: {
+        /** Success */
+        204: {};
+      };
+    };
+  };
+  '/users-with-headers-without-schemas': {
+    GET: {
+      response: {
+        /** Success */
+        204: {};
+      };
+    };
+  };
+  '/users-with-content-headers': {
+    GET: {
+      response: {
+        /** Success */
+        204: {
+          headers: {
+            'x-content'?: {
+              'application/json': {
+                name?: string;
+              };
+            };
+            'x-referenced-content'?: {
+              'application/json': MyServiceComponents['schemas']['x-rate-limit-remaining'];
+            };
+          };
+        };
+      };
+    };
+  };
 }>;
 
 export interface MyServiceComponents {
