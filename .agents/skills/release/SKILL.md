@@ -67,7 +67,7 @@ For each selected project:
 
 # 3. Confirm the plan
 
-Show one plan covering every selected project: the release head; for each project, its PR title, head and base branches, whether it creates or reuses the PR, any branch to create and its branch base, and the path of its PR body file followed by the file's full Markdown; for each package, its release notes comparison base; for `zimic-web`, the shipped and excluded hunks and the packages it waits for. Ask the user once to approve. That approval covers creating and pushing branches, opening PRs, and merging them after CI passes. Stop if the user does not approve.
+Show one plan covering every selected project: the release head; for each project, its PR title, head and base branches, whether it creates or reuses the PR, any branch to create and its branch base, and the path of its PR body file followed by the file's full Markdown; for each package, its release notes comparison base; for `zimic-web`, the excluded hunks, the shipped hunks grouped by package or area, and the packages it waits for. Ask the user once to approve. That approval covers creating and pushing branches, opening PRs, and merging them after CI passes. Stop if the user does not approve.
 
 # 4. Start the releases
 
