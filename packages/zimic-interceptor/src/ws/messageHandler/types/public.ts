@@ -227,7 +227,7 @@ export interface LocalWebSocketMessageHandler<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#websocketmessagehandler `WebSocketMessageHandler` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler `WebSocketMessageHandler` API reference}
  */
 export interface SyncedRemoteWebSocketMessageHandler<
   Schema extends WebSocketSchema,
@@ -306,7 +306,7 @@ export interface SyncedRemoteWebSocketMessageHandler<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#websocketmessagehandler `WebSocketMessageHandler` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler `WebSocketMessageHandler` API reference}
  */
 export interface PendingRemoteWebSocketMessageHandler<
   Schema extends WebSocketSchema,
@@ -316,7 +316,7 @@ export interface PendingRemoteWebSocketMessageHandler<
     Path
   >,
 > extends SyncedRemoteWebSocketMessageHandler<Schema, Path, RestrictedMessage> {
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#websocketmessagehandler `WebSocketMessageHandler` API reference} */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler `WebSocketMessageHandler` API reference} */
   then: <
     FulfilledResult = SyncedRemoteWebSocketMessageHandler<Schema, Path, RestrictedMessage>,
     RejectedResult = never,
@@ -329,12 +329,12 @@ export interface PendingRemoteWebSocketMessageHandler<
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ) => Promise<FulfilledResult | RejectedResult>;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#websocketmessagehandler `WebSocketMessageHandler` API reference} */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler `WebSocketMessageHandler` API reference} */
   catch: <RejectedResult = never>(
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ) => Promise<SyncedRemoteWebSocketMessageHandler<Schema, Path, RestrictedMessage> | RejectedResult>;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#websocketmessagehandler `WebSocketMessageHandler` API reference} */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler `WebSocketMessageHandler` API reference} */
   finally: (
     onFinally?: (() => void) | null,
   ) => Promise<SyncedRemoteWebSocketMessageHandler<Schema, Path, RestrictedMessage>>;
@@ -343,7 +343,7 @@ export interface PendingRemoteWebSocketMessageHandler<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#websocketmessagehandler `WebSocketMessageHandler` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler `WebSocketMessageHandler` API reference}
  */
 export type RemoteWebSocketMessageHandler<
   Schema extends WebSocketSchema,

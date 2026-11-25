@@ -175,11 +175,12 @@ export async function expectWebSocketTimesCheckError(
   expect(timesCheckError).toBeDefined();
   expect(timesCheckError!.name).toBe('WebSocketTimesCheckError');
 
-  const expectedMessage = [
-    options.message,
-    '',
-    `Learn more: https://zimic.dev/docs/interceptor/api/websocket-${options.handler}-handler#handlertimes`,
-  ].join('\n');
+  const learnMoreURL =
+    options.handler === 'message'
+      ? 'https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertimes'
+      : 'https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlertimes';
+
+  const expectedMessage = [options.message, '', `Learn more: ${learnMoreURL}`].join('\n');
 
   expect(timesCheckError!.message).toEqual(expectedMessage);
 

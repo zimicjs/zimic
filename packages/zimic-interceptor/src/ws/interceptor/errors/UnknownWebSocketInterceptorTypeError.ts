@@ -5,7 +5,7 @@ import { WebSocketInterceptorType } from '../types/options';
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor#createwebsocketinterceptor `createWebSocketInterceptor()` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference}
  */
 class UnknownWebSocketInterceptorTypeError extends ValidationError {
   constructor(unknownType: unknown) {

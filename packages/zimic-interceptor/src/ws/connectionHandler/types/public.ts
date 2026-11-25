@@ -150,7 +150,7 @@ export interface LocalWebSocketConnectionHandler<Schema extends WebSocketSchema,
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#websocketconnectionhandler `WebSocketConnectionHandler` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler `WebSocketConnectionHandler` API reference}
  */
 export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocketSchema, Path extends string = string> {
   /**
@@ -209,32 +209,32 @@ export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocket
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#websocketconnectionhandler `WebSocketConnectionHandler` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler `WebSocketConnectionHandler` API reference}
  */
 export interface PendingRemoteWebSocketConnectionHandler<
   Schema extends WebSocketSchema,
   Path extends string = string,
 > extends SyncedRemoteWebSocketConnectionHandler<Schema, Path> {
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#websocketconnectionhandler `WebSocketConnectionHandler` API reference} */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler `WebSocketConnectionHandler` API reference} */
   then: <FulfilledResult = SyncedRemoteWebSocketConnectionHandler<Schema, Path>, RejectedResult = never>(
     onFulfilled?:
       ((handler: SyncedRemoteWebSocketConnectionHandler<Schema, Path>) => PossiblePromise<FulfilledResult>) | null,
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ) => Promise<FulfilledResult | RejectedResult>;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#websocketconnectionhandler `WebSocketConnectionHandler` API reference} */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler `WebSocketConnectionHandler` API reference} */
   catch: <RejectedResult = never>(
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ) => Promise<SyncedRemoteWebSocketConnectionHandler<Schema, Path> | RejectedResult>;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#websocketconnectionhandler `WebSocketConnectionHandler` API reference} */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler `WebSocketConnectionHandler` API reference} */
   finally: (onFinally?: (() => void) | null) => Promise<SyncedRemoteWebSocketConnectionHandler<Schema, Path>>;
 }
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#websocketconnectionhandler `WebSocketConnectionHandler` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler `WebSocketConnectionHandler` API reference}
  */
 export type RemoteWebSocketConnectionHandler<
   Schema extends WebSocketSchema,

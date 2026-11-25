@@ -2,7 +2,7 @@ import { ValidationError } from '@zimic/utils/validation';
 
 import { HttpInterceptorType } from '../types/options';
 
-/** @see {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor#createhttpinterceptor `createHttpInterceptor()` API reference} */
+/** @see {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `createHttpInterceptor()` API reference} */
 class UnknownHttpInterceptorTypeError extends ValidationError {
   constructor(unknownType: unknown) {
     super(
