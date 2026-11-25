@@ -36,8 +36,6 @@
 
 Interceptors use the schema of your API to type your mocks: an [HTTP schema](https://zimic.dev/docs/http/guides/schemas) from [`@zimic/http`](https://zimic.dev/docs/http) for HTTP interceptors, and a [WebSocket schema](https://zimic.dev/docs/ws/guides/schemas) from [`@zimic/ws`](https://zimic.dev/docs/ws) for WebSocket interceptors. Interception happens at the network level, so it works with any client, including the native `fetch`, [`@zimic/fetch`](https://zimic.dev/docs/fetch), and [axios](https://axios-http.com).
 
-`@zimic/http` and `@zimic/ws` are optional peer dependencies. Install only the schema package for the protocol you use: `@zimic/http` for HTTP interceptors, `@zimic/ws` for WebSocket interceptors, or both if your project uses both.
-
 ## When to use
 
 - You test code that calls an external API and want mocks that match the real API.
@@ -45,37 +43,11 @@ Interceptors use the schema of your API to type your mocks: an [HTTP schema](htt
 - You want your tests to verify which requests and messages your application sends.
 - You run end-to-end tests where the application and the tests are separate processes.
 
-## Installation
-
-For HTTP interception, install the stable HTTP schema package and interceptor entry point:
-
-```bash
-pnpm add @zimic/http @zimic/interceptor --dev
-```
-
-For experimental WebSocket interception, install the WebSocket schema package instead:
-
-```bash
-pnpm add @zimic/ws @zimic/interceptor --dev
-```
-
-Install both schema packages only when the project intercepts both protocols.
-
-## Runtime requirements
-
-HTTP interception requires the [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). Browsers must provide Fetch natively or through a polyfill. Server-side interception requires Node.js 22 or later.
-
-WebSocket interception requires a native or polyfilled [WebSocket API](https://developer.mozilla.org/docs/Web/API/WebSocket) in the client runtime. Browsers normally provide it natively; Node.js clients must expose the native `WebSocket` or a compatible polyfill. `@zimic/interceptor`, including interceptor servers, requires Node.js 22 or later. Projects consuming the optional `@zimic/ws` package require Node.js 22.4 or later. Local browser interception also requires an [initialized mock service worker](https://zimic.dev/docs/interceptor/cli/browser#zimic-interceptor-browser-init).
-
 ## Highlights
 
-- :globe_with_meridians: **HTTP interceptors**
+- :globe_with_meridians: **Typed interceptors**
 
-  Use your [`@zimic/http` schema](https://zimic.dev/docs/http/guides/schemas) to declare [local](https://zimic.dev/docs/interceptor/guides/http/local-interceptors) and [remote](https://zimic.dev/docs/interceptor/guides/http/remote-interceptors) HTTP interceptors. Mock external services and simulate success, loading, and error states with ease and type safety.
-
-- :zap: **WebSocket interceptors**
-
-  Use your [`@zimic/ws` schema](https://zimic.dev/docs/ws/guides/schemas) to declare [experimental WebSocket interceptors](https://zimic.dev/docs/interceptor/guides/ws/local-interceptors). Mock typed message flows, observe connected clients, send server messages, and verify expected messages in development and tests.
+  Use your [`@zimic/http`](https://zimic.dev/docs/http/guides/schemas) and [`@zimic/ws`](https://zimic.dev/docs/ws/guides/schemas) schemas to declare [HTTP](https://zimic.dev/docs/interceptor/guides/http/local-interceptors) and [WebSocket](https://zimic.dev/docs/interceptor/guides/ws/local-interceptors) interceptors that run locally or through an [interceptor server](https://zimic.dev/docs/interceptor/cli/server). Mock external services and simulate success, loading, and error states with type safety. WebSocket support is experimental.
 
 - :link: **Network-level interception**
 
@@ -83,7 +55,7 @@ WebSocket interception requires a native or polyfilled [WebSocket API](https://d
 
 - :bulb: **Readability**
 
-  `@zimic/interceptor` was designed to encourage clarity and readability. Declare intuitive mocks, test with confidence, and verify that your application is making the expected HTTP requests or WebSocket messages with [declarative assertions](https://zimic.dev/docs/interceptor/guides/http/declarative-assertions).
+  `@zimic/interceptor` was designed to encourage clarity and readability. Verify that your application makes the expected requests and sends the expected messages with declarative assertions for [HTTP](https://zimic.dev/docs/interceptor/guides/http/declarative-assertions) and [WebSocket](https://zimic.dev/docs/interceptor/guides/ws/declarative-assertions).
 
 **Learn more**:
 

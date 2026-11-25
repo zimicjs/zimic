@@ -1,10 +1,6 @@
 import { SERVICE_WORKER_FILE_NAME } from '@/cli/browser/shared/constants';
 
-/**
- * An error thrown when the browser mock service worker is not found.
- *
- * @see {@link https://zimic.dev/docs/interceptor/cli/browser#zimic-interceptor-browser-init `zimic-interceptor browser init` API reference}
- */
+/** @see {@link https://zimic.dev/docs/interceptor/cli/browser#zimic-interceptor-browser-init `zimic-interceptor browser init` API reference} */
 class UnregisteredBrowserServiceWorkerError extends Error {
   constructor() {
     super(

@@ -19,6 +19,7 @@ export default defineConfig({
           environment: 'node',
           include: ['./{src,tests}/**/*.test.ts', './{src,tests}/**/*.node.test.ts'],
           exclude: ['**/*.browser.test.ts'],
+          execArgv: ['--expose-gc'],
         },
       },
       {

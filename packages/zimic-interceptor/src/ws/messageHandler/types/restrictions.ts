@@ -58,7 +58,7 @@ export type WebSocketMessageHandlerComputedRestriction<
 export type WebSocketMessageHandlerRestriction<Message extends WebSocketMessageSchema> =
   WebSocketMessageHandlerStaticRestriction<Message> | WebSocketMessageHandlerComputedRestriction<Message>;
 
-/** The arguments accepted by `handler.with()` after a restriction. Only static restrictions accept options. */
+/** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlerwith `handler.with()` API reference} */
 export type WebSocketMessageHandlerRestrictionOptionsArguments<Message extends WebSocketMessageSchema, Restriction> =
   Restriction extends WebSocketMessageHandlerComputedRestriction<Message>
     ? []

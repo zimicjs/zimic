@@ -14,23 +14,23 @@ WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. 
 
 WebSocket interceptors allow you to handle client messages and send custom server messages. Their primary use is to mock WebSocket flows in development or testing environments, especially when the backend is unavailable or when you want to control connection and message scenarios.
 
-In `@zimic/interceptor`, WebSocket interceptors are available in two types: `local` (default) and `remote`. Interceptors with type `remote` use a dedicated [interceptor server](/docs/interceptor/cli/server) to handle WebSocket connections and messages. This opens up more possibilities for mocking than [local interceptors](/docs/interceptor/guides/ws/local-interceptors), such as handling connections from multiple applications. Remote WebSocket interceptors require `type: 'remote'`.
+In `@zimic/interceptor`, WebSocket interceptors are available in two types: `local` (default) and `remote`. Interceptors with type `remote` use a dedicated [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle WebSocket connections and messages. This opens up more possibilities for mocking than [local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md), such as handling connections from multiple applications.
 
-Application clients must provide a native or polyfilled [WebSocket API](https://developer.mozilla.org/docs/Web/API/WebSocket). Browsers normally provide it natively; Node.js clients must expose the native `WebSocket` or a compatible polyfill. Projects consuming `@zimic/ws` require Node.js 22.4 or later. The separately running interceptor server requires Node.js 22 or later; it accepts application WebSocket connections and relays messages between the clients and interceptor.
+Remote interceptors work with any WebSocket client, including libraries such as [`ws`](https://github.com/websockets/ws), because clients connect to a real WebSocket server.
 
 ## When to use remote WebSocket interceptors
 
 - **Development**
 
-  Remote interceptors are useful if you want mocked WebSocket flows to be accessible by multiple applications (e.g. browser, other projects, test clients). This is not possible with local interceptors, which only work in the application where they are defined.
+  Remote interceptors are useful if you want your mocked WebSocket flows to be accessible by multiple applications (e.g. browser, other projects, test clients). This is not possible with local interceptors, which only work in the application where they are defined.
 
 - **Testing**
 
-  If you do not run your application in the same process as your tests, remote interceptors are the way to go to mock WebSocket messages and verify how your application handles server responses, broadcasts, and connection state. When using [Cypress](https://www.cypress.io), [Playwright](https://playwright.dev), or other end-to-end testing tools, this is generally the case because the test runner and the application run separately.
+  If you do not run your application in the same process as your tests, remote interceptors are the way to go to mock WebSocket messages and verify how your application handles server messages, broadcasts, and connection state. When using [Cypress](https://www.cypress.io), [Playwright](https://playwright.dev), or other end-to-end testing tools, this is generally the case because the test runner and the application run separately.
 
 ## Creating a remote WebSocket interceptor
 
-To start using a WebSocket interceptor, declare a WebSocket schema using [`@zimic/ws`](/docs/ws/guides/schemas). The schema represents the message data sent and received by your WebSocket clients and servers.
+To start using a WebSocket interceptor, declare a WebSocket schema using [`@zimic/ws`](/docs/zimic-ws/guides/1-schemas.md). The schema represents the structure of your WebSocket service, including the paths and the messages exchanged by clients and servers.
 
 ```ts title='schema.ts'
 import { WebSocketSchema } from '@zimic/ws';
@@ -40,12 +40,16 @@ type ChatMessage =
   | { type: 'typing'; data: { username: string } }
   | { type: 'presence'; data: { online: boolean } };
 
-type Schema = WebSocketSchema<ChatMessage>;
+type Schema = WebSocketSchema<{
+  '/chat': {
+    message: ChatMessage;
+  };
+}>;
 ```
 
-With the schema defined, you can now create your interceptor with `createWebSocketInterceptor`. It takes the schema as a type parameter and returns an interceptor instance. The `baseURL` option represents the scope of the interceptor and points to the URL that your application will use to open WebSocket connections.
+With the schema defined, you can now create your interceptor with [`createWebSocketInterceptor`](/docs/zimic-interceptor/api/ws/1-create-websocket-interceptor.mdx). It takes the schema as a type parameter and returns an interceptor instance. The `baseURL` option represents the scope of the interceptor and points to the URL that your application will use to open WebSocket connections.
 
-In the case of a remote interceptor, the `baseURL` should point to an [interceptor server](/docs/interceptor/cli/server), which is configured by the interceptor to handle connections and messages.
+In the case of a remote interceptor, the `baseURL` should point to an [interceptor server](/docs/zimic-interceptor/cli/1-server.md), which is configured by the interceptor to handle connections and messages.
 
 ```ts
 import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
@@ -53,24 +57,19 @@ import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
 const interceptor = createWebSocketInterceptor<Schema>({
   // highlight-next-line
   type: 'remote',
-  baseURL: 'ws://localhost:3000/chat',
-  messageSaving: { enabled: true },
+  baseURL: 'ws://localhost:3000',
 });
 ```
 
-You can also set other options, such as authentication and message saving.
-
-:::info INFO: <span>WebSocket interceptor scope</span>
-
-WebSocket interceptors are designed for typed test and development mocks. They do not proxy unmatched WebSocket traffic to an upstream server, and they do not provide a general-purpose WebSocket gateway. Declare handlers for the messages your test expects to observe or mock.
-
-:::
+You can also set other options, such as the interceptor type and how unhandled messages should be treated. Refer to the [`createWebSocketInterceptor` API reference](/docs/zimic-interceptor/api/ws/1-create-websocket-interceptor.mdx) for more details.
 
 ### Path discriminators
 
 When using multiple remote interceptors connected to the same interceptor server, it is important to differentiate them by using path discriminators. This is done by appending a suffix to the `baseURL` of each interceptor and makes sure that no interceptor interferes with another's connections and messages.
 
 This is especially useful if you have multiple interceptors mocking different services or WebSocket endpoints, or if you are running tests in parallel, each with its own interceptors.
+
+Consider the following example:
 
 ```ts
 import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
@@ -84,22 +83,24 @@ const chatInterceptor = createWebSocketInterceptor<ChatSchema>({
 const notificationInterceptor = createWebSocketInterceptor<NotificationSchema>({
   type: 'remote',
   // highlight-next-line
-  baseURL: `ws://localhost:3000/notifications/${crypto.randomUUID()}`,
+  baseURL: `ws://localhost:3000/notification/${crypto.randomUUID()}`,
 });
 ```
+
+Here, two remote interceptors are created, one for a fictional chat service and another for a notification service. Both interceptors use the same interceptor server, but they are differentiated by service with the paths `/chat` and `/notification`. Moreover, [`crypto.randomUUID()`](https://developer.mozilla.org/docs/Web/API/Crypto/randomUUID) is used to generate a unique identifier for each interceptor, which makes sure that they don't interfere with each other if multiple instances are running at the same time.
 
 If you are using a setup like this, note that your application should use the same base URL as the interceptor when opening WebSocket connections, otherwise they may not be handled. A common strategy is to change an environment variable or similar to point to the base URL of the interceptor.
 
 ```ts
-process.env.CHAT_SOCKET_URL = chatInterceptor.baseURL;
-process.env.NOTIFICATION_SOCKET_URL = notificationInterceptor.baseURL;
+process.env.CHAT_SERVICE_URL = chatInterceptor.baseURL;
+process.env.NOTIFICATION_SERVICE_URL = notificationInterceptor.baseURL;
 ```
 
 ## WebSocket interceptor lifecycle
 
 ### Starting an interceptor
 
-To intercept connections and messages, start the interceptor server using the [`zimic-interceptor server start`](/docs/interceptor/cli/server#zimic-interceptor-server-start) CLI. It can run as a standalone server:
+To intercept connections and messages, start the interceptor server using the [`zimic-interceptor server start`](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-start) CLI. It can run as a standalone server:
 
 ```bash
 zimic-interceptor server start --port 3000
@@ -113,13 +114,25 @@ zimic-interceptor server start --port 3000 --ephemeral -- npm run test
 
 The command after `--` will be executed when the server is ready. The flag `--ephemeral` indicates that the server should automatically stop after the command `npm run test` finishes.
 
+:::info NOTE: <span>Interceptor servers in development and testing</span>
+
+Interceptor servers are development and test tools. Do not use them as production application servers.
+
+:::
+
+:::info NOTE: <span>Interceptor server versions</span>
+
+Use the same `@zimic/interceptor` version for the interceptor server and your remote interceptors. Changes to how they communicate ship in minor releases and are not breaking changes, so a server on another version may reject your interceptors when they start.
+
+:::
+
 :::info IMPORTANT: <span>Interceptor server authentication</span>
 
 Although authentication is optional for private development servers, we strongly recommend [enabling it](#interceptor-server-authentication) when the server is not bound to `localhost`, `127.0.0.1`, or `::1`, or when it is shared over a network. Authentication prevents unauthorized remote interceptors from connecting to the server.
 
 :::
 
-Once the server is running, you can start the interceptor with `interceptor.start()`. This is usually done in a `beforeAll` hook in your test suite.
+Once the server is running, you can start the interceptor with [`interceptor.start()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorstart). This is usually done in a `beforeAll` hook in your test suite.
 
 ```ts
 beforeAll(async () => {
@@ -132,7 +145,7 @@ During the start up, the interceptor will connect to the server and get ready to
 
 ### Clearing an interceptor
 
-When using an interceptor in tests, it's important to clear it between tests to avoid one test affecting another. This is performed with `interceptor.clear()`, which resets handlers, saved messages, connected clients, and server messages to their initial states.
+When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another. This is performed with [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear), which resets the interceptor and handlers to their initial states.
 
 ```ts
 beforeEach(async () => {
@@ -143,7 +156,7 @@ beforeEach(async () => {
 
 ### Checking expectations
 
-After each test, you can check if your application has sent all of the expected messages with `interceptor.checkTimes()`.
+After each test, you can check if your application has sent all of the expected messages and opened all of the expected connections with [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes). Learn more about how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx) to keep your tests clean and readable.
 
 ```ts
 afterEach(async () => {
@@ -154,7 +167,7 @@ afterEach(async () => {
 
 ### Stopping an interceptor
 
-After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with `interceptor.stop()`.
+After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with [`interceptor.stop()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorstop).
 
 ```ts
 afterAll(async () => {
@@ -165,15 +178,15 @@ afterAll(async () => {
 
 ### Mocking messages
 
-You can now use the interceptor to handle client-to-server messages and send mock server responses. Message data, restrictions, responses, saved messages, connected clients, and server sends are typed by default based on the schema.
+You can now use the interceptor to handle client messages and send mock server messages. All paths, messages, restrictions, and responses are typed by default based on the schema.
 
-Use `interceptor.message()` to create a message handler. Handlers can restrict matching messages with `.with(...)`, restrict messages to a known client with `.from(...)`, delay matching with `.delay(...)`, run side effects with `.effect(...)`, send server responses with `.respond(...)`, and declare expected message counts with `.times(...)`.
+Use [`interceptor.message()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptormessage) to create a [message handler](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx). To handle connections, use [`interceptor.connection()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorconnection), as described in [Using connections and server sends](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx).
 
 ```ts
 test('example', async () => {
   // highlight-start
   await interceptor
-    .message()
+    .message('/chat')
     .with({ type: 'message' })
     .respond((message) => ({
       type: 'presence',
@@ -182,133 +195,63 @@ test('example', async () => {
     .times(1);
   // highlight-end
 
-  // Run the application and send WebSocket messages...
+  // Run the application and send messages...
 });
 ```
 
-:::info INFO: <span>Remote WebSocket interceptors are asynchronous</span>
+Remote interceptors handle messages in the same [order as local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md#mocking-messages).
 
-Many operations in remote WebSocket interceptors are **asynchronous** because they may involve communication with an interceptor server. This is different from [local interceptors](/docs/interceptor/guides/ws/local-interceptors), which have mostly **synchronous** operations. Await remote handler chains that register or update handlers, such as `.respond(...)`, `.times(...)`, `.clear()`, and `.checkTimes()`.
+:::info INFO: <span>Remote interceptors are asynchronous</span>
 
-WebSocket frames arrive in transport order, but Zimic handles messages independently. Asynchronous restrictions, effects, delays, and responses can overlap and complete in any order. Do not rely on handler-completion or response order.
+Many operations in remote interceptors are **asynchronous** because they may involve communication with an interceptor server. This is different from [local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md), which have mostly **synchronous** operations.
 
 If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy rule is [`@typescript-eslint/no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises). It checks promises appearing to be unhandled, which is helpful to indicate missing `await`'s in remote interceptor operations.
 
 :::
 
-If you need to access the messages processed by the interceptor, enable message saving and use `handler.messages`. Message saving is enabled by default in Node.js when `process.env.NODE_ENV === 'test'` and disabled by default in browsers. Configure `messageSaving: { enabled: true }` when you need saved messages in every environment. Saved message arrays are readonly and keep stable references. Calling `handler.clear()` removes that handler's saved messages from the handler, sender client, and server arrays in place; calling `interceptor.clear()` clears all saved message arrays and resets safe-limit accounting.
-
-`handler.clear()` returns the same handler reset to the root message schema. Continue configuration from that returned handler when a previous `.with(...)` narrowed its message type. An older narrowed alias does not retain sound narrowing after either the handler or interceptor is cleared.
+If you need to access the messages processed by the interceptor, use [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages).
 
 ```ts
-const narrowedHandler = await interceptor.message().with({ type: 'typing' });
-const rootHandler = await narrowedHandler.clear();
-
-await rootHandler.respond({ type: 'presence', data: { online: true } });
-```
-
-```ts
+// highlight-next-line
 const handler = await interceptor
-  .message()
+  .message('/chat')
   .with({ type: 'message' })
   .respond({ type: 'presence', data: { online: true } })
   .times(1);
 
-// Run the application and send WebSocket messages...
+// Run the application and send messages...
 
 console.log(handler.messages.length); // 1
+
 console.log(handler.messages[0].data); // { type: 'message', data: { text: 'Hello!' } }
 console.log(handler.messages[0].sender.url); // 'ws://localhost:3000/chat'
 ```
 
-### Passive handlers
-
-Handlers without `.respond(...)` or `.effect(...)` are valid passive handlers. They accept connections, observe matching messages, save them when message saving is enabled, and count toward `.times()` without sending a response or running an effect.
-
-```ts
-const handler = await interceptor.message().with({ type: 'typing' }).times(1);
-
-// Run the application and send WebSocket messages...
-
-console.log(handler.messages.length); // 1
-```
-
-### Connected clients
-
-Use [`interceptor.on('connection', listener)`](/docs/interceptor/api/websocket-interceptor#interceptoron) to run code when a client first connects, before it sends any messages. The callback receives the typed client handle:
-
-```ts
-interceptor.on('connection', (client) => {
-  client.send(JSON.stringify({ type: 'presence', data: { online: true } }));
-});
-```
-
-Registration is synchronous, including for remote interceptors. Register the listener before opening application clients. Existing connections are not replayed. Remove a listener with `interceptor.off('connection', listener)`, passing the same callback reference. `interceptor.clear()` and `interceptor.stop()` also remove listeners, so register them again after clearing or restarting the interceptor.
-
-The interceptor tracks currently connected clients in `interceptor.clients`. Each client is a public handle that can send messages back to the real WebSocket connection. You can use these handles in `.from(...)` restrictions or inside effects.
-
-```ts
-await interceptor.message().effect((message) => {
-  const [firstClient] = interceptor.clients;
-
-  firstClient.send(
-    JSON.stringify({
-      type: 'presence',
-      data: { online: message.type === 'message' },
-    }),
-  );
-});
-```
-
-### Server sends
-
-The interceptor also exposes a synthetic server handle. Calling `interceptor.server.send(...)` broadcasts to currently connected clients.
-
-```ts
-interceptor.server.send(JSON.stringify({ type: 'presence', data: { online: true } }));
-```
-
-To send to a selected subset of connected clients, pass their handles in `options.to`. Omitting `to` retains broadcast behavior.
-
-```ts
-interceptor.server.send(JSON.stringify({ type: 'presence', data: { online: true } }), {
-  to: interceptor.clients.slice(0, 2),
-});
-```
-
-Server-originated sends are delivered to connected clients, but they are not added to handler or client saved message lists. Saved messages are produced by matched client-to-server messages.
-
-### Remote message transport
-
-Remote WebSocket interceptors preserve the frame kind of each message. Text frames remain text, JSON messages remain JSON, and binary frames remain binary when they pass through the interceptor server. Zimic uses an internal transport envelope for remote messages, so user payloads such as `{ type: 'binary', data: '...' }` are still treated as JSON when they were sent as JSON, not as transport metadata.
-
-Before matching restrictions or running callbacks, handlers parse text frames containing a valid JSON object or array. Other text frames stay strings, including top-level JSON numbers, booleans, `null`, and strings. Binary frames retain their original data. Unlike HTTP bodies without a `content-type`, which are parsed as any JSON value, WebSocket frames have no content type to declare JSON, and string messages are sent as raw text. For string-based schemas, text such as `'{"type":"message"}'` is therefore exposed as parsed JSON rather than as a string. Avoid JSON object or array text when the message must remain a string. A frame such as `'42'` stays a string, even when the schema declares a number, so restrict it by its text, such as `handler.with('42')`.
-
-Binary messages can be sent with `Blob`, `ArrayBuffer`, typed arrays, and `DataView` values.
-
-### Remote connection setup failures
-
-When a user WebSocket connects through the interceptor server, the server confirms the connection with the remote interceptor before retaining it as a connected client. While confirmation is pending, the server pauses the socket and resumes it after normal message listeners are attached. Standards-valid frames sent immediately after the user observes `open` are preserved and processed in order. If setup cannot complete, the server closes the user socket and removes any temporary connection state.
-
 ## Interceptor server authentication
 
-While authentication is optional for private development servers, we strongly recommend enabling authentication when the server is not bound to `localhost`, `127.0.0.1`, or `::1`, or is shared over a network. Authentication prevents unauthorized remote interceptors from connecting to the server.
+While authentication is optional for private development servers, we strongly recommend enabling authentication when the server is bound to a hostname other than `localhost`, `127.0.0.1`, or `::1`, or is shared over a network. Authentication prevents unauthorized remote interceptors from connecting to the server.
 
 Without authentication, browser remote interceptors can connect only when both the interceptor server and the web application use a loopback hostname: `localhost`, `127.0.0.1`, or `::1`. Configure authentication if either one uses another hostname. This restriction does not apply to remote interceptors running outside a browser.
 
-To create an interceptor authentication token, use the [`zimic-interceptor server token create`](/docs/interceptor/cli/server#zimic-interceptor-server-token-create) CLI:
+Starting an unauthenticated server through the CLI or [`createInterceptorServer`](/docs/zimic-interceptor/api/server/1-create-interceptor-server.md) logs a warning when the server uses a non-loopback hostname or runs with `NODE_ENV=production`. The warning does not stop the server in v1.
+
+In `@zimic/interceptor` v2, unauthenticated servers will refuse to start on non-loopback hostnames.
+
+To create an interceptor authentication token, use the [`zimic-interceptor server token create`](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-token-create) CLI:
 
 ```bash
 zimic-interceptor server token create \
   --name <token-name>
 ```
 
-Then, start the server using the `--tokens-dir` option pointing to the directory where the tokens are saved. The server will only accept remote interceptors bearing a valid token.
+Then, start the server using the `--tokens-dir` option pointing to the directory where the tokens are saved. The server will only accept remote interceptors bearing a valid token, regardless of where they run.
 
 ```bash
 zimic-interceptor server start --port 3000 \
   --tokens-dir .zimic/interceptor/server/tokens
 ```
+
+You can list the authorized tokens with [`zimic-interceptor server token ls`](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-token-ls).
 
 :::important IMPORTANT: <span>Private tokens directory</span>
 
@@ -321,13 +264,14 @@ Once the server is running, remote interceptors can use the `auth.token` option 
 ```ts
 import { createWebSocketInterceptor, type WebSocketInterceptorAuthOptions } from '@zimic/interceptor/experimental/ws';
 
-const auth: WebSocketInterceptorAuthOptions = {
-  token: '<token>',
-};
+const auth: WebSocketInterceptorAuthOptions = { token: '<token>' };
 
 const interceptor = createWebSocketInterceptor<Schema>({
   type: 'remote',
-  baseURL: 'ws://localhost:3000/chat',
+  baseURL: 'ws://localhost:3000',
+  // highlight-next-line
   auth,
 });
 ```
+
+Replace `<token>` with the token you created earlier. Interceptor tokens do not expire, so you can use the same token for multiple interceptors. If you need to invalidate a token, use the [`zimic-interceptor server token rm`](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-token-rm) CLI.

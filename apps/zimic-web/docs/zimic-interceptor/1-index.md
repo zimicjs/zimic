@@ -19,13 +19,9 @@ Interceptors use the schema of your API to type your mocks: an [HTTP schema](/do
 
 ## Highlights
 
-- :globe_with_meridians: **HTTP interceptors**
+- :globe_with_meridians: **Typed interceptors**
 
-  Use your [`@zimic/http` schema](/docs/zimic-http/guides/1-schemas.md) to declare [local](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) and [remote](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md) HTTP interceptors. Mock external services and simulate success, loading, and error states with ease and type safety.
-
-- :zap: **WebSocket interceptors**
-
-  Use your [`@zimic/ws` schema](/docs/ws/guides/schemas) to declare [experimental WebSocket interceptors](/docs/interceptor/guides/ws/local-interceptors). Mock typed message flows, observe connected clients, send server messages, and verify expected messages in development and tests.
+  Use your [`@zimic/http`](/docs/zimic-http/guides/1-schemas.md) and [`@zimic/ws`](/docs/zimic-ws/guides/1-schemas.md) schemas to declare [HTTP](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) and [WebSocket](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md) interceptors that run locally or through an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). Mock external services and simulate success, loading, and error states with type safety. WebSocket support is experimental.
 
 - :link: **Network-level interception**
 
@@ -33,11 +29,11 @@ Interceptors use the schema of your API to type your mocks: an [HTTP schema](/do
 
 - :bulb: **Readability**
 
-  `@zimic/interceptor` was designed to encourage clarity and readability. Declare intuitive mocks, test with confidence, and verify that your application is making the expected requests with [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx).
+  `@zimic/interceptor` was designed to encourage clarity and readability. Verify that your application makes the expected requests and sends the expected messages with declarative assertions for [HTTP](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) and [WebSocket](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx).
 
 **Learn more**:
 
-- [`@zimic/interceptor` - Getting started](/docs/interceptor/getting-started)
+- [`@zimic/interceptor` - Getting started](/docs/zimic-interceptor/2-getting-started.mdx)
 - [`@zimic/interceptor` - Guides](/docs/interceptor/guides)
 - [`@zimic/interceptor` - API](/docs/interceptor/api)
 - [`@zimic/interceptor` - CLI](/docs/interceptor/cli)

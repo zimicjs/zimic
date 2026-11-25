@@ -149,6 +149,7 @@ export async function readBytes(data: Blob | ArrayBuffer) {
 export async function expectWebSocketTimesCheckError(
   callback: () => PossiblePromise<void>,
   options: {
+    handler: 'message' | 'connection';
     message: string;
     expectedNumberOfMatches: number | { min: number; max: number };
   },
@@ -170,7 +171,7 @@ export async function expectWebSocketTimesCheckError(
   const expectedMessage = [
     options.message,
     '',
-    'Learn more: https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlertimes',
+    `Learn more: https://zimic.dev/docs/interceptor/api/websocket-${options.handler}-handler#handlertimes`,
   ].join('\n');
 
   expect(timesCheckError!.message).toEqual(expectedMessage);

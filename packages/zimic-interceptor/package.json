@@ -16,7 +16,7 @@
     "api",
     "static"
   ],
-  "version": "1.6.0-canary.9",
+  "version": "1.6.0-canary.10",
   "homepage": "https://zimic.dev/docs/interceptor",
   "repository": {
     "type": "git",
@@ -37,7 +37,7 @@
     "provenance": true
   },
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.15.0"
   },
   "license": "MIT",
   "files": [

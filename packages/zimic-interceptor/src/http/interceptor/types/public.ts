@@ -4,11 +4,11 @@ import { PossiblePromise } from '@zimic/utils/types';
 import { SyncHttpInterceptorMethodHandler, AsyncHttpInterceptorMethodHandler } from './handlers';
 import { HttpInterceptorPlatform, RemoteHttpInterceptorOptions, UnhandledRequestStrategy } from './options';
 
-/** @see {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `createHttpInterceptor` API reference} */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptorrequestsaving `interceptor.requestSaving` API reference} */
 export interface HttpInterceptorRequestSaving {
-  /** @see {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `createHttpInterceptor` API reference} */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptorrequestsaving `interceptor.requestSaving` API reference} */
   enabled: boolean;
-  /** @see {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `createHttpInterceptor` API reference} */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptorrequestsaving `interceptor.requestSaving` API reference} */
   safeLimit: number;
 }
 
@@ -55,9 +55,13 @@ export interface HttpInterceptor<_Schema extends HttpSchema> {
  * @see {@link https://zimic.dev/docs/interceptor/guides/http/local-interceptors Using local interceptors}
  */
 export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInterceptor<Schema> {
-  /** @readonly */
+  /**
+   * @readonly
+   * @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptortype `interceptor.type` API reference}
+   */
   get type(): 'local';
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptoronunhandledrequest `interceptor.onUnhandledRequest` API reference} */
   onUnhandledRequest?: UnhandledRequestStrategy.Local;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptorget `interceptor.get()` API reference} */
@@ -81,8 +85,10 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptoroptions `interceptor.options()` API reference} */
   options: SyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptorchecktimes `interceptor.checkTimes()` API reference} */
   checkTimes: () => void;
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptorclear `interceptor.clear()` API reference} */
   clear: () => void;
 }
 
@@ -91,9 +97,13 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
  * @see {@link https://zimic.dev/docs/interceptor/guides/http/remote-interceptors Using remote interceptors}
  */
 export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpInterceptor<Schema> {
-  /** @readonly */
+  /**
+   * @readonly
+   * @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptortype `interceptor.type` API reference}
+   */
   get type(): 'remote';
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptoronunhandledrequest `interceptor.onUnhandledRequest` API reference} */
   onUnhandledRequest?: UnhandledRequestStrategy.Remote;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptorauth `interceptor.auth` API reference} */
@@ -120,7 +130,9 @@ export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpIn
   /** @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptoroptions `interceptor.options()` API reference} */
   options: AsyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptorchecktimes `interceptor.checkTimes()` API reference} */
   checkTimes: () => Promise<void>;
 
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-interceptor#interceptorclear `interceptor.clear()` API reference} */
   clear: () => Promise<void>;
 }

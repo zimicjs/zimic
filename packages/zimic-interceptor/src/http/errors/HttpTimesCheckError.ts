@@ -125,9 +125,8 @@ function createTimesCheckErrorMessage(options: HttpTimesCheckErrorOptions) {
 }
 
 /**
- * Error thrown when the number of requests matched by a handler does not satisfy its `handler.times()` declaration.
- *
  * @deprecated `TimesCheckError` has been renamed to `HttpTimesCheckError`.
+ * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes `handler.times()` API reference}
  */
 export class TimesCheckError extends TypeError {
   constructor(options: HttpTimesCheckErrorOptions) {
@@ -139,7 +138,7 @@ export class TimesCheckError extends TypeError {
   }
 }
 
-/** Error thrown when the number of requests matched by a handler does not satisfy its `handler.times()` declaration. */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#handlertimes `handler.times()` API reference} */
 // eslint-disable-next-line @typescript-eslint/no-deprecated
 class HttpTimesCheckError extends TimesCheckError {
   constructor(options: HttpTimesCheckErrorOptions) {

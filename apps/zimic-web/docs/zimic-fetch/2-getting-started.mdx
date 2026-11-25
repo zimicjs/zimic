@@ -27,6 +27,34 @@ This guide will help you get started with `@zimic/fetch`.
 `@zimic/fetch` requires [TypeScript](https://www.typescriptlang.org) >= 5.0, with the following configuration:
 
 <Tabs groupId="typescript-version">
+  <TabItem value="typescript-7" label="TypeScript 7">
+
+```json title='tsconfig.json'
+{
+  "compilerOptions": {
+    // highlight-start
+    "strict": true,
+    "lib": ["esnext", "dom"]
+    // highlight-end
+  }
+}
+```
+
+  </TabItem>
+  <TabItem value="typescript-6" label="TypeScript 6">
+
+```json title='tsconfig.json'
+{
+  "compilerOptions": {
+    // highlight-start
+    "strict": true,
+    "lib": ["esnext", "dom"]
+    // highlight-end
+  }
+}
+```
+
+  </TabItem>
   <TabItem value="typescript-5" label="TypeScript 5">
 
 ```json title='tsconfig.json'
@@ -41,42 +69,14 @@ This guide will help you get started with `@zimic/fetch`.
 ```
 
   </TabItem>
-  <TabItem value="typescript-6" label="TypeScript 6">
-
-```json title='tsconfig.json'
-{
-  "compilerOptions": {
-    // highlight-start
-    "strict": true,
-    "lib": ["esnext", "dom"]
-    // highlight-end
-  }
-}
-```
-
-  </TabItem>
-  <TabItem value="typescript-7" label="TypeScript 7">
-
-```json title='tsconfig.json'
-{
-  "compilerOptions": {
-    // highlight-start
-    "strict": true,
-    "lib": ["esnext", "dom"]
-    // highlight-end
-  }
-}
-```
-
-  </TabItem>
 </Tabs>
 
   </TabItem>
   <TabItem value="server" label="Server side">
 
-| Runtime                       | Version    |
-| ----------------------------- | ---------- |
-| [Node.js](https://nodejs.org) | >= 22.12.0 |
+| Runtime                       | Version   |
+| ----------------------------- | --------- |
+| [Node.js](https://nodejs.org) | >= 22.0.0 |
 
 ### Supported languages
 
@@ -85,14 +85,14 @@ This guide will help you get started with `@zimic/fetch`.
 `@zimic/fetch` requires [TypeScript](https://www.typescriptlang.org) >= 5.0, with the following configuration:
 
 <Tabs groupId="typescript-version">
-  <TabItem value="typescript-5" label="TypeScript 5">
+  <TabItem value="typescript-7" label="TypeScript 7">
 
 ```json title='tsconfig.json'
 {
   "compilerOptions": {
     // highlight-start
     "strict": true,
-    "lib": ["esnext", "webworker", "webworker.iterable"]
+    "lib": ["esnext", "webworker"]
     // highlight-end
   }
 }
@@ -113,14 +113,14 @@ This guide will help you get started with `@zimic/fetch`.
 ```
 
   </TabItem>
-  <TabItem value="typescript-7" label="TypeScript 7">
+  <TabItem value="typescript-5" label="TypeScript 5">
 
 ```json title='tsconfig.json'
 {
   "compilerOptions": {
     // highlight-start
     "strict": true,
-    "lib": ["esnext", "webworker"]
+    "lib": ["esnext", "webworker", "webworker.iterable"]
     // highlight-end
   }
 }
