@@ -3,7 +3,9 @@ import { Server as HttpServer } from 'http';
 import { Server as HttpsServer } from 'https';
 import { WebSocketServer as NodeWebSocketServer } from 'ws';
 
+/** @see {@link https://zimic.dev/docs/ws/api/websocket-server#serveropen `server.open()` API reference} */
 export interface WebSocketServerOpenOptions {
+  /** @see {@link https://zimic.dev/docs/ws/api/websocket-server#serveropen `server.open()` API reference} */
   timeout?: number;
 }
 
@@ -50,4 +52,5 @@ export async function openWebSocketServer(
   });
 }
 
+/** @see {@link https://zimic.dev/docs/ws/api/websocket-server#serverclose `server.close()` API reference} */
 export type WebSocketServerCloseOptions = WebSocketServerOpenOptions;

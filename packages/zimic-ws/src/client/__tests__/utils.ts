@@ -1,57 +1,56 @@
-import { waitForDelay } from '@zimic/utils/time';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { vi } from 'vitest';
 
-export function delayWebSocketListenerTrigger(delayDuration: number) {
+// Holds the next listener added to a socket until released.
+export function delayWebSocketListenerTrigger() {
   const originalWebSocketAddEventListener = WebSocket.prototype.addEventListener;
-
-  const promises = new Set<Promise<void>>();
+  const released = createPromiseWithResolvers<void>();
 
   const delayedWebSocketAddEventListener = vi
     .spyOn(WebSocket.prototype, 'addEventListener')
-    .mockImplementationOnce(function (this: WebSocket, type, listener) {
-      const promise = waitForDelay(delayDuration).then(() => {
-        originalWebSocketAddEventListener.call(this, type, listener as () => void);
-        promises.delete(promise);
+    .mockImplementationOnce(function (this: WebSocket, type, listener, options) {
+      void released.then(() => {
+        originalWebSocketAddEventListener.call(this, type, listener, options);
       });
-      promises.add(promise);
-
-      return this;
     });
 
   return {
+    release() {
+      released.resolve();
+    },
     restore() {
       delayedWebSocketAddEventListener.mockRestore();
-    },
-    asPromise() {
-      return Promise.all(promises);
     },
   };
 }
 
-export function delayWebSocketClose(delayDuration: number) {
-  const originalWebSocketClose = WebSocket.prototype.close;
+// Holds the close events of sockets until released, but only for listeners added while delaying. The sockets still
+// close natively.
+export function delayWebSocketClose() {
+  const originalWebSocketAddEventListener = WebSocket.prototype.addEventListener;
+  const released = createPromiseWithResolvers<void>();
 
-  const promises = new Set<Promise<void>>();
+  const delayedWebSocketAddEventListener = vi
+    .spyOn(WebSocket.prototype, 'addEventListener')
+    .mockImplementation(function (this: WebSocket, type, listener, options) {
+      const delayedListener =
+        type === 'close'
+          ? (event: Event) => {
+              void released.then(() => {
+                (listener as EventListener)(event);
+              });
+            }
+          : listener;
 
-  const delayedWebSocketClose = vi.spyOn(WebSocket.prototype, 'close').mockImplementationOnce(function (
-    this: WebSocket,
-    ...parameters
-  ) {
-    const promise = waitForDelay(delayDuration).then(() => {
-      originalWebSocketClose.apply(this, parameters);
-      promises.delete(promise);
+      originalWebSocketAddEventListener.call(this, type, delayedListener, options);
     });
-    promises.add(promise);
-
-    return this;
-  });
 
   return {
-    restore() {
-      delayedWebSocketClose.mockRestore();
+    release() {
+      released.resolve();
     },
-    toPromise() {
-      return Promise.all(promises);
+    restore() {
+      delayedWebSocketAddEventListener.mockRestore();
     },
   };
 }
