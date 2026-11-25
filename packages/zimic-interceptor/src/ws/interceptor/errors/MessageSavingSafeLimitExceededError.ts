@@ -3,9 +3,7 @@ import { createInterceptorSavingSafeLimitExceededMessage } from '@/interceptor/e
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * Error thrown when the safe limit of saved intercepted messages is exceeded.
- *
- * @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptormessagesaving `interceptor.messageSaving` API reference}
  */
 class MessageSavingSafeLimitExceededError extends TypeError {
   constructor(numberOfSavedMessages: number, safeLimit: number) {
@@ -15,7 +13,7 @@ class MessageSavingSafeLimitExceededError extends TypeError {
         optionName: 'messageSaving',
         numberOfSavedResources: numberOfSavedMessages,
         safeLimit,
-        learnMoreURL: 'https://zimic.dev/docs/interceptor/api/create-websocket-interceptor',
+        learnMoreURL: 'https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptormessagesaving',
       }),
     );
     this.name = 'MessageSavingSafeLimitExceededError';

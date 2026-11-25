@@ -365,6 +365,7 @@ export function declareClientsSocketIOProtocolTests(options: SharedSocketIOProto
             await waitForSocketConnection(socket);
 
             await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+              handler: 'connection',
               message: [
                 'Expected exactly 1 matching connection, but got 0.',
                 '',
@@ -434,6 +435,7 @@ export function declareClientsSocketIOProtocolTests(options: SharedSocketIOProto
 
             await waitFor(() =>
               expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                handler: 'message',
                 message: [
                   'Expected exactly 1 matching message, but got 0.',
                   '',

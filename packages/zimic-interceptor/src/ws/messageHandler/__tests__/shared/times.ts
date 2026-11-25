@@ -97,6 +97,7 @@ export function declareTimesWebSocketMessageHandlerTests(
           const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(1);
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+            handler: 'message',
             message: 'Expected exactly 1 message, but got 0.',
             expectedNumberOfMatches: 1,
           });
@@ -141,6 +142,7 @@ export function declareTimesWebSocketMessageHandlerTests(
           const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(2);
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+            handler: 'message',
             message: 'Expected exactly 2 messages, but got 0.',
             expectedNumberOfMatches: 2,
           });
@@ -152,6 +154,7 @@ export function declareTimesWebSocketMessageHandlerTests(
             await response;
 
             await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+              handler: 'message',
               message: 'Expected exactly 2 messages, but got 1.',
               expectedNumberOfMatches: 2,
             });
@@ -171,6 +174,7 @@ export function declareTimesWebSocketMessageHandlerTests(
             await response;
 
             await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+              handler: 'message',
               message: 'Expected exactly 4 messages, but got 3.',
               expectedNumberOfMatches: 4,
             });
@@ -199,6 +203,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
             await waitFor(() =>
               expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                handler: 'message',
                 message: 'Expected exactly 1 message, but got 2.',
                 expectedNumberOfMatches: 1,
               }),
@@ -228,6 +233,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
             await waitFor(() =>
               expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                handler: 'message',
                 message: 'Expected exactly 0 messages, but got 1.',
                 expectedNumberOfMatches: 0,
               }),
@@ -268,6 +274,7 @@ export function declareTimesWebSocketMessageHandlerTests(
           const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(2, 3);
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+            handler: 'message',
             message: 'Expected at least 2 and at most 3 messages, but got 0.',
             expectedNumberOfMatches: { min: 2, max: 3 },
           });
@@ -279,6 +286,7 @@ export function declareTimesWebSocketMessageHandlerTests(
             await response;
 
             await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+              handler: 'message',
               message: 'Expected at least 2 and at most 3 messages, but got 1.',
               expectedNumberOfMatches: { min: 2, max: 3 },
             });
@@ -329,6 +337,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
             await waitFor(() =>
               expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                handler: 'message',
                 message: 'Expected at least 2 and at most 3 messages, but got 4.',
                 expectedNumberOfMatches: { min: 2, max: 3 },
               }),
@@ -367,6 +376,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
             await waitFor(() =>
               expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                handler: 'message',
                 message: 'Expected at least 0 and at most 1 message, but got 2.',
                 expectedNumberOfMatches: { min: 0, max: 1 },
               }),
@@ -392,6 +402,7 @@ export function declareTimesWebSocketMessageHandlerTests(
           const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(1, 1);
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+            handler: 'message',
             message: 'Expected exactly 1 message, but got 0.',
             expectedNumberOfMatches: { min: 1, max: 1 },
           });
@@ -408,6 +419,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
             await waitFor(() =>
               expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                handler: 'message',
                 message: 'Expected exactly 1 message, but got 2.',
                 expectedNumberOfMatches: { min: 1, max: 1 },
               }),
@@ -433,6 +445,7 @@ export function declareTimesWebSocketMessageHandlerTests(
           const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(2, 2);
 
           await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+            handler: 'message',
             message: 'Expected exactly 2 messages, but got 0.',
             expectedNumberOfMatches: { min: 2, max: 2 },
           });
@@ -444,6 +457,7 @@ export function declareTimesWebSocketMessageHandlerTests(
             expect(await response).toBe(JSON.stringify({ type: 'delete', id: '1' }));
 
             await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+              handler: 'message',
               message: 'Expected exactly 2 messages, but got 1.',
               expectedNumberOfMatches: { min: 2, max: 2 },
             });
@@ -459,6 +473,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
             await waitFor(() =>
               expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                handler: 'message',
                 message: 'Expected exactly 2 messages, but got 3.',
                 expectedNumberOfMatches: { min: 2, max: 2 },
               }),
@@ -497,6 +512,7 @@ export function declareTimesWebSocketMessageHandlerTests(
             ].join('\n');
 
             await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+              handler: 'message',
               message: expectedMessage,
               expectedNumberOfMatches: 1,
             });
@@ -508,6 +524,7 @@ export function declareTimesWebSocketMessageHandlerTests(
               expect(await response).toBe(JSON.stringify({ type: 'delete', id: 'fallback' }));
 
               await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                handler: 'message',
                 message: expectedMessage,
                 expectedNumberOfMatches: 1,
               });
@@ -531,6 +548,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
               await waitFor(() =>
                 expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                  handler: 'message',
                   message: [
                     'Expected exactly 1 matching message, but got 0.',
                     '',
@@ -576,6 +594,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
               await waitFor(() =>
                 expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                  handler: 'message',
                   message: [
                     'Expected exactly 1 matching message, but got 0.',
                     '',
@@ -612,6 +631,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
               await waitFor(() =>
                 expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                  handler: 'message',
                   message: [
                     'Expected exactly 1 matching message, but got 0.',
                     '',
@@ -658,6 +678,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
             await waitFor(() =>
               expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                handler: 'message',
                 message: [
                   'Expected exactly 1 matching message, but got 0.',
                   '',
@@ -712,6 +733,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
             await waitFor(() =>
               expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                handler: 'message',
                 message: [
                   'Expected exactly 1 matching message, but got 0.',
                   '',
@@ -753,6 +775,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
             await waitFor(() =>
               expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                handler: 'message',
                 message: [
                   'Expected exactly 1 matching message, but got 0.',
                   '',
@@ -798,6 +821,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
             await waitFor(() =>
               expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                handler: 'message',
                 message: [
                   'Expected exactly 1 matching message, but got 0.',
                   '',
@@ -844,6 +868,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
                 await waitFor(() =>
                   expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                    handler: 'message',
                     message: [
                       'Expected exactly 1 matching message, but got 0.',
                       '',
@@ -881,6 +906,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
               await waitFor(() =>
                 expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                  handler: 'message',
                   message: [
                     'Expected exactly 1 matching message, but got 0.',
                     '',
@@ -918,6 +944,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
               await waitFor(() =>
                 expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                  handler: 'message',
                   message: [
                     'Expected exactly 1 matching message, but got 0.',
                     '',
@@ -963,6 +990,7 @@ export function declareTimesWebSocketMessageHandlerTests(
             const handler = await interceptor.message().with({ type: 'delete' }).times(1);
 
             await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+              handler: 'message',
               message: 'Expected exactly 1 matching message, but got 0.',
               expectedNumberOfMatches: 1,
             });
@@ -984,6 +1012,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
               await waitFor(() =>
                 expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                  handler: 'message',
                   message: ['Expected exactly 1 matching message, but got 0.', '', ...expectedUnmatchedEntry].join(
                     '\n',
                   ),
@@ -999,6 +1028,7 @@ export function declareTimesWebSocketMessageHandlerTests(
 
               await waitFor(() =>
                 expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                  handler: 'message',
                   message: ['Expected exactly 1 matching message, but got 2.', '', ...expectedUnmatchedEntry].join(
                     '\n',
                   ),
@@ -1039,6 +1069,7 @@ export function declareTimesWebSocketMessageHandlerTests(
             await handler.times(1);
 
             await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+              handler: 'message',
               message: 'Expected exactly 1 message, but got 0.',
               expectedNumberOfMatches: 1,
             });
@@ -1066,6 +1097,7 @@ export function declareTimesWebSocketMessageHandlerTests(
         const handler = await interceptor.message().respond({ type: 'delete', id: '1' }).times(1);
 
         await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+          handler: 'message',
           message: 'Expected exactly 1 message, but got 0.',
           expectedNumberOfMatches: 1,
         });

@@ -3,17 +3,9 @@ import { Server as HttpServer } from 'http';
 import { Server as HttpsServer } from 'https';
 import { WebSocketServer as NodeWebSocketServer } from 'ws';
 
-/**
- * The options to open a WebSocket server.
- *
- * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serveropen `server.open()` API reference}
- */
+/** @see {@link https://zimic.dev/docs/ws/api/websocket-server#serveropen `server.open()` API reference} */
 export interface WebSocketServerOpenOptions {
-  /**
-   * The maximum time, in milliseconds, to wait for the server to open or close.
-   *
-   * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serveropen `server.open()` API reference}
-   */
+  /** @see {@link https://zimic.dev/docs/ws/api/websocket-server#serveropen `server.open()` API reference} */
   timeout?: number;
 }
 
@@ -60,9 +52,5 @@ export async function openWebSocketServer(
   });
 }
 
-/**
- * The options to close a WebSocket server.
- *
- * @see {@link https://zimic.dev/docs/ws/api/websocket-server#serverclose `server.close()` API reference}
- */
+/** @see {@link https://zimic.dev/docs/ws/api/websocket-server#serverclose `server.close()` API reference} */
 export type WebSocketServerCloseOptions = WebSocketServerOpenOptions;

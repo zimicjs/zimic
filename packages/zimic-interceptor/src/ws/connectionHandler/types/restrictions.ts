@@ -18,9 +18,6 @@ type PartialHttpSearchParamsOrSchema<Schema extends HttpSearchParamsSchema.Loose
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A static restriction declared with `handler.with()`. Each declared field must be met. `auth` exists only if the
- * schema declares it, as in Socket.IO schemas.
- *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
  */
 export type WebSocketConnectionHandlerStaticRestriction<
@@ -38,8 +35,6 @@ export type WebSocketConnectionHandlerStaticRestriction<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The members of {@link WebSocketConnectionHandlerStaticRestriction} present in every schema.
- *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
  */
 export interface BaseWebSocketConnectionHandlerStaticRestriction<Schema extends WebSocketSchema, Path extends string> {
@@ -56,8 +51,6 @@ export interface BaseWebSocketConnectionHandlerStaticRestriction<Schema extends 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A computed restriction declared with `handler.with()`, returning whether a connection attempt matches.
- *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
  */
 export type WebSocketConnectionHandlerComputedRestriction<
@@ -67,8 +60,6 @@ export type WebSocketConnectionHandlerComputedRestriction<
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
- *
- * A restriction declared with `handler.with()`, either static or computed.
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
  */

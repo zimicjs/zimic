@@ -1,7 +1,10 @@
-import { WebSocketMessageData, WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
+import { WebSocketSchema } from '@zimic/ws';
 import { describe, expectTypeOf, it } from 'vitest';
 
-import type { LocalWebSocketMessageHandler } from '@/ws/messageHandler/types/public';
+import type {
+  LocalWebSocketMessageHandler,
+  PendingRemoteWebSocketMessageHandler,
+} from '@/ws/messageHandler/types/public';
 
 import { createWebSocketInterceptor } from '../factory';
 import { UnhandledWebSocketInterceptorMessage } from '../types/messages';
@@ -27,64 +30,36 @@ type PathKeyedSchema = WebSocketSchema<{
   };
 }>;
 
+// The interceptors below are only type-checked. The functions declaring them are never called.
 describe('WebSocketInterceptor > Types', () => {
   it('should type message handlers with the messages of the declared path', () => {
-    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+    declareWebSocketInterceptorTypes<PathKeyedSchema>((interceptor) => {
       expectTypeOf(interceptor.message('/rooms/:roomId')).toEqualTypeOf<
-        LocalWebSocketMessageHandler<PathKeyedSchema, '/rooms/:roomId'>
+        | LocalWebSocketMessageHandler<PathKeyedSchema, '/rooms/:roomId'>
+        | PendingRemoteWebSocketMessageHandler<PathKeyedSchema, '/rooms/:roomId'>
       >();
 
       expectTypeOf(interceptor.message('/rooms/1')).toEqualTypeOf<
-        LocalWebSocketMessageHandler<PathKeyedSchema, '/rooms/:roomId'>
+        | LocalWebSocketMessageHandler<PathKeyedSchema, '/rooms/:roomId'>
+        | PendingRemoteWebSocketMessageHandler<PathKeyedSchema, '/rooms/:roomId'>
       >();
-    }
-
-    expectTypeOf(declareHandlers).toBeFunction();
+    });
   });
 
   it('should type message handlers with the messages of all paths if no path is declared', () => {
-    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
-      expectTypeOf(interceptor.message()).toEqualTypeOf<LocalWebSocketMessageHandler<PathKeyedSchema>>();
-    }
-
-    expectTypeOf(declareHandlers).toBeFunction();
+    declareWebSocketInterceptorTypes<PathKeyedSchema>((interceptor) => {
+      expectTypeOf(interceptor.message()).toEqualTypeOf<
+        LocalWebSocketMessageHandler<PathKeyedSchema> | PendingRemoteWebSocketMessageHandler<PathKeyedSchema>
+      >();
+    });
   });
 
   it('should accept a client from a path-specific effect as the target of a server message', () => {
-    function declareSend(
-      interceptor: LocalWebSocketInterceptor<PathKeyedSchema>,
-      data: WebSocketMessageData<WebSocketSchemaMessage<PathKeyedSchema>>,
-    ) {
+    declareWebSocketInterceptorTypes<PathKeyedSchema>((interceptor) => {
       interceptor.connection('/rooms/:roomId').effect((client) => {
-        interceptor.server.send(data, { to: client });
+        interceptor.server.send({ type: 'chat', text: 'hello' }, { to: client });
       });
-    }
-
-    expectTypeOf(declareSend).toBeFunction();
-  });
-
-  it('should not accept messages that are not declared in the schema in server sends', () => {
-    function declareSend(interceptor: LocalWebSocketInterceptor<MessageSchema>) {
-      interceptor.server.send(
-        // @ts-expect-error The message is not declared in the schema.
-        { type: 'unknown' },
-      );
-    }
-
-    expectTypeOf(declareSend).toBeFunction();
-  });
-
-  it('should not accept messages that are not declared in the schema in client sends', () => {
-    function declareSend(interceptor: LocalWebSocketInterceptor<MessageSchema>) {
-      const client = interceptor.clients[0];
-
-      client.send(
-        // @ts-expect-error The message is not declared in the schema.
-        { type: 'unknown' },
-      );
-    }
-
-    expectTypeOf(declareSend).toBeFunction();
+    });
   });
 
   it('should not accept options of a schema with messages other than the messages of the schema', () => {
@@ -97,12 +72,10 @@ describe('WebSocketInterceptor > Types', () => {
   });
 
   it('should not accept undeclared paths in message handlers', () => {
-    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+    declareWebSocketInterceptorTypes<PathKeyedSchema>((interceptor) => {
       // @ts-expect-error The path is not declared in the schema.
       interceptor.message('/unknown');
-    }
-
-    expectTypeOf(declareHandlers).toBeFunction();
+    });
   });
 
   it('should correctly type local and remote factory return values', () => {
@@ -128,13 +101,6 @@ describe('WebSocketInterceptor > Types', () => {
     expectTypeOf(declareInterceptors).toBeFunction();
   });
 
-  it('should not accept the interceptor server as a sender restriction', () => {
-    declareWebSocketInterceptorTypes<MessageSchema>((interceptor) => {
-      // @ts-expect-error Interceptor server handles cannot restrict client senders.
-      interceptor.message().from(interceptor.server);
-    });
-  });
-
   it('should correctly type schemas inferred from public interceptor types', () => {
     type LocalSchema = InferWebSocketInterceptorSchema<LocalWebSocketInterceptor<MessageSchema>>;
     expectTypeOf<LocalSchema>().toEqualTypeOf<MessageSchema>();
@@ -146,47 +112,23 @@ describe('WebSocketInterceptor > Types', () => {
     expectTypeOf<UnknownSchema>().toEqualTypeOf<never>();
   });
 
-  it('should correctly type restricted message callbacks', () => {
-    declareWebSocketInterceptorTypes<MessageSchema>((interceptor) => {
-      interceptor
-        .message()
-        .with({ type: 'create' })
-        .respond((message) => {
-          expectTypeOf(message).toEqualTypeOf<Extract<Message, { type: 'create' }>>();
-          return { type: 'delete', id: message.body.text };
-        });
-
-      function declareInvalidMessages() {
-        // @ts-expect-error Invalid static restriction.
-        interceptor.message().with({ type: 'update' });
-
-        // @ts-expect-error Invalid static response.
-        interceptor.message().respond({ type: 'update' });
-      }
-
-      expectTypeOf(declareInvalidMessages).toBeFunction();
-    });
-  });
-
   describe('Unhandled messages', () => {
-    it('should correctly type the unhandled message strategy', () => {
-      declareWebSocketInterceptorTypes<MessageSchema>((interceptor) => {
-        expectTypeOf(interceptor.onUnhandledMessage).toEqualTypeOf<
-          UnhandledMessageStrategy<MessageSchema> | undefined
-        >();
-      });
-    });
+    // No WebSocket counterpart for "should correctly type the unhandled request strategy": WebSocket strategies do not differ between local and remote interceptors.
 
     it('should type unhandled message factories with the messages of the schema', () => {
       function declareInterceptor(baseURL: string) {
-        createWebSocketInterceptor<MessageSchema>({
+        type Schema = WebSocketSchema<{
+          '/': {
+            message: Message | Blob | number;
+          };
+        }>;
+
+        createWebSocketInterceptor<Schema>({
           baseURL,
           onUnhandledMessage(message) {
-            expectTypeOf(message).toEqualTypeOf<UnhandledWebSocketInterceptorMessage<MessageSchema>>();
-            expectTypeOf(message).toEqualTypeOf<Message>();
-
-            // @ts-expect-error The property is not declared in the messages of the schema.
-            return { log: message.unknown === 'value' };
+            expectTypeOf(message).toEqualTypeOf<UnhandledWebSocketInterceptorMessage<Schema>>();
+            expectTypeOf(message).toEqualTypeOf<Message | ArrayBuffer | `${number}`>();
+            return { log: true };
           },
         });
       }

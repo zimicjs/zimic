@@ -31,15 +31,11 @@ Messages are parsed before matching restrictions, running callbacks, or saving t
 
 Local and remote interceptors parse messages in the same way. In remote interceptors, each message keeps its frame type through the [interceptor server](/docs/zimic-interceptor/cli/1-server.md).
 
-:::info INFO: <span>JSON text in string messages</span>
-
 A text frame such as `'{"type":"message"}'` reaches handlers as `{ type: 'message' }`, even if the schema declares the message as a string. Avoid JSON object or array text in messages that must remain strings.
-
-:::
 
 ## Using client messages
 
-Client messages are declared in your [schema](/docs/zimic-ws/guides/1-schemas.md#declaring-messages) using the `message` property of each path. Then, they will be available as the parsed message data, such as in [`handler.with()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerwith), [`handler.effect()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlereffect), [computed responses](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerrespond), and [`handler.messages`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlermessages).
+Client messages are declared in your [schema](/docs/zimic-ws/guides/1-schemas.md#declaring-messages) using the `message` property of each path. Then, they will be available as the parsed message data, such as in [`handler.with()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerwith), [`handler.effect()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlereffect), [computed responses](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerrespond), and [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages).
 
 ### JSON client message
 
@@ -186,15 +182,11 @@ await interceptor
   </TabItem>
 </Tabs>
 
-:::info INFO: <span>Numbers and booleans in client messages</span>
-
-Clients send numbers and booleans as text, such as `'42'` or `'true'`, and handlers receive them as strings, even when the schema declares a number or a boolean. Restrict them by their text, such as `handler.with('42')`.
-
-:::
+Clients send numbers and booleans as text, such as `'42'` or `'true'`. Handlers receive them as strings typed as `` `${number}` `` or `'true' | 'false'`, even when the schema declares a number or a boolean. Restrict them by their text, such as `handler.with('42')`.
 
 ## Using server messages
 
-Server messages are declared in your [schema](/docs/zimic-ws/guides/1-schemas.md#declaring-messages) in the same `message` property as client messages. They can be sent with [`handler.respond()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerrespond), [`client.send()`](/docs/zimic-interceptor/api/10-websocket-interceptor-client.mdx#clientsend), and [`interceptor.server.send()`](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx#interceptorserver), each typed with the messages of the schema.
+Server messages are declared in your [schema](/docs/zimic-ws/guides/1-schemas.md#declaring-messages) in the same `message` property as client messages. They can be sent with [`handler.respond()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerrespond), [`client.send()`](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx#clientsend), and [`interceptor.server.send()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorserver), each typed with the messages of the schema.
 
 Server messages are sent as follows:
 

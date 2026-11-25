@@ -16,10 +16,7 @@ import { DeclaredWebSocketInterceptorPath, WebSocketInterceptorPathMessage } fro
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The data of a client-to-server message as received by the interceptor. Text messages holding a JSON object or array
- * are parsed. Other text messages, including top-level numbers and booleans, arrive as their text, such as `'42'` or
- * `'true'`. Binary messages arrive as `ArrayBuffer`, regardless of whether the client sent a `Blob`, an `ArrayBuffer`,
- * or an `ArrayBufferView`, because WebSocket binary frames carry only raw bytes.
+ * @see {@link https://zimic.dev/docs/interceptor/guides/ws/messages#default-message-parsing Default message parsing}
  */
 export type ReceivedWebSocketMessageData<Message extends WebSocketMessageSchema> =
   Message extends UnparsedWebSocketJSONPrimitive
@@ -28,8 +25,6 @@ export type ReceivedWebSocketMessageData<Message extends WebSocketMessageSchema>
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
- *
- * A message that no handler of the interceptor matched.
  *
  * @see {@link https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages Unhandled messages}
  */
@@ -62,25 +57,13 @@ export interface InterceptedWebSocketInterceptorMessage<
     Path
   >,
 > {
-  /**
-   * The client that sent the message.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor-client `WebSocketInterceptorClient` API reference}
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlermessages `handler.messages` API reference} */
   sender: WebSocketInterceptorClient<Schema, Path>;
 
-  /**
-   * The interceptor server that received the message.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorserver `interceptor.server` API reference}
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlermessages `handler.messages` API reference} */
   receiver: WebSocketInterceptorServer<Schema>;
 
-  /**
-   * The message data, as matched by the handler.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlermessages `handler.messages` API reference}
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-message-handler#handlermessages `handler.messages` API reference} */
   data: ReceivedWebSocketMessageData<RestrictedMessage>;
 }
 
@@ -150,9 +133,6 @@ export type WebSocketInterceptorConnectionError<Schema extends WebSocketSchema, 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The handshake of a connection attempt to the interceptor, as matched by a connection handler before it is answered.
- * `auth` exists only if the schema declares it, as in Socket.IO schemas.
- *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
  */
 export type WebSocketInterceptorConnectionRequest<
@@ -162,11 +142,7 @@ export type WebSocketInterceptorConnectionRequest<
   WebSocketInterceptorConnectionAuth<Schema, Path>,
   BaseWebSocketInterceptorConnectionRequest<Schema, Path>,
   BaseWebSocketInterceptorConnectionRequest<Schema, Path> & {
-    /**
-     * The `auth` payload sent by the Socket.IO client when connecting to the namespace, or `{}` if it sent none.
-     *
-     * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
-     */
+    /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference} */
     auth: WebSocketInterceptorConnectionAuth<Schema, Path>;
   }
 >;
@@ -174,46 +150,24 @@ export type WebSocketInterceptorConnectionRequest<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The members of {@link WebSocketInterceptorConnectionRequest} present in every schema.
- *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
  */
 export interface BaseWebSocketInterceptorConnectionRequest<Schema extends WebSocketSchema, Path extends string> {
-  /**
-   * The URL used to open the connection.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference} */
   url: string;
 
-  /**
-   * The subprotocols requested by the client when opening the connection, in the order they were requested.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference} */
   protocols: readonly WebSocketInterceptorConnectionProtocol<Schema, Path>[];
 
-  /**
-   * The search parameters of the connection URL.
-   *
-   * @see {@link https://zimic.dev/docs/http/api/http-search-params `HttpSearchParams` API reference}
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference} */
   searchParams: HttpSearchParams<WebSocketInterceptorConnectionSearchParamsSchema<Schema, Path>>;
 
-  /**
-   * The URI-decoded path parameters of the connection URL, parsed from the path declared in
-   * `interceptor.connection(path)`. Empty if the handler declares no path.
-   *
-   * @see {@link https://zimic.dev/docs/http/api/http-schema#inferpathparams `InferPathParams` API reference}
-   */
+  /** @see {@link https://zimic.dev/docs/ws/api/websocket-schema#inferpathparams `InferPathParams` API reference} */
   pathParams: InferPathParams<Path>;
 }
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
- *
- * A handle of a client connected to a WebSocket interceptor. `auth` exists only if the schema declares it, as in
- * Socket.IO schemas.
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor-client `WebSocketInterceptorClient` API reference}
  */
@@ -225,8 +179,6 @@ export type WebSocketInterceptorClient<
   BaseWebSocketInterceptorClient<Schema, Path>,
   BaseWebSocketInterceptorClient<Schema, Path> & {
     /**
-     * The `auth` payload sent by the Socket.IO client when connecting to the namespace, or `{}` if it sent none.
-     *
      * @readonly
      * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor-client#clientauth `client.auth` API reference}
      */
@@ -237,59 +189,41 @@ export type WebSocketInterceptorClient<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The members of {@link WebSocketInterceptorClient} present in every schema.
- *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor-client `WebSocketInterceptorClient` API reference}
  */
 export interface BaseWebSocketInterceptorClient<Schema extends WebSocketSchema, Path extends string> {
   /**
-   * The URL used to open the connection of the client.
-   *
    * @readonly
    * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor-client#clienturl `client.url` API reference}
    */
   url: string;
 
   /**
-   * The subprotocols requested by the client when opening the connection, in the order they were requested.
-   *
    * @readonly
    * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor-client#clientprotocols `client.protocols` API reference}
    */
   protocols: readonly WebSocketInterceptorConnectionProtocol<Schema, Path>[];
 
   /**
-   * The search parameters of the URL used to open the connection of the client.
-   *
    * @readonly
    * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor-client#clientsearchparams `client.searchParams` API reference}
    */
   searchParams: HttpSearchParams<WebSocketInterceptorConnectionSearchParamsSchema<Schema, Path>>;
 
   /**
-   * The client-to-server messages sent by this client that matched a message handler.
-   *
    * @readonly
    * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor-client#clientmessages `client.messages` API reference}
    */
   messages: readonly InterceptedWebSocketInterceptorMessage<Schema, Path>[];
 
-  /**
-   * Sends a server message to this client.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor-client#clientsend `client.send()` API reference}
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor-client#clientsend `client.send()` API reference} */
   send: (
     data:
       | WebSocketInterceptorPathMessage<Schema, Path>
       | WebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
   ) => void;
 
-  /**
-   * Closes the connection of this client, as if the server closed it.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor-client#clientclose `client.close()` API reference}
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor-client#clientclose `client.close()` API reference} */
   close: (code?: number, reason?: string) => void;
 }
 

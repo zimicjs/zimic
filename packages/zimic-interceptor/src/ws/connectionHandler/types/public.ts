@@ -18,9 +18,6 @@ export interface InternalWebSocketConnectionHandler<Schema extends WebSocketSche
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A side effect declared with `handler.effect()`, called with the client and the handshake request of each accepted
- * connection that the handler matches.
- *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlereffect `handler.effect()` API reference}
  */
 export type WebSocketConnectionHandlerConnectionCallback<
@@ -34,8 +31,6 @@ export type WebSocketConnectionHandlerConnectionCallback<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A static handshake response declared with `handler.respond()`, accepting or rejecting matched connections.
- *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
  */
 export type WebSocketConnectionHandlerResponseStaticDeclaration<
@@ -46,24 +41,15 @@ export type WebSocketConnectionHandlerResponseStaticDeclaration<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A static handshake response declared with `handler.respond()` that accepts matched connections.
- *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
  */
 export interface WebSocketConnectionHandlerAcceptDeclaration {
-  /**
-   * The action to apply to matched connections, opening them.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference} */
   action: 'accept';
 }
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
- *
- * A static handshake response declared with `handler.respond()` that rejects matched connections. `error` exists only
- * if the schema declares it, as in Socket.IO schemas.
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
  */
@@ -74,12 +60,7 @@ export type WebSocketConnectionHandlerRejectDeclaration<
   WebSocketInterceptorConnectionError<Schema, Path>,
   BaseWebSocketConnectionHandlerRejectDeclaration,
   BaseWebSocketConnectionHandlerRejectDeclaration & {
-    /**
-     * The error sent to the rejected Socket.IO client, received as the `message` and `data` of its `connect_error`.
-     * Without one, the client receives the message `'Connection rejected'`.
-     *
-     * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
-     */
+    /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference} */
     error?: WebSocketInterceptorConnectionError<Schema, Path>;
   }
 >;
@@ -87,24 +68,15 @@ export type WebSocketConnectionHandlerRejectDeclaration<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The members of {@link WebSocketConnectionHandlerRejectDeclaration} present in every schema.
- *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
  */
 export interface BaseWebSocketConnectionHandlerRejectDeclaration {
-  /**
-   * The action to apply to matched connections, refusing them before they open.
-   *
-   * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference} */
   action: 'reject';
 }
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
- *
- * A function declared with `handler.respond()` that computes the handshake response from the handshake request of each
- * matched connection.
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
  */
@@ -118,8 +90,6 @@ export type WebSocketConnectionHandlerResponseComputedDeclaration<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A handshake response declared with `handler.respond()`, either static or computed.
- *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
  */
 export type WebSocketConnectionHandlerResponseDeclaration<
@@ -132,8 +102,6 @@ export type WebSocketConnectionHandlerResponseDeclaration<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A local WebSocket connection handler. In a local handler, the mocking operations are synchronous.
- *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler `WebSocketConnectionHandler` API reference}
  */
 export interface LocalWebSocketConnectionHandler<Schema extends WebSocketSchema, Path extends string = string> {
@@ -144,9 +112,6 @@ export interface LocalWebSocketConnectionHandler<Schema extends WebSocketSchema,
   get type(): 'local';
 
   /**
-   * The path declared in `interceptor.connection(path)`, relative to the interceptor base URL. `undefined` if the
-   * handler matches every connection to its interceptor.
-   *
    * @readonly
    * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerpath `handler.path` API reference}
    */
@@ -185,11 +150,7 @@ export interface LocalWebSocketConnectionHandler<Schema extends WebSocketSchema,
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A synced remote WebSocket connection handler. When a remote handler is synced, it is guaranteed that all of the
- * mocking operations were committed to the connected
- * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
- *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler `WebSocketConnectionHandler` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#websocketconnectionhandler `WebSocketConnectionHandler` API reference}
  */
 export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocketSchema, Path extends string = string> {
   /**
@@ -199,9 +160,6 @@ export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocket
   get type(): 'remote';
 
   /**
-   * The path declared in `interceptor.connection(path)`, relative to the interceptor base URL. `undefined` if the
-   * handler matches every connection to its interceptor.
-   *
    * @readonly
    * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerpath `handler.path` API reference}
    */
@@ -251,51 +209,32 @@ export interface SyncedRemoteWebSocketConnectionHandler<Schema extends WebSocket
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A pending remote WebSocket connection handler. When a remote handler is pending, it is not guaranteed that all of the
- * mocking operations were committed to the connected
- * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
- *
- * To commit a remote handler, you can `await` it or use the methods {@link then handler.then()},
- * {@link catch handler.catch()}, and {@link finally handler.finally()}.
- *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler `WebSocketConnectionHandler` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#websocketconnectionhandler `WebSocketConnectionHandler` API reference}
  */
 export interface PendingRemoteWebSocketConnectionHandler<
   Schema extends WebSocketSchema,
   Path extends string = string,
 > extends SyncedRemoteWebSocketConnectionHandler<Schema, Path> {
-  /**
-   * Waits for the remote handler to be synced with the connected
-   * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#websocketconnectionhandler `WebSocketConnectionHandler` API reference} */
   then: <FulfilledResult = SyncedRemoteWebSocketConnectionHandler<Schema, Path>, RejectedResult = never>(
     onFulfilled?:
       ((handler: SyncedRemoteWebSocketConnectionHandler<Schema, Path>) => PossiblePromise<FulfilledResult>) | null,
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ) => Promise<FulfilledResult | RejectedResult>;
 
-  /**
-   * Waits for the remote handler to be synced with the connected
-   * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#websocketconnectionhandler `WebSocketConnectionHandler` API reference} */
   catch: <RejectedResult = never>(
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ) => Promise<SyncedRemoteWebSocketConnectionHandler<Schema, Path> | RejectedResult>;
 
-  /**
-   * Waits for the remote handler to be synced with the connected
-   * {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#websocketconnectionhandler `WebSocketConnectionHandler` API reference} */
   finally: (onFinally?: (() => void) | null) => Promise<SyncedRemoteWebSocketConnectionHandler<Schema, Path>>;
 }
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A remote WebSocket connection handler. In a remote handler, the mocking operations are asynchronous and include
- * remote calls to the connected {@link https://zimic.dev/docs/interceptor/cli/server interceptor server}.
- *
- * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler `WebSocketConnectionHandler` API reference}
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#websocketconnectionhandler `WebSocketConnectionHandler` API reference}
  */
 export type RemoteWebSocketConnectionHandler<
   Schema extends WebSocketSchema,
@@ -304,8 +243,6 @@ export type RemoteWebSocketConnectionHandler<
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
- *
- * A WebSocket connection handler, either local or remote.
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler `WebSocketConnectionHandler` API reference}
  */

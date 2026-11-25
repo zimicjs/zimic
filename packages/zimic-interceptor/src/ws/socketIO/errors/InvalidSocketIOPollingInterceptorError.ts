@@ -3,8 +3,6 @@ import { ValidationError } from '@zimic/utils/validation';
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * An error thrown when a Socket.IO protocol starts with a polling interceptor that cannot serve its interceptor.
- *
  * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#polling Socket.IO polling}
  */
 class InvalidSocketIOPollingInterceptorError extends ValidationError {

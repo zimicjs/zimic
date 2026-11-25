@@ -15,9 +15,9 @@ WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. 
 
 :::
 
-[WebSocket interceptors](/docs/zimic-interceptor/api/7-websocket-interceptor.mdx) are very efficient and can accept connections and respond to messages within milliseconds. This is great to keep your development and test environments fast, but sometimes you may want to simulate network latency, reproduce server processing time, check connecting and loading states in your application, or test how it behaves under slow conditions.
+[WebSocket interceptors](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx) are very efficient and can accept connections and respond to messages within milliseconds. This is great to keep your development and test environments fast, but sometimes you may want to simulate network latency, reproduce server processing time, check connecting and loading states in your application, or test how it behaves under slow conditions.
 
-[`handler.delay()`](/docs/zimic-interceptor/api/8-websocket-message-handler.mdx#handlerdelay) allows you to add declarative delays to your intercepted messages. The delay runs before the effects and the response of the handler.
+[`handler.delay()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerdelay) allows you to add declarative delays to your intercepted messages. The delay runs before the effects and the response of the handler.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -77,7 +77,7 @@ await interceptor
   </TabItem>
 </Tabs>
 
-Connection handlers also support [`handler.delay()`](/docs/zimic-interceptor/api/9-websocket-connection-handler.mdx#handlerdelay), which delays the handshake of matched connections. The client stays in the `CONNECTING` state during the delay, whether the connection is accepted or rejected afterward.
+Connection handlers also support [`handler.delay()`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerdelay), which delays the handshake of matched connections. The client stays in the `CONNECTING` state during the delay, whether the connection is accepted or rejected afterward.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">

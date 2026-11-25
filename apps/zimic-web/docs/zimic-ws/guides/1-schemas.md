@@ -206,6 +206,8 @@ import { ChatSchema } from './schema';
 
 const client = new WebSocketClient<ChatSchema, '/rooms/:roomId'>('ws://localhost:3000/rooms/1?token=secret', 'chat');
 
+await client.open();
+
 client.send(JSON.stringify({ type: 'typing', data: { username: 'diego' } }));
 ```
 
@@ -235,22 +237,3 @@ server.addEventListener('connection', (client) => {
 httpServer.listen(3000, '127.0.0.1');
 await server.open();
 ```
-
-## Using schemas with interceptors
-
-Experimental WebSocket interceptors from `@zimic/interceptor/experimental/ws` use `WebSocketSchema` to type connection and message handlers, restrictions, responses, saved messages, connected clients, and server sends.
-
-```ts
-import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
-
-import { ChatSchema } from './schema';
-
-const interceptor = createWebSocketInterceptor<ChatSchema>({
-  baseURL: 'ws://localhost:3000',
-});
-```
-
-**Related**:
-
-- [API - `WebSocketSchema`](/docs/zimic-ws/api/1-websocket-schema.md)
-- [Interceptor guides - WebSocket interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md)

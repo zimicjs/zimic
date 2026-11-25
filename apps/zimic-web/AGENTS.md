@@ -8,3 +8,13 @@ The [zimic.dev](https://zimic.dev) documentation website, built with Docusaurus.
 - Keep the docs for analogous APIs parallel, such as HTTP and WebSocket interceptors (see `packages/zimic-interceptor/AGENTS.md`).
 - The build fails on broken internal links and anchors. Run the `build` script after changing routes, headings, or links.
 - Context7 indexes only `docs`, as set by `folders` in the root `context7.json`. Update `folders` when docs move elsewhere, and keep its `rules` in sync with the docs (see "Published artifacts" in the root `AGENTS.md`).
+
+## Writing style
+
+- Integrate new capabilities into the existing narrative instead of appending sections or notes.
+- Mirror the analogous HTTP page, and add text only for behavior HTTP lacks.
+- Document each rule on one page and link to it from others. State runtime requirements only on the getting started page.
+- Keep core behavior in body text. Use admonitions only for skippable prerequisites, warnings, or tips.
+- Leave out implementation details users cannot act on.
+- Write one rule per sentence, without semicolons or colon-joined clauses. Keep example lists short.
+- Make code examples type-check against the schema on the same page, and match URLs to the schema paths.

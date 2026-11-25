@@ -27,9 +27,11 @@ function isRemoteHttpInterceptorOptions(options: HttpInterceptorOptions): option
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: LocalHttpInterceptorOptions,
 ): PublicLocalHttpInterceptor<Schema>;
+/** @see {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `createHttpInterceptor()` API reference} */
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: RemoteHttpInterceptorOptions,
 ): PublicRemoteHttpInterceptor<Schema>;
+/** @see {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `createHttpInterceptor()` API reference} */
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: HttpInterceptorOptions,
 ): PublicLocalHttpInterceptor<Schema> | PublicRemoteHttpInterceptor<Schema>;

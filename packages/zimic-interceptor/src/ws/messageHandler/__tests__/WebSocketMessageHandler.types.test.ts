@@ -105,6 +105,15 @@ describe('WebSocketMessageHandler > Types', () => {
     expectTypeOf(declareHandler).toBeFunction();
   });
 
+  it('should not accept the interceptor server as a sender restriction', () => {
+    function declareHandler(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      // @ts-expect-error Interceptor server handles cannot restrict client senders.
+      interceptor.message().from(interceptor.server);
+    }
+
+    expectTypeOf(declareHandler).toBeFunction();
+  });
+
   it('should type the sender from the handler path', () => {
     function declareHandler(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
       interceptor.message('/rooms/:roomId').effect((_message, context) => {
