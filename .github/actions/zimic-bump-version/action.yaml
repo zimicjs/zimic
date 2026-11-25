@@ -110,7 +110,22 @@ runs:
             git checkout $branch
 
             while true; do
-              git merge - --no-ff --no-edit
+              if ! git merge - --no-ff --no-edit; then
+                # A release branch built from a selection of canary changes, instead of from canary itself, changes
+                # the version line from an older base than this branch. Resolve only that conflict, keeping the
+                # released version, and fail on any other.
+                if [[ "$(git diff --name-only --diff-filter=U)" != '${{ inputs.project-directory }}/package.json' ]]; then
+                  echo "Merge into '$branch' has conflicts other than the project version. Aborting."
+                  exit 1
+                fi
+
+                echo 'Resolving the project version conflict...'
+                git merge --abort
+                git merge - --no-ff --no-edit -X ours
+                npm pkg set version="$bumpedVersion"
+                git add package.json
+                git commit --amend --no-edit
+              fi
 
               if git push --set-upstream origin $branch --no-verify; then
                 echo "Branch '$branch' synced successfully."
