@@ -1,0 +1,79 @@
+import { assertTypeOf } from '@zimic/utils/validation';
+import { WebSocketSchema } from '@zimic/ws';
+
+import UnknownWebSocketInterceptorTypeError from './errors/UnknownWebSocketInterceptorTypeError';
+import LocalWebSocketInterceptor from './LocalWebSocketInterceptor';
+import RemoteWebSocketInterceptor from './RemoteWebSocketInterceptor';
+import {
+  WebSocketInterceptorOptions,
+  LocalWebSocketInterceptorOptions,
+  RemoteWebSocketInterceptorOptions,
+} from './types/options';
+import {
+  LocalWebSocketInterceptor as PublicLocalWebSocketInterceptor,
+  RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor,
+} from './types/public';
+
+function isLocalWebSocketInterceptorOptions<Schema extends WebSocketSchema>(
+  options: WebSocketInterceptorOptions<Schema>,
+): options is LocalWebSocketInterceptorOptions<Schema> {
+  return options.type === undefined || options.type === 'local';
+}
+
+function isRemoteWebSocketInterceptorOptions<Schema extends WebSocketSchema>(
+  options: WebSocketInterceptorOptions<Schema>,
+): options is RemoteWebSocketInterceptorOptions<Schema> {
+  return options.type === 'remote';
+}
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * Creates a WebSocket interceptor. Client and server messages are typed with the WebSocket schema passed as the type
+ * argument.
+ */
+export function createWebSocketInterceptor<Schema extends WebSocketSchema>(
+  options: LocalWebSocketInterceptorOptions<Schema>,
+): PublicLocalWebSocketInterceptor<Schema>;
+export function createWebSocketInterceptor<Schema extends WebSocketSchema>(
+  options: RemoteWebSocketInterceptorOptions<Schema>,
+): PublicRemoteWebSocketInterceptor<Schema>;
+export function createWebSocketInterceptor<Schema extends WebSocketSchema>(
+  options: WebSocketInterceptorOptions<Schema>,
+): PublicLocalWebSocketInterceptor<Schema> | PublicRemoteWebSocketInterceptor<Schema>;
+export function createWebSocketInterceptor<Schema extends WebSocketSchema>(
+  options: WebSocketInterceptorOptions<Schema>,
+): PublicLocalWebSocketInterceptor<Schema> | PublicRemoteWebSocketInterceptor<Schema> {
+  assertTypeOf('options.baseURL', options.baseURL, 'string');
+  assertTypeOf('options.messageSaving', options.messageSaving, 'object', { optional: true });
+  assertTypeOf('options.messageSaving.enabled', options.messageSaving?.enabled, 'boolean', { optional: true });
+  assertTypeOf('options.messageSaving.safeLimit', options.messageSaving?.safeLimit, 'number', { optional: true });
+
+  assertTypeOf('options.onUnhandledMessage', options.onUnhandledMessage, ['object', 'function'], { optional: true });
+
+  // Unlike HTTP, unhandled message declarations have no action to validate.
+  if (typeof options.onUnhandledMessage === 'object') {
+    assertTypeOf('options.onUnhandledMessage.log', options.onUnhandledMessage.log, 'boolean', { optional: true });
+  }
+
+  assertTypeOf('options.protocol', options.protocol, 'object', { optional: true });
+
+  // Local interceptors do not authenticate, so they ignore the authentication option.
+  if (isRemoteWebSocketInterceptorOptions(options)) {
+    assertTypeOf('options.auth', options.auth, 'object', { optional: true });
+
+    if (options.auth) {
+      assertTypeOf('options.auth.token', options.auth.token, 'string');
+    }
+  }
+
+  const type = options.type;
+
+  if (isLocalWebSocketInterceptorOptions(options)) {
+    return new LocalWebSocketInterceptor<Schema>(options);
+  } else if (isRemoteWebSocketInterceptorOptions(options)) {
+    return new RemoteWebSocketInterceptor<Schema>(options);
+  }
+
+  throw new UnknownWebSocketInterceptorTypeError(type);
+}

@@ -278,6 +278,10 @@ describe('Schema types', () => {
         driveId: string;
         filePath: string;
       }>();
+      expectTypeOf<InferPathParams<'/drives/:driveId:filePath/items'>>().toEqualTypeOf<{
+        driveId: string;
+        filePath: string;
+      }>();
     });
 
     it('should not infer escaped path param schemas from path strings', () => {
@@ -324,6 +328,17 @@ describe('Schema types', () => {
       >().toEqualTypeOf<{
         otherId?: string;
         otherId2: string;
+      }>();
+
+      expectTypeOf<InferPathParams<'/drives/\\:children:filePath+'>>().toEqualTypeOf<{ filePath: string }>();
+      expectTypeOf<InferPathParams<'/drives/\\:children:filePath/items'>>().toEqualTypeOf<{ filePath: string }>();
+      expectTypeOf<InferPathParams<'/drives/:driveId/\\:root/\\:children:filePath+'>>().toEqualTypeOf<{
+        driveId: string;
+        filePath: string;
+      }>();
+      expectTypeOf<InferPathParams<'/drives/:driveId\\:root/:filePath'>>().toEqualTypeOf<{
+        driveId: string;
+        filePath: string;
       }>();
     });
 

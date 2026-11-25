@@ -1,4 +1,6 @@
-export class UnsupportedURLProtocolError extends TypeError {
+import ValidationError from '@/validation/ValidationError';
+
+export class UnsupportedURLProtocolError extends ValidationError {
   constructor(protocol: string, availableProtocols: string[] | readonly string[]) {
     super(
       `Unsupported URL protocol: '${protocol}'. ` +

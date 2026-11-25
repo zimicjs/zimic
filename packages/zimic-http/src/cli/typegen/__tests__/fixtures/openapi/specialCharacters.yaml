@@ -1,0 +1,92 @@
+openapi: 3.1.0
+
+info:
+  title: Special Characters
+  version: 1.0.0
+
+paths:
+  /users:
+    get:
+      summary: Lists users with "quoted" and 'single-quoted' names.
+      description: |-
+        Closes a comment */ early, uses a back\slash, and
+        spans multiple lines with ünïcödé 名前 🚀.
+      responses:
+        '200':
+          description: Users with */ and "quotes"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User-Profile'
+
+components:
+  schemas:
+    User-Profile:
+      type: object
+      description: A profile with "quoted", back\slash, and */ characters.
+      required:
+        - id
+      properties:
+        id:
+          type: string
+        kebab-case:
+          type: string
+          description: Uses a hyphen.
+        'double"quote':
+          type: string
+          description: Contains a "double" quote.
+        single'quote:
+          type: string
+          description: Contains a 'single' quote.
+        back\slash:
+          type: string
+          description: Contains a back\slash and \n escape.
+        end*/comment:
+          type: string
+          description: Ends a comment */ inside the key.
+        with space:
+          type: string
+        default:
+          type: string
+          description: Uses a reserved word.
+        class:
+          type: string
+        delete:
+          type: string
+        $dollar:
+          type: string
+        _underscore:
+          type: string
+        '0':
+          type: string
+          description: Uses a numeric key.
+        '42':
+          type: integer
+        '1.5':
+          type: number
+        '007':
+          type: string
+          description: Uses a number with leading zeros.
+        '-1':
+          type: string
+          description: Uses a negative number.
+        café:
+          type: string
+          description: Uses ünïcödé 名前 🚀.
+        名前:
+          type: string
+        🚀:
+          type: string
+        status:
+          type: string
+          enum:
+            - '"quoted"'
+            - back\slash
+            - '*/'
+            - café
+            - 名前 🚀
+        title:
+          type: string
+          const: It's "constant" */

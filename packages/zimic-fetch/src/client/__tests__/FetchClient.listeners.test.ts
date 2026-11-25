@@ -2,6 +2,7 @@ import { HttpHeaders, HttpSchema, HttpSearchParams, StrictHeaders } from '@zimic
 import { expectFetchError } from '@zimic/utils/fetch';
 import { Default } from '@zimic/utils/types';
 import { joinURL } from '@zimic/utils/url';
+import { createInvalidTypeOfCases, ValidationError } from '@zimic/utils/validation';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -11,7 +12,7 @@ import createFetch from '../factory';
 import { FetchRequest } from '../request/FetchRequest';
 import FetchResponseError from '../response/error/FetchResponseError';
 import { FetchResponse, FetchResponsePerStatusCode } from '../response/FetchResponse';
-import { Fetch } from '../types/public';
+import { Fetch, FetchOptions } from '../types/public';
 
 describe('FetchClient > Listeners', () => {
   const baseURL = 'http://localhost:3000';
@@ -503,6 +504,20 @@ describe('FetchClient > Listeners', () => {
     );
   });
 
+  const invalidListeners = createInvalidTypeOfCases('function', { optional: true });
+
+  it.each(invalidListeners)(
+    'should throw an error if provided an `onRequest` listener that is not a function ($label)',
+    ({ value, actualType }) => {
+      // @ts-expect-error Forcing an invalid `onRequest` listener type.
+      const invalidOnRequest: FetchOptions<HttpSchema>['onRequest'] = value;
+
+      expect(() => {
+        createFetch({ baseURL, onRequest: invalidOnRequest });
+      }).toThrow(new ValidationError(`Expected options.onRequest to be function, but got ${actualType}.`));
+    },
+  );
+
   it('should support listening to responses', async () => {
     type Schema = HttpSchema<{
       '/users': {
@@ -938,4 +953,16 @@ describe('FetchClient > Listeners', () => {
       expect(onResponse).toHaveBeenCalledTimes(1);
     });
   });
+
+  it.each(invalidListeners)(
+    'should throw an error if provided an `onResponse` listener that is not a function ($label)',
+    ({ value, actualType }) => {
+      // @ts-expect-error Forcing an invalid `onResponse` listener type.
+      const invalidOnResponse: FetchOptions<HttpSchema>['onResponse'] = value;
+
+      expect(() => {
+        createFetch({ baseURL, onResponse: invalidOnResponse });
+      }).toThrow(new ValidationError(`Expected options.onResponse to be function, but got ${actualType}.`));
+    },
+  );
 });

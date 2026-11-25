@@ -5,10 +5,12 @@ import type { HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema<{
   '/users-with-path-item-component': MyServiceComponents['pathItems']['users'];
+  '/users-with-path-item-component-reference': MyServiceComponents['pathItems']['usersReference'];
 }>;
 
 export interface MyServiceComponents {
   pathItems: {
+    usersReference: MyServiceComponents['pathItems']['users'];
     /** User paths */
     users: {
       POST: {

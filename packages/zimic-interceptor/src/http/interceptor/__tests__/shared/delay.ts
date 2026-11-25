@@ -5,12 +5,13 @@ import { waitForDelay } from '@zimic/utils/time';
 import { joinURL } from '@zimic/utils/url';
 import { beforeEach, describe, expect, it, Mock, MockInstance, vi } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
+import { expectHttpTimesCheckError } from '@/http/requestHandler/__tests__/shared/utils';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import type { LocalHttpRequestHandler, PendingRemoteHttpRequestHandler } from '../../../requestHandler/types/public';
-import { HttpInterceptorOptions } from '../../types/options';
+import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareDelayHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
@@ -40,11 +41,10 @@ export function declareDelayHttpInterceptorTests(options: RuntimeSharedHttpInter
   async function usingDelayedHandler(
     declareDelay: (handler: DelayableHandler) => DelayableHandler,
     callback: (context: {
-      handler: { clear: () => PromiseLike<unknown> | unknown; requests: readonly unknown[] };
+      handler: { requests: readonly unknown[] };
       respond: Mock;
       randomSpy: MockInstance<typeof Math.random>;
       sendRequest: () => Promise<{ response: Promise<Response> }>;
-      interceptor: { type: 'local' | 'remote' };
     }) => Promise<void>,
   ) {
     await usingHttpInterceptor<Schema>(interceptorOptions, async (interceptor) => {
@@ -74,7 +74,6 @@ export function declareDelayHttpInterceptorTests(options: RuntimeSharedHttpInter
           handler,
           respond,
           randomSpy,
-          interceptor,
           sendRequest: async () => {
             dispatchStartedPromise = createPromiseWithResolvers<void>();
 
@@ -268,22 +267,48 @@ export function declareDelayHttpInterceptorTests(options: RuntimeSharedHttpInter
     await expectDelayedResponse((handler) => handler.delay(firstDelay).delay(secondDelay), secondDelay);
   });
 
-  it('should not throw an error if the handler is cleared while the delay is being awaited', async () => {
+  it('should not handle requests after cleared during their delay', async () => {
     const delay = 200;
 
-    await usingDelayedHandler(
-      (handler) => handler.delay(delay),
-      async ({ handler, respond, sendRequest, interceptor }) => {
+    const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
+
+    await usingHttpInterceptor<Schema>({ ...interceptorOptions, onUnhandledRequest }, async (interceptor) => {
+      const delayStartedPromise = createPromiseWithResolvers<void>();
+      const respond = vi.fn();
+
+      const handler = await promiseIfRemote(
+        interceptor
+          .get('/users')
+          .delay(() => {
+            delayStartedPromise.resolve();
+            return delay;
+          })
+          .respond(respond),
+        interceptor,
+      );
+
+      // The timers are faked only after the interceptor is set up, which relies on real timers.
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+      try {
         await usingIgnoredConsole(['error'], async (console) => {
-          const { response } = await sendRequest();
+          const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
 
           // The rejection handler is attached before advancing, to avoid an unhandled rejection.
-          const fetchErrorExpectation = expectFetchError(response);
+          const fetchErrorExpectation = expectFetchError(responsePromise);
 
-          let settled = false;
-          void response.catch(() => (settled = true));
+          await delayStartedPromise;
+
+          // Lets the pending asynchronous steps schedule the delay timer.
+          await vi.advanceTimersByTimeAsync(0);
 
           await promiseIfRemote(handler.clear(), interceptor);
+
+          let settled = false;
+          void responsePromise.catch(() => (settled = true));
 
           await vi.advanceTimersByTimeAsync(delay - 1);
           expect(settled).toBe(false);
@@ -291,14 +316,78 @@ export function declareDelayHttpInterceptorTests(options: RuntimeSharedHttpInter
           await vi.advanceTimersByTimeAsync(1);
 
           await fetchErrorExpectation;
-          expect(settled).toBe(true);
 
           expect(respond).not.toHaveBeenCalled();
           expect(handler.requests).toHaveLength(0);
+          expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
 
           expect(console.error).toHaveBeenCalledTimes(0);
         });
-      },
-    );
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
+  it('should not handle requests after cleared and redeclared during their delay', async () => {
+    const delay = 200;
+
+    const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(() => ({
+      action: 'reject',
+      log: false,
+    }));
+
+    await usingHttpInterceptor<Schema>({ ...interceptorOptions, onUnhandledRequest }, async (interceptor) => {
+      const delayStartedPromise = createPromiseWithResolvers<void>();
+      const respond = vi.fn();
+
+      const handler = await promiseIfRemote(
+        interceptor
+          .get('/users')
+          .delay(() => {
+            delayStartedPromise.resolve();
+            return delay;
+          })
+          .respond(respond),
+        interceptor,
+      );
+
+      // The timers are faked only after the interceptor is set up, which relies on real timers.
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+      try {
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+
+        // The rejection handler is attached before advancing, to avoid an unhandled rejection.
+        const fetchErrorExpectation = expectFetchError(responsePromise);
+
+        await delayStartedPromise;
+
+        // Lets the pending asynchronous steps schedule the delay timer.
+        await vi.advanceTimersByTimeAsync(0);
+
+        await promiseIfRemote(handler.clear(), interceptor);
+
+        // Redeclaring the cleared handler would apply its new response to the request in its delay.
+        const redeclaredRespond = vi.fn();
+        await promiseIfRemote(handler.respond(redeclaredRespond).times(1), interceptor);
+
+        await vi.advanceTimersByTimeAsync(delay);
+
+        await fetchErrorExpectation;
+
+        expect(respond).not.toHaveBeenCalled();
+        expect(redeclaredRespond).not.toHaveBeenCalled();
+        expect(handler.requests).toHaveLength(0);
+        expect(onUnhandledRequest).toHaveBeenCalledTimes(1);
+      } finally {
+        vi.useRealTimers();
+      }
+
+      await expectHttpTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+        message: 'Expected exactly 1 request, but got 0.',
+        expectedNumberOfRequests: 1,
+      });
+    });
   });
 }
