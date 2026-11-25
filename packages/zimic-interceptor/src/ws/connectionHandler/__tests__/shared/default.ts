@@ -420,6 +420,7 @@ export function declareDefaultWebSocketConnectionHandlerTests(
         socket.close();
 
         await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+          handler: 'connection',
           message: [
             'Expected exactly 1 matching connection, but got 0.',
             '',
@@ -439,6 +440,7 @@ export function declareDefaultWebSocketConnectionHandlerTests(
         await handler.clear().respond({ action: 'reject' }).times(1);
 
         await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+          handler: 'connection',
           message: 'Expected exactly 1 connection, but got 0.',
           expectedNumberOfMatches: 1,
         });

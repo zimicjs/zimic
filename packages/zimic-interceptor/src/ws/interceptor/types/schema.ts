@@ -11,26 +11,33 @@ import { LocalWebSocketInterceptor, RemoteWebSocketInterceptor } from './public'
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * Infers the schema of a `WebSocketInterceptor`. Resolves to `never` if the type is not a local or remote WebSocket
- * interceptor.
+ * Infers the schema of a {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor `WebSocketInterceptor`}.
  *
  * @example
  *   import {
- *   createWebSocketInterceptor,
- *   type InferWebSocketInterceptorSchema,
+ *     createWebSocketInterceptor,
+ *     type InferWebSocketInterceptorSchema,
  *   } from '@zimic/interceptor/experimental/ws';
  *   import { type WebSocketSchema } from '@zimic/ws';
  *
  *   const interceptor = createWebSocketInterceptor<
- *   WebSocketSchema<{ '/rooms/:roomId': {
- *   message: { type: 'ping' } | { type: 'pong' } } }>
+ *     WebSocketSchema<{
+ *       '/rooms/:roomId': {
+ *         message: { type: 'ping' } | { type: 'pong' };
+ *       };
+ *     }>
  *   >({
- *   baseURL: 'ws://localhost:3000',
+ *     baseURL: 'ws://localhost:3000',
  *   });
  *
  *   type Schema = InferWebSocketInterceptorSchema<typeof interceptor>;
- *   // WebSocketSchema<{ '/rooms/:roomId': {
- *   message: { type: 'ping' } | { type: 'pong' } } }>
+ *   // WebSocketSchema<{
+ *   //   '/rooms/:roomId': {
+ *   //     message: { type: 'ping' } | { type: 'pong' };
+ *   //   };
+ *   // }>
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor `WebSocketInterceptor` API reference}
  */
 export type InferWebSocketInterceptorSchema<Interceptor> =
   Interceptor extends LocalWebSocketInterceptor<infer Schema>

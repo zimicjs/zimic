@@ -1,7 +1,7 @@
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * An error thrown when a Socket.IO protocol starts in an interceptor while another running interceptor uses it.
+ * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#namespaces Socket.IO namespaces}
  */
 class SharedSocketIOProtocolError extends Error {
   constructor() {

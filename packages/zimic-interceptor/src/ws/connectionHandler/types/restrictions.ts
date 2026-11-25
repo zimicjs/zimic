@@ -17,35 +17,26 @@ type PartialHttpSearchParamsOrSchema<Schema extends HttpSearchParamsSchema.Loose
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A static restriction declared with `handler.with()`. Each declared field must be met.
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
  */
 export interface WebSocketConnectionHandlerStaticRestriction<
   Schema extends WebSocketSchema = WebSocketSchema,
   Path extends string = string,
 > {
-  /**
-   * The search params of the connection URL. Connections match if their search params contain these, or are equal to
-   * them with `exact: true`. Array values declare a search param with multiple values.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference} */
   searchParams?: PartialHttpSearchParamsOrSchema<WebSocketInterceptorConnectionSearchParamsSchema<Schema, Path>>;
 
-  /**
-   * The subprotocols requested by the client. Connections match if they requested all of these, in any order, or
-   * exactly these, in the same order, with `exact: true`.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference} */
   protocols?: readonly WebSocketInterceptorConnectionProtocol<Schema, Path>[];
 
-  /**
-   * Whether the search params and subprotocols of connections must be equal to the restriction instead of containing
-   * it. Defaults to `false`.
-   */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference} */
   exact?: boolean;
 }
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A computed restriction declared with `handler.with()`, returning whether a connection attempt matches.
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
  */
 export type WebSocketConnectionHandlerComputedRestriction<
   Schema extends WebSocketSchema = WebSocketSchema,
@@ -55,7 +46,7 @@ export type WebSocketConnectionHandlerComputedRestriction<
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * A restriction declared with `handler.with()`, either static or computed.
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerwith `handler.with()` API reference}
  */
 export type WebSocketConnectionHandlerRestriction<
   Schema extends WebSocketSchema = WebSocketSchema,

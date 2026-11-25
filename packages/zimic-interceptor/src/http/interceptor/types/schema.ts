@@ -4,7 +4,7 @@ import { LocalHttpInterceptor, RemoteHttpInterceptor } from './public';
  * Infers the schema of an {@link https://zimic.dev/docs/interceptor/api/http-interceptor `HttpInterceptor`}.
  *
  * @example
- *   import { type InferHttpInterceptorSchema } from '@zimic/http';
+ *   import { createHttpInterceptor, type InferHttpInterceptorSchema } from '@zimic/interceptor/http';
  *
  *   const interceptor = createHttpInterceptor<{
  *     '/users': {
