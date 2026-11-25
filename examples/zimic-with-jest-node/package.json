@@ -14,10 +14,10 @@
   },
   "devDependencies": {
     "@jest/globals": "^30.5.2",
-    "@swc/core": "^1.16.18",
+    "@swc/core": "^1.16.20",
     "@swc/jest": "^0.2.39",
     "@zimic/interceptor": "latest",
-    "dotenv-cli": "^11.0.0",
+    "dotenv-cli": "^11.1.0",
     "jest": "^30.5.2",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "@typescript/native": "npm:typescript@^7.0.2"

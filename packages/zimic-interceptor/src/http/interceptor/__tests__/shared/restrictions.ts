@@ -3,9 +3,9 @@ import { expectFetchError } from '@zimic/utils/fetch';
 import { joinURL } from '@zimic/utils/url';
 import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
@@ -220,6 +220,39 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
       expect(response.status).toBe(204);
 
       expect(handler.requests).toHaveLength(2);
+    });
+  });
+
+  it('should support intercepting requests having static restrictions', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      const handler = await promiseIfRemote(
+        interceptor
+          .get('/users')
+          .with({ headers: { count: 1 }, searchParams: { tag: 'admin' } })
+          .respond({ status: 204 }),
+        interceptor,
+      );
+
+      expect(handler.requests).toHaveLength(0);
+
+      const headers = new HttpHeaders<RequestHeadersSchema>({ count: 1 });
+
+      const response = await fetch(joinURL(baseURL, '/users?tag=admin'), { method: 'GET', headers });
+      expect(response.status).toBe(204);
+
+      expect(handler.requests).toHaveLength(1);
+
+      let responsePromise = fetch(joinURL(baseURL, '/users?tag=other'), { method: 'GET', headers });
+      await expectFetchError(responsePromise);
+
+      expect(handler.requests).toHaveLength(1);
+
+      responsePromise = fetch(joinURL(baseURL, '/users?tag=admin'), { method: 'GET' });
+      await expectFetchError(responsePromise);
+
+      expect(handler.requests).toHaveLength(1);
     });
   });
 
@@ -832,6 +865,72 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
     });
   });
 
+  it('should support intercepting requests having computed restrictions', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      const handler = await promiseIfRemote(
+        interceptor
+          .get('/users')
+          .with((request) => {
+            expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<RequestSearchParamsSchema>>();
+            return request.searchParams.get('tag') === 'admin';
+          })
+          .respond({ status: 204 }),
+        interceptor,
+      );
+
+      expect(handler.requests).toHaveLength(0);
+
+      const response = await fetch(joinURL(baseURL, '/users?tag=admin'), { method: 'GET' });
+      expect(response.status).toBe(204);
+
+      expect(handler.requests).toHaveLength(1);
+
+      const responsePromise = fetch(joinURL(baseURL, '/users?tag=other'), { method: 'GET' });
+      await expectFetchError(responsePromise);
+
+      expect(handler.requests).toHaveLength(1);
+    });
+  });
+
+  // No HTTP counterpart for "should support intercepting messages from a restricted sender": HTTP requests have no
+  // sender connection to restrict.
+
+  it('should support intercepting requests satisfying multiple restrictions', async () => {
+    await usingHttpInterceptor<{
+      '/users': { GET: MethodSchema };
+    }>(interceptorOptions, async (interceptor) => {
+      const handler = await promiseIfRemote(
+        interceptor
+          .get('/users')
+          .with({ searchParams: { tag: 'admin' } })
+          .with((request) => request.headers.get('count') === '1')
+          .respond({ status: 204 }),
+        interceptor,
+      );
+
+      expect(handler.requests).toHaveLength(0);
+
+      const headers = new HttpHeaders<RequestHeadersSchema>({ count: 1 });
+
+      const response = await fetch(joinURL(baseURL, '/users?tag=admin'), { method: 'GET', headers });
+      expect(response.status).toBe(204);
+
+      expect(handler.requests).toHaveLength(1);
+
+      let responsePromise = fetch(joinURL(baseURL, '/users?tag=other'), { method: 'GET', headers });
+      await expectFetchError(responsePromise);
+
+      expect(handler.requests).toHaveLength(1);
+
+      responsePromise = fetch(joinURL(baseURL, '/users?tag=admin'), { method: 'GET' });
+      await expectFetchError(responsePromise);
+
+      expect(handler.requests).toHaveLength(1);
+    });
+  });
+
   it('should reset restrictions when cleared', async () => {
     await usingHttpInterceptor<{
       '/users': { GET: MethodSchema };
@@ -863,4 +962,7 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
       expect(handler.requests).toHaveLength(1);
     });
   });
+
+  // No HTTP counterpart for "should support intercepting connections having partial protocols restrictions": HTTP
+  // requests negotiate no subprotocols.
 }

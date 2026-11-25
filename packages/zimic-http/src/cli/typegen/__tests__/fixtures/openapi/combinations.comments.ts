@@ -56,6 +56,19 @@ export type MyServiceSchema = HttpSchema<{
       };
     };
   };
+  '/pets': {
+    GET: {
+      response: {
+        /** Success */
+        200: {
+          headers: {
+            'content-type': 'application/json';
+          };
+          body: MyServiceComponents['schemas']['Cat'] | MyServiceComponents['schemas']['Dog'];
+        };
+      };
+    };
+  };
   '/not-user': {
     GET: {
       response: {
@@ -69,30 +82,136 @@ export type MyServiceSchema = HttpSchema<{
       };
     };
   };
+  '/discriminators': {
+    GET: {
+      response: {
+        /** Success */
+        200: {
+          headers: {
+            'content-type': 'application/json';
+          };
+          body: {
+            unmappedAnimal?: MyServiceComponents['schemas']['UnmappedAnimal'];
+            repeatedAnimal?: MyServiceComponents['schemas']['RepeatedAnimal'];
+            truck?: MyServiceComponents['schemas']['Truck'];
+            car?: MyServiceComponents['schemas']['Car'];
+            bike?: MyServiceComponents['schemas']['Bike'];
+            circle?: MyServiceComponents['schemas']['Circle'];
+            inlineDiscriminator?: MyServiceComponents['schemas']['InlineDiscriminator'];
+            unionWithSchemaNameMapping?: MyServiceComponents['schemas']['UnionWithSchemaNameMapping'];
+            unionWithInvalidMapping?: MyServiceComponents['schemas']['UnionWithInvalidMapping'];
+          };
+        };
+      };
+    };
+  };
+  '/compositions': {
+    GET: {
+      response: {
+        /** Success */
+        200: {
+          headers: {
+            'content-type': 'application/json';
+          };
+          body: {
+            requiredReferencedProperties?: MyServiceComponents['schemas']['RequiredReferencedProperties'];
+            requiredChainedReferenceProperties?: MyServiceComponents['schemas']['RequiredChainedReferenceProperties'];
+            requiredAnyProperties?: MyServiceComponents['schemas']['RequiredAnyProperties'];
+            referenceThroughChainedReference?: MyServiceComponents['schemas']['ReferenceThroughChainedReference'];
+            inlineAllOf?: MyServiceComponents['schemas']['InlineAllOf'];
+            booleanAllOf?: MyServiceComponents['schemas']['BooleanAllOf'];
+            multipleTypesWithOneOf?: MyServiceComponents['schemas']['MultipleTypesWithOneOf'];
+          };
+        };
+      };
+    };
+  };
 }>;
 
 export interface MyServiceComponents {
   schemas: {
+    Bird: {
+      kind: 'Bird';
+    };
+    Fish: {
+      kind: 'Fish';
+      discriminator?: string;
+    };
+    UntypedAnimal: {
+      legs?: number;
+    };
+    AnyAnimal: any;
+    UnmappedAnimal:
+      | MyServiceComponents['schemas']['Bird']
+      | MyServiceComponents['schemas']['Fish']
+      | MyServiceComponents['schemas']['UntypedAnimal']
+      | MyServiceComponents['schemas']['AnyAnimal']
+      | {
+          name?: string;
+        };
+    RepeatedAnimal: MyServiceComponents['schemas']['Bird'] | MyServiceComponents['schemas']['Fish'];
+    UnionWithSchemaNameMapping: MyServiceComponents['schemas']['SchemaNameMappingMember'];
+    SchemaNameMappingMember: {
+      kind: 'mapped-kind';
+    };
+    UnionWithInvalidMapping: MyServiceComponents['schemas']['InvalidMappingMember'];
+    InvalidMappingMember: {
+      kind?: string;
+    };
+    Vehicle: {
+      kind?: string;
+      wheels?: number;
+    };
+    Truck: Omit<MyServiceComponents['schemas']['Vehicle'], 'kind'> & {
+      kind: 'truck';
+    };
+    Car: Omit<MyServiceComponents['schemas']['Vehicle'], 'kind'> & {
+      kind: 'car';
+    };
+    Bike: {
+      kind: 'Bike';
+    } & Omit<MyServiceComponents['schemas']['Vehicle'], 'kind'>;
+    Shape: {
+      kind?: string;
+    };
+    Circle: {
+      kind: 'Circle';
+    } & Omit<MyServiceComponents['schemas']['Shape'], 'kind'>;
+    InlineDiscriminator: {
+      kind: 'InlineDiscriminator';
+    } & (Omit<
+      {
+        kind?: string;
+      },
+      'kind'
+    > & {
+      name?: string;
+    });
+    Profile: {
+      name?: string;
+      nickname?: string;
+      removed?: never;
+    };
+    ProfileAlias: MyServiceComponents['schemas']['Profile'];
+    RequiredReferencedProperties: WithRequired<MyServiceComponents['schemas']['Profile'], 'name'>;
+    RequiredChainedReferenceProperties: WithRequired<MyServiceComponents['schemas']['ProfileAlias'], 'nickname'>;
+    RequiredAnyProperties: MyServiceComponents['schemas']['AnyAnimal'];
+    ReferenceThroughChainedReference: MyServiceComponents['schemas']['ProfileAlias']['name'];
+    InlineAllOf: {
+      name?: string;
+    };
+    BooleanAllOf: any;
+    MultipleTypesWithOneOf: number | string;
     User: {
       /** Format: int64 */
       id: number;
       name: string;
-      /**
-       * Discriminator enum property added by openapi-typescript
-       *
-       * @enum {string}
-       */
       type: 'user';
     };
     Friend: {
       /** Format: int64 */
       id: number;
       name: string;
-      /**
-       * Discriminator enum property added by openapi-typescript
-       *
-       * @enum {string}
-       */
       type: 'friend';
       /** Format: int64 */
       userId: number;
@@ -111,6 +230,22 @@ export interface MyServiceComponents {
     DiscriminatedUserOrFriend: MyServiceComponents['schemas']['User'] | MyServiceComponents['schemas']['Friend'];
     AnyOfUsersOrFriends: MyServiceComponents['schemas']['Users'] | MyServiceComponents['schemas']['Friends'];
     AllOfUsersAndFriends: MyServiceComponents['schemas']['Users'] & MyServiceComponents['schemas']['Friends'];
+    Named: {
+      name: string;
+    };
+    Pet: {
+      petType: string;
+    };
+    Cat: MyServiceComponents['schemas']['Named'] &
+      Omit<MyServiceComponents['schemas']['Pet'], 'petType'> & {
+        petType: 'cat';
+      };
+    Dog: Omit<MyServiceComponents['schemas']['Pet'], 'petType'> & {
+      petType: 'dog';
+    };
     NotUser: any;
   };
 }
+type WithRequired<T, K extends keyof T> = T & {
+  [P in K]-?: T[P];
+};

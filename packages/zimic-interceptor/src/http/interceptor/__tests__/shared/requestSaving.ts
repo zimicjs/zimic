@@ -1,12 +1,13 @@
 import { HttpSchema } from '@zimic/http';
 import { joinURL } from '@zimic/utils/url';
+import { createInvalidTypeOfCases, ValidationError } from '@zimic/utils/validation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import DisabledRequestSavingError from '@/http/requestHandler/errors/DisabledRequestSavingError';
 import { isClientSide } from '@/utils/environment';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { promiseIfRemote } from '@tests/utils/promises';
 
 import RequestSavingSafeLimitExceededError from '../../errors/RequestSavingSafeLimitExceededError';
 import { DEFAULT_REQUEST_SAVING_SAFE_LIMIT } from '../../HttpInterceptorImplementation';
@@ -163,6 +164,32 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
         expect(handler.implementation.savedInterceptedRequests).toHaveLength(0);
       });
     });
+
+    // No HTTP counterpart for "should save intercepted connections if message saving is disabled": HTTP interceptors
+    // save only requests.
+
+    // No HTTP counterpart for "should save intercepted messages if connection saving is disabled": HTTP interceptors
+    // save only requests.
+
+    const invalidEnabledOptions = createInvalidTypeOfCases('boolean', { optional: true });
+
+    it.each(invalidEnabledOptions)(
+      'should throw an error if provided a request saving enabled option that is not a boolean ($label)',
+      async ({ value, actualType }) => {
+        const handler = vi.fn();
+
+        // @ts-expect-error Forcing an invalid request saving enabled option type.
+        const invalidEnabled: boolean = value;
+
+        await expect(async () => {
+          await usingHttpInterceptor({ ...interceptorOptions, requestSaving: { enabled: invalidEnabled } }, handler);
+        }).rejects.toThrow(
+          new ValidationError(`Expected options.requestSaving.enabled to be boolean, but got ${actualType}.`),
+        );
+
+        expect(handler).not.toHaveBeenCalled();
+      },
+    );
   });
 
   describe('Safe limit', () => {
@@ -437,6 +464,41 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
         });
       });
     });
+
+    // No HTTP counterpart for "should show a warning if the number of saved messages exceeds the safe limit,
+    // considering disconnected clients": HTTP requests have no long-lived client connection that can disconnect.
+
+    // No HTTP counterpart for "should show a warning if the number of saved connections exceeds the safe limit,
+    // considering disconnected clients": HTTP requests have no long-lived client connection that can disconnect.
+
+    // No HTTP counterpart for "should show a warning if the number of saved connections exceeds the safe limit,
+    // ignoring saved messages": HTTP interceptors save only requests.
+
+    // No HTTP counterpart for "should show a warning if the number of saved messages exceeds the safe limit, ignoring
+    // saved connections": HTTP interceptors save only requests.
+
+    const invalidSafeLimits = createInvalidTypeOfCases('number', { optional: true });
+
+    it.each(invalidSafeLimits)(
+      'should throw an error if provided a request saving safe limit that is not a number ($label)',
+      async ({ value, actualType }) => {
+        const handler = vi.fn();
+
+        // @ts-expect-error Forcing an invalid request saving safe limit type.
+        const invalidSafeLimit: number = value;
+
+        await expect(async () => {
+          await usingHttpInterceptor(
+            { ...interceptorOptions, requestSaving: { safeLimit: invalidSafeLimit } },
+            handler,
+          );
+        }).rejects.toThrow(
+          new ValidationError(`Expected options.requestSaving.safeLimit to be number, but got ${actualType}.`),
+        );
+
+        expect(handler).not.toHaveBeenCalled();
+      },
+    );
   });
 
   it('should support changing the request saving configuration after created', async () => {
@@ -524,4 +586,22 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
       expect(handler.requests).toHaveLength(numberOfRequests);
     });
   });
+
+  const invalidRequestSavings = createInvalidTypeOfCases('object', { optional: true });
+
+  it.each(invalidRequestSavings)(
+    'should throw an error if provided a request saving configuration that is not an object ($label)',
+    async ({ value, actualType }) => {
+      const handler = vi.fn();
+
+      // @ts-expect-error Forcing an invalid request saving type.
+      const invalidRequestSaving: Partial<HttpInterceptorRequestSaving> = value;
+
+      await expect(async () => {
+        await usingHttpInterceptor({ ...interceptorOptions, requestSaving: invalidRequestSaving }, handler);
+      }).rejects.toThrow(new ValidationError(`Expected options.requestSaving to be object, but got ${actualType}.`));
+
+      expect(handler).not.toHaveBeenCalled();
+    },
+  );
 }

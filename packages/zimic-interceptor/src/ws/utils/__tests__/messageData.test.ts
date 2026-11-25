@@ -1,10 +1,8 @@
 import { ValidationError } from '@zimic/utils/validation';
-import { WebSocketSchema } from '@zimic/ws';
 import { describe, expect, it } from 'vitest';
 
 import {
   deserializeWebSocketMessageDataFromTransport,
-  isSerializedWebSocketMessageData,
   normalizeWebSocketMessageData,
   serializeWebSocketMessageDataForSocket,
   serializeWebSocketMessageDataForTransport,
@@ -23,33 +21,40 @@ const textMessageDataCases = [
 ];
 
 describe('normalizeWebSocketMessageData', () => {
-  it.each(['plain text', '{invalid', '[invalid'])('should preserve non-JSON text message data %s', (data) => {
-    expect(normalizeWebSocketMessageData(data)).toBe(data);
+  it.each(['plain text', '{invalid', '[invalid'])('should preserve non-JSON text message data %s', async (data) => {
+    await expect(normalizeWebSocketMessageData(data)).resolves.toBe(data);
+  });
+
+  it.each(['"message"', '1', 'true', 'null'])('should preserve JSON primitive text message data %s', async (data) => {
+    await expect(normalizeWebSocketMessageData(data)).resolves.toBe(data);
   });
 
   it.each([
     { data: '{"type":"message"}', expected: { type: 'message' } },
     { data: '["message"]', expected: ['message'] },
-    { data: '"message"', expected: 'message' },
-    { data: '1', expected: 1 },
-    { data: 'true', expected: true },
-    { data: 'null', expected: null },
-  ])('should parse JSON message data $data', ({ data, expected }) => {
-    expect(normalizeWebSocketMessageData(data)).toEqual(expected);
+  ])('should parse JSON message data $data', async ({ data, expected }) => {
+    await expect(normalizeWebSocketMessageData(data)).resolves.toEqual(expected);
   });
 
-  it('should preserve JSON message data', () => {
+  it('should preserve JSON message data', async () => {
     const data = { type: 'message' };
-    expect(normalizeWebSocketMessageData(data)).toEqual(data);
+    await expect(normalizeWebSocketMessageData(data)).resolves.toEqual(data);
+  });
+
+  it('should preserve ArrayBuffer message data', async () => {
+    const data = new Uint8Array([1, 2, 3]).buffer;
+    await expect(normalizeWebSocketMessageData<ArrayBuffer>(data)).resolves.toBe(data);
   });
 
   it.each([
     { type: 'Blob', data: new Blob([new Uint8Array([1, 2, 3])]) },
-    { type: 'ArrayBuffer', data: new Uint8Array([1, 2, 3]).buffer },
-    { type: 'Uint8Array', data: new Uint8Array([0, 1, 2, 3, 0]).subarray(1, 4) },
-    { type: 'DataView', data: new DataView(new Uint8Array([0, 1, 2, 3, 0]).buffer, 1, 3) },
-  ])('should preserve $type message data', ({ data }) => {
-    expect(normalizeWebSocketMessageData<WebSocketSchema<typeof data>>(data)).toBe(data);
+    { type: 'Uint8Array with offset', data: new Uint8Array([0, 1, 2, 3, 0]).subarray(1, 4) },
+    { type: 'DataView with offset', data: new DataView(new Uint8Array([0, 1, 2, 3, 0]).buffer, 1, 3) },
+  ])('should convert $type message data to ArrayBuffer', async ({ data }) => {
+    const normalizedData = await normalizeWebSocketMessageData<typeof data>(data);
+
+    expect(normalizedData).toBeInstanceOf(ArrayBuffer);
+    expect(normalizedData).toEqual(new Uint8Array([1, 2, 3]).buffer);
   });
 });
 
@@ -91,32 +96,6 @@ describe('serializeWebSocketMessageDataForTransport', () => {
       type: 'binary',
       data: 'AQID',
     });
-  });
-
-  it('should reject undefined message data', async () => {
-    await expect(serializeWebSocketMessageDataForTransport(undefined)).rejects.toThrow(
-      new ValidationError('WebSocket message data must not be undefined.'),
-    );
-  });
-});
-
-describe('isSerializedWebSocketMessageData', () => {
-  it.each([
-    { type: 'text', data: '{"type":"message"}' },
-    { type: 'binary', data: 'AQID' },
-  ])('should accept $type message data', (data) => {
-    expect(isSerializedWebSocketMessageData(data)).toBe(true);
-  });
-
-  it.each([
-    { type: 'json', data: { type: 'message' } },
-    { type: 'text', data: 1 },
-    { type: 'binary', data: 1 },
-    { type: 'unknown', data: 'message' },
-    null,
-    undefined,
-  ])('should reject invalid message data %j', (data) => {
-    expect(isSerializedWebSocketMessageData(data)).toBe(false);
   });
 });
 

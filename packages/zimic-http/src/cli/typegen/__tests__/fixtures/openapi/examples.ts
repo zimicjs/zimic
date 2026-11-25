@@ -12,6 +12,8 @@ export type MyServiceSchema = HttpSchema<{
         };
         body: {
           name?: string;
+          discriminatorInExample?: Record<string, any>;
+          nickname?: string;
           email: string;
           password: string;
         };

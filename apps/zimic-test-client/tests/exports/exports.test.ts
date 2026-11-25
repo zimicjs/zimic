@@ -75,6 +75,80 @@ import {
   InvalidJSONError as HttpInvalidJSONError,
 } from '@zimic/http';
 import {
+  createWebSocketInterceptor,
+  type WebSocketInterceptor,
+  type LocalWebSocketInterceptor,
+  type RemoteWebSocketInterceptor,
+  type WebSocketInterceptorPlatform,
+  type WebSocketInterceptorType,
+  type WebSocketInterceptorAuthOptions,
+  type WebSocketInterceptorOptions,
+  type LocalWebSocketInterceptorOptions,
+  type RemoteWebSocketInterceptorOptions,
+  type WebSocketInterceptorMessageSaving,
+  type WebSocketInterceptorConnectionSaving,
+  type InferWebSocketInterceptorSchema,
+  type InterceptedWebSocketInterceptorMessage,
+  type WebSocketInterceptorClient,
+  type WebSocketInterceptorServer,
+  type WebSocketInterceptorServerSendOptions,
+  type WebSocketInterceptorProtocol,
+  type WebSocketMessageHandler,
+  type LocalWebSocketMessageHandler,
+  type RemoteWebSocketMessageHandler,
+  type SyncedRemoteWebSocketMessageHandler,
+  type PendingRemoteWebSocketMessageHandler,
+  type WebSocketMessageHandlerMessageCallback,
+  type WebSocketMessageHandlerMessageContext,
+  type WebSocketMessageHandlerMessageStaticDeclaration,
+  type WebSocketMessageHandlerMessageComputedDeclaration,
+  type WebSocketMessageHandlerMessageDeclaration,
+  type WebSocketMessageHandlerDelayFactory,
+  type WebSocketMessageHandlerRestriction,
+  type WebSocketMessageHandlerStaticRestriction,
+  type WebSocketMessageHandlerStaticRestrictionOptions,
+  type WebSocketMessageHandlerComputedRestriction,
+  type WebSocketInterceptorConnectionRequest,
+  type WebSocketConnectionHandler,
+  type LocalWebSocketConnectionHandler,
+  type RemoteWebSocketConnectionHandler,
+  type SyncedRemoteWebSocketConnectionHandler,
+  type PendingRemoteWebSocketConnectionHandler,
+  type WebSocketConnectionHandlerConnectionCallback,
+  type WebSocketConnectionHandlerResponseStaticDeclaration,
+  type WebSocketConnectionHandlerResponseComputedDeclaration,
+  type WebSocketConnectionHandlerResponseDeclaration,
+  type WebSocketConnectionHandlerDelayFactory,
+  type WebSocketConnectionHandlerRestriction,
+  type WebSocketConnectionHandlerStaticRestriction,
+  type WebSocketConnectionHandlerComputedRestriction,
+  type UnhandledMessageStrategy,
+  RunningWebSocketInterceptorError,
+  NotRunningWebSocketInterceptorError,
+  UnknownWebSocketInterceptorPlatformError,
+  UnknownWebSocketInterceptorTypeError,
+  MessageSavingSafeLimitExceededError,
+  ConnectionSavingSafeLimitExceededError,
+  UnregisteredBrowserServiceWorkerError as WebSocketUnregisteredBrowserServiceWorkerError,
+  DisabledMessageSavingError,
+  DisabledConnectionSavingError,
+  WebSocketTimesCheckError,
+} from '@zimic/interceptor/experimental/ws';
+import {
+  createSocketIOProtocol,
+  type SocketIOSchema,
+  type SocketIOEventMessage,
+  type SocketIOAckMessage,
+  type SocketIOMessage,
+  type SocketIOParser,
+  type SocketIOPollingSchema,
+  type SocketIOProtocolOptions,
+  SharedSocketIOProtocolError,
+  DuplicateSocketIONamespaceError,
+  MismatchedSocketIOProtocolOptionsError,
+  InvalidSocketIOPollingInterceptorError,
+} from '@zimic/interceptor/experimental/ws/socket.io';
+import {
   createHttpInterceptor,
   type HttpInterceptor,
   type LocalHttpInterceptor,
@@ -114,7 +188,7 @@ import {
   RequestSavingSafeLimitExceededError,
   InvalidFormDataError as InterceptorInvalidFormDataError,
   InvalidJSONError as InterceptorInvalidJSONError,
-  UnregisteredBrowserServiceWorkerError,
+  UnregisteredBrowserServiceWorkerError as HttpUnregisteredBrowserServiceWorkerError,
   DisabledRequestSavingError,
   HttpTimesCheckError,
   TimesCheckError,
@@ -124,6 +198,17 @@ import {
   WebSocketTimeoutError,
   WebSocketOpenTimeoutError,
   WebSocketCloseTimeoutError,
+  type JSONStringified as WebSocketJSONStringified,
+  type LiteralWebSocketSchemaPathFromNonLiteral,
+  type InferPathParams as WebSocketInferPathParams,
+  type WebSocketConnectionProtocolSchema,
+  type WebSocketConnectionSchema,
+  type WebSocketConnectionSearchParamsSchema,
+  type WebSocketMessageSchema,
+  type WebSocketPathSchema,
+  type WebSocketSchema,
+  type WebSocketSchemaMessage,
+  type WebSocketSchemaPath,
 } from '@zimic/ws';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
@@ -310,11 +395,27 @@ describe('Exports', () => {
 
       expectTypeOf<WebSocketCloseTimeoutError>().not.toBeAny();
       expect(typeof WebSocketCloseTimeoutError).toBe('function');
+
+      expectTypeOf<WebSocketJSONStringified<never>>().not.toBeAny();
+      expectTypeOf<WebSocketSchemaPath<never>>().not.toBeAny();
+      expectTypeOf<WebSocketSchemaMessage<never>>().not.toBeAny();
+      expectTypeOf<WebSocketInferPathParams<never>>().not.toBeAny();
+      expectTypeOf<WebSocketPathSchema>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionSchema>().not.toBeAny();
+      expectTypeOf<WebSocketMessageSchema>().not.toBeAny();
+      expectTypeOf<LiteralWebSocketSchemaPathFromNonLiteral<never, never>>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionSearchParamsSchema<never>>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionProtocolSchema<never>>().not.toBeAny();
+      expectTypeOf<WebSocketSchema.Path<never>>().not.toBeAny();
+      expectTypeOf<WebSocketSchema.Connection<never>>().not.toBeAny();
+      expectTypeOf<WebSocketSchema.Message<never>>().not.toBeAny();
+      expectTypeOf<WebSocketSchema.SearchParams<never>>().not.toBeAny();
+      expectTypeOf<WebSocketSchema.PathParams<never>>().not.toBeAny();
     });
   });
 
   describe('@zimic/interceptor', () => {
-    it('exports all expected resources from @zimic/interceptor', () => {
+    it('exports all expected resources from @zimic/interceptor/http', () => {
       // eslint-disable-next-line @typescript-eslint/no-deprecated
       expectTypeOf<InterceptorInvalidJSONError>().not.toBeAny();
       // eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -389,8 +490,8 @@ describe('Exports', () => {
       expectTypeOf<RequestSavingSafeLimitExceededError>().not.toBeAny();
       expect(typeof RequestSavingSafeLimitExceededError).toBe('function');
 
-      expectTypeOf<UnregisteredBrowserServiceWorkerError>().not.toBeAny();
-      expect(typeof UnregisteredBrowserServiceWorkerError).toBe('function');
+      expectTypeOf<HttpUnregisteredBrowserServiceWorkerError>().not.toBeAny();
+      expect(typeof HttpUnregisteredBrowserServiceWorkerError).toBe('function');
 
       expectTypeOf<DisabledRequestSavingError>().not.toBeAny();
       expect(typeof DisabledRequestSavingError).toBe('function');
@@ -402,6 +503,118 @@ describe('Exports', () => {
       expectTypeOf<TimesCheckError>().not.toBeAny();
       // eslint-disable-next-line @typescript-eslint/no-deprecated
       expect(typeof TimesCheckError).toBe('function');
+    });
+
+    it('exports all expected resources from @zimic/interceptor/experimental/ws/socket.io', () => {
+      expectTypeOf(createSocketIOProtocol).not.toBeAny();
+      expect(typeof createSocketIOProtocol).toBe('function');
+
+      expectTypeOf<SocketIOSchema>().not.toBeAny();
+      expectTypeOf<SocketIOEventMessage>().not.toBeAny();
+      expectTypeOf<SocketIOAckMessage>().not.toBeAny();
+      expectTypeOf<SocketIOMessage>().not.toBeAny();
+      expectTypeOf<SocketIOParser>().not.toBeAny();
+      expectTypeOf<SocketIOPollingSchema>().not.toBeAny();
+      expectTypeOf<SocketIOProtocolOptions>().not.toBeAny();
+
+      expectTypeOf<SharedSocketIOProtocolError>().not.toBeAny();
+      expect(typeof SharedSocketIOProtocolError).toBe('function');
+
+      expectTypeOf<DuplicateSocketIONamespaceError>().not.toBeAny();
+      expect(typeof DuplicateSocketIONamespaceError).toBe('function');
+
+      expectTypeOf<MismatchedSocketIOProtocolOptionsError>().not.toBeAny();
+      expect(typeof MismatchedSocketIOProtocolOptionsError).toBe('function');
+
+      expectTypeOf<InvalidSocketIOPollingInterceptorError>().not.toBeAny();
+      expect(typeof InvalidSocketIOPollingInterceptorError).toBe('function');
+    });
+
+    it('exports all expected resources from @zimic/interceptor/experimental/ws', () => {
+      expectTypeOf(createWebSocketInterceptor).not.toBeAny();
+      expect(typeof createWebSocketInterceptor).toBe('function');
+
+      expectTypeOf<WebSocketInterceptor<never>>().not.toBeAny();
+      expectTypeOf<LocalWebSocketInterceptor<never>>().not.toBeAny();
+      expectTypeOf<RemoteWebSocketInterceptor<never>>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorPlatform>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorType>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorAuthOptions>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorOptions<never>>().not.toBeAny();
+      expectTypeOf<LocalWebSocketInterceptorOptions<never>>().not.toBeAny();
+      expectTypeOf<RemoteWebSocketInterceptorOptions<never>>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorMessageSaving>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorConnectionSaving>().not.toBeAny();
+      expectTypeOf<UnhandledMessageStrategy>().not.toBeAny();
+      expectTypeOf<UnhandledMessageStrategy.Declaration>().not.toBeAny();
+      expectTypeOf<UnhandledMessageStrategy.DeclarationFactory>().not.toBeAny();
+      expectTypeOf<InferWebSocketInterceptorSchema<never>>().not.toBeAny();
+      expectTypeOf<InterceptedWebSocketInterceptorMessage<never>>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorClient<never>>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorServer<never>>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorServerSendOptions<never>>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorProtocol<never>>().not.toBeAny();
+
+      expectTypeOf<WebSocketMessageHandler<never>>().not.toBeAny();
+      expectTypeOf<LocalWebSocketMessageHandler<never>>().not.toBeAny();
+      expectTypeOf<RemoteWebSocketMessageHandler<never>>().not.toBeAny();
+      expectTypeOf<SyncedRemoteWebSocketMessageHandler<never>>().not.toBeAny();
+      expectTypeOf<PendingRemoteWebSocketMessageHandler<never>>().not.toBeAny();
+      expectTypeOf<WebSocketMessageHandlerMessageCallback<never>>().not.toBeAny();
+      expectTypeOf<WebSocketMessageHandlerMessageContext<never>>().not.toBeAny();
+      expectTypeOf<WebSocketMessageHandlerMessageStaticDeclaration<never>>().not.toBeAny();
+      expectTypeOf<WebSocketMessageHandlerMessageComputedDeclaration<never, never>>().not.toBeAny();
+      expectTypeOf<WebSocketMessageHandlerMessageDeclaration<never, never>>().not.toBeAny();
+      expectTypeOf<WebSocketMessageHandlerDelayFactory<never>>().not.toBeAny();
+      expectTypeOf<WebSocketMessageHandlerRestriction<never>>().not.toBeAny();
+      expectTypeOf<WebSocketMessageHandlerStaticRestriction<never>>().not.toBeAny();
+      expectTypeOf<WebSocketMessageHandlerStaticRestrictionOptions>().not.toBeAny();
+      expectTypeOf<WebSocketMessageHandlerComputedRestriction<never>>().not.toBeAny();
+
+      expectTypeOf<WebSocketInterceptorConnectionRequest>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionHandler<never>>().not.toBeAny();
+      expectTypeOf<LocalWebSocketConnectionHandler<never>>().not.toBeAny();
+      expectTypeOf<RemoteWebSocketConnectionHandler<never>>().not.toBeAny();
+      expectTypeOf<SyncedRemoteWebSocketConnectionHandler<never>>().not.toBeAny();
+      expectTypeOf<PendingRemoteWebSocketConnectionHandler<never>>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionHandlerConnectionCallback<never>>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionHandlerResponseStaticDeclaration>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionHandlerResponseComputedDeclaration>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionHandlerResponseDeclaration>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionHandlerDelayFactory>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionHandlerRestriction>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionHandlerStaticRestriction>().not.toBeAny();
+      expectTypeOf<WebSocketConnectionHandlerComputedRestriction>().not.toBeAny();
+
+      expectTypeOf<RunningWebSocketInterceptorError>().not.toBeAny();
+      expect(typeof RunningWebSocketInterceptorError).toBe('function');
+
+      expectTypeOf<NotRunningWebSocketInterceptorError>().not.toBeAny();
+      expect(typeof NotRunningWebSocketInterceptorError).toBe('function');
+
+      expectTypeOf<UnknownWebSocketInterceptorPlatformError>().not.toBeAny();
+      expect(typeof UnknownWebSocketInterceptorPlatformError).toBe('function');
+
+      expectTypeOf<UnknownWebSocketInterceptorTypeError>().not.toBeAny();
+      expect(typeof UnknownWebSocketInterceptorTypeError).toBe('function');
+
+      expectTypeOf<MessageSavingSafeLimitExceededError>().not.toBeAny();
+      expect(typeof MessageSavingSafeLimitExceededError).toBe('function');
+
+      expectTypeOf<ConnectionSavingSafeLimitExceededError>().not.toBeAny();
+      expect(typeof ConnectionSavingSafeLimitExceededError).toBe('function');
+
+      expectTypeOf<WebSocketUnregisteredBrowserServiceWorkerError>().not.toBeAny();
+      expect(typeof WebSocketUnregisteredBrowserServiceWorkerError).toBe('function');
+
+      expectTypeOf<DisabledMessageSavingError>().not.toBeAny();
+      expect(typeof DisabledMessageSavingError).toBe('function');
+
+      expectTypeOf<DisabledConnectionSavingError>().not.toBeAny();
+      expect(typeof DisabledConnectionSavingError).toBe('function');
+
+      expectTypeOf<WebSocketTimesCheckError>().not.toBeAny();
+      expect(typeof WebSocketTimesCheckError).toBe('function');
     });
   });
 });

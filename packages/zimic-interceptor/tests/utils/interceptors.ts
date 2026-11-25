@@ -1,6 +1,7 @@
 import { HttpSchema, HttpMethod } from '@zimic/http';
 import { PossiblePromise } from '@zimic/utils/types';
 import { joinURL } from '@zimic/utils/url';
+import { WebSocketSchema } from '@zimic/ws';
 import { expect, inject } from 'vitest';
 
 import { createHttpInterceptor } from '@/http';
@@ -22,6 +23,28 @@ import {
   RemoteHttpInterceptorWorkerOptions,
 } from '@/http/interceptorWorker/types/options';
 import InterceptorServer from '@/server/InterceptorServer';
+import { createWebSocketInterceptor } from '@/ws/interceptor/factory';
+import LocalWebSocketInterceptor from '@/ws/interceptor/LocalWebSocketInterceptor';
+import RemoteWebSocketInterceptor from '@/ws/interceptor/RemoteWebSocketInterceptor';
+import {
+  LocalWebSocketInterceptorOptions,
+  RemoteWebSocketInterceptorOptions,
+  WebSocketInterceptorOptions,
+} from '@/ws/interceptor/types/options';
+import {
+  LocalWebSocketInterceptor as PublicLocalWebSocketInterceptor,
+  RemoteWebSocketInterceptor as PublicRemoteWebSocketInterceptor,
+  WebSocketInterceptor,
+} from '@/ws/interceptor/types/public';
+import { createWebSocketInterceptorWorker } from '@/ws/interceptorWorker/factory';
+import LocalWebSocketInterceptorWorker from '@/ws/interceptorWorker/LocalWebSocketInterceptorWorker';
+import RemoteWebSocketInterceptorWorker from '@/ws/interceptorWorker/RemoteWebSocketInterceptorWorker';
+import {
+  LocalWebSocketInterceptorWorkerOptions,
+  RemoteWebSocketInterceptorWorkerOptions,
+  WebSocketInterceptorWorkerOptions,
+} from '@/ws/interceptorWorker/types/options';
+import WebSocketInterceptorWorker from '@/ws/interceptorWorker/WebSocketInterceptorWorker';
 
 export function getBrowserBaseURL(type: HttpInterceptorType) {
   if (type === 'local') {
@@ -58,6 +81,26 @@ export function createInternalHttpInterceptor<Schema extends HttpSchema>(options
     onUnhandledRequest: { action: 'reject', log: false },
     ...options,
   }) satisfies HttpInterceptor<Schema> as LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
+}
+
+export function createInternalWebSocketInterceptor<Schema extends WebSocketSchema>(
+  options: LocalWebSocketInterceptorOptions<Schema>,
+): LocalWebSocketInterceptor<Schema>;
+export function createInternalWebSocketInterceptor<Schema extends WebSocketSchema>(
+  options: RemoteWebSocketInterceptorOptions<Schema>,
+): RemoteWebSocketInterceptor<Schema>;
+export function createInternalWebSocketInterceptor<Schema extends WebSocketSchema>(
+  options: WebSocketInterceptorOptions<Schema>,
+): LocalWebSocketInterceptor<Schema> | RemoteWebSocketInterceptor<Schema>;
+export function createInternalWebSocketInterceptor<Schema extends WebSocketSchema>(
+  options: WebSocketInterceptorOptions<Schema>,
+) {
+  return createWebSocketInterceptor<Schema>({
+    messageSaving: { enabled: false },
+    connectionSaving: { enabled: false },
+    onUnhandledMessage: { log: false },
+    ...options,
+  }) satisfies WebSocketInterceptor<Schema> as LocalWebSocketInterceptor<Schema> | RemoteWebSocketInterceptor<Schema>;
 }
 
 type UsingInterceptorCallback<Interceptor extends HttpInterceptor<never>> = (
@@ -124,30 +167,185 @@ export async function usingHttpInterceptor<Schema extends HttpSchema>(
   }
 }
 
-type UsingWorkerCallback = (worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker) => PossiblePromise<void>;
+type UsingWebSocketInterceptorCallback<Interceptor> = (interceptor: Interceptor) => PossiblePromise<void>;
+
+export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
+  interceptorOptions: LocalWebSocketInterceptorOptions<Schema>,
+  callback: UsingWebSocketInterceptorCallback<PublicLocalWebSocketInterceptor<Schema>>,
+): Promise<void>;
+export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
+  interceptorOptions: LocalWebSocketInterceptorOptions<Schema>,
+  options: UsingInterceptorOptions,
+  callback: UsingWebSocketInterceptorCallback<PublicLocalWebSocketInterceptor<Schema>>,
+): Promise<void>;
+export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
+  interceptorOptions: RemoteWebSocketInterceptorOptions<Schema>,
+  callback: UsingWebSocketInterceptorCallback<PublicRemoteWebSocketInterceptor<Schema>>,
+): Promise<void>;
+export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
+  interceptorOptions: RemoteWebSocketInterceptorOptions<Schema>,
+  options: UsingInterceptorOptions,
+  callback: UsingWebSocketInterceptorCallback<PublicRemoteWebSocketInterceptor<Schema>>,
+): Promise<void>;
+export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
+  interceptorOptions: WebSocketInterceptorOptions<Schema>,
+  callback: UsingWebSocketInterceptorCallback<
+    PublicLocalWebSocketInterceptor<Schema> | PublicRemoteWebSocketInterceptor<Schema>
+  >,
+): Promise<void>;
+export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
+  interceptorOptions: WebSocketInterceptorOptions<Schema>,
+  options: UsingInterceptorOptions,
+  callback: UsingWebSocketInterceptorCallback<
+    PublicLocalWebSocketInterceptor<Schema> | PublicRemoteWebSocketInterceptor<Schema>
+  >,
+): Promise<void>;
+export async function usingWebSocketInterceptor<Schema extends WebSocketSchema>(
+  interceptorOptions: WebSocketInterceptorOptions<Schema>,
+  callbackOrOptions:
+    | UsingWebSocketInterceptorCallback<PublicLocalWebSocketInterceptor<Schema>>
+    | UsingWebSocketInterceptorCallback<PublicRemoteWebSocketInterceptor<Schema>>
+    | UsingWebSocketInterceptorCallback<
+        PublicLocalWebSocketInterceptor<Schema> | PublicRemoteWebSocketInterceptor<Schema>
+      >
+    | UsingInterceptorOptions,
+  optionalCallback?:
+    | UsingWebSocketInterceptorCallback<PublicLocalWebSocketInterceptor<Schema>>
+    | UsingWebSocketInterceptorCallback<PublicRemoteWebSocketInterceptor<Schema>>
+    | UsingWebSocketInterceptorCallback<
+        PublicLocalWebSocketInterceptor<Schema> | PublicRemoteWebSocketInterceptor<Schema>
+      >,
+): Promise<void> {
+  const { start: shouldStartInterceptor = true } = typeof callbackOrOptions === 'function' ? {} : callbackOrOptions;
+  const callback = (optionalCallback ?? callbackOrOptions) as UsingWebSocketInterceptorCallback<
+    PublicLocalWebSocketInterceptor<Schema> | PublicRemoteWebSocketInterceptor<Schema>
+  >;
+
+  const interceptor = createInternalWebSocketInterceptor<Schema>(interceptorOptions);
+
+  try {
+    if (shouldStartInterceptor) {
+      await interceptor.start();
+    }
+    await callback(interceptor);
+  } finally {
+    await interceptor.stop();
+  }
+}
+
+type UsingHttpWorkerCallback<Worker extends LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker> = (
+  worker: Worker,
+) => PossiblePromise<void>;
 
 interface UsingWorkerOptions {
   start?: boolean;
 }
 
 export async function usingHttpInterceptorWorker(
+  workerOptions: LocalHttpInterceptorWorkerOptions,
+  callback: UsingHttpWorkerCallback<LocalHttpInterceptorWorker>,
+): Promise<void>;
+export async function usingHttpInterceptorWorker(
+  workerOptions: LocalHttpInterceptorWorkerOptions,
+  options: UsingWorkerOptions,
+  callback: UsingHttpWorkerCallback<LocalHttpInterceptorWorker>,
+): Promise<void>;
+export async function usingHttpInterceptorWorker(
+  workerOptions: RemoteHttpInterceptorWorkerOptions,
+  callback: UsingHttpWorkerCallback<RemoteHttpInterceptorWorker>,
+): Promise<void>;
+export async function usingHttpInterceptorWorker(
+  workerOptions: RemoteHttpInterceptorWorkerOptions,
+  options: UsingWorkerOptions,
+  callback: UsingHttpWorkerCallback<RemoteHttpInterceptorWorker>,
+): Promise<void>;
+export async function usingHttpInterceptorWorker(
   workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions,
-  callback: UsingWorkerCallback,
+  callback: UsingHttpWorkerCallback<LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker>,
 ): Promise<void>;
 export async function usingHttpInterceptorWorker(
   workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions,
   options: UsingWorkerOptions,
-  callback: UsingWorkerCallback,
+  callback: UsingHttpWorkerCallback<LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker>,
 ): Promise<void>;
 export async function usingHttpInterceptorWorker(
   workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions,
-  callbackOrOptions: UsingWorkerCallback | UsingWorkerOptions,
-  optionalCallback?: UsingWorkerCallback,
+  callbackOrOptions:
+    | UsingHttpWorkerCallback<LocalHttpInterceptorWorker>
+    | UsingHttpWorkerCallback<RemoteHttpInterceptorWorker>
+    | UsingHttpWorkerCallback<LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker>
+    | UsingWorkerOptions,
+  optionalCallback?:
+    | UsingHttpWorkerCallback<LocalHttpInterceptorWorker>
+    | UsingHttpWorkerCallback<RemoteHttpInterceptorWorker>
+    | UsingHttpWorkerCallback<LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker>,
 ): Promise<void> {
   const { start: shouldStartWorker = true } = typeof callbackOrOptions === 'function' ? {} : callbackOrOptions;
-  const callback = (optionalCallback ?? callbackOrOptions) as UsingWorkerCallback;
+  const callback = (optionalCallback ?? callbackOrOptions) as UsingHttpWorkerCallback<
+    LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker
+  >;
 
   const worker = createHttpInterceptorWorker(workerOptions);
+
+  try {
+    if (shouldStartWorker) {
+      await worker.start();
+    }
+    await callback(worker);
+  } finally {
+    await worker.stop();
+  }
+}
+
+type UsingWebSocketWorkerCallback<Worker extends WebSocketInterceptorWorker> = (
+  worker: Worker,
+) => PossiblePromise<void>;
+
+export async function usingWebSocketInterceptorWorker(
+  workerOptions: LocalWebSocketInterceptorWorkerOptions,
+  callback: UsingWebSocketWorkerCallback<LocalWebSocketInterceptorWorker>,
+): Promise<void>;
+export async function usingWebSocketInterceptorWorker(
+  workerOptions: LocalWebSocketInterceptorWorkerOptions,
+  options: UsingWorkerOptions,
+  callback: UsingWebSocketWorkerCallback<LocalWebSocketInterceptorWorker>,
+): Promise<void>;
+export async function usingWebSocketInterceptorWorker(
+  workerOptions: RemoteWebSocketInterceptorWorkerOptions,
+  callback: UsingWebSocketWorkerCallback<RemoteWebSocketInterceptorWorker>,
+): Promise<void>;
+export async function usingWebSocketInterceptorWorker(
+  workerOptions: RemoteWebSocketInterceptorWorkerOptions,
+  options: UsingWorkerOptions,
+  callback: UsingWebSocketWorkerCallback<RemoteWebSocketInterceptorWorker>,
+): Promise<void>;
+export async function usingWebSocketInterceptorWorker(
+  workerOptions: WebSocketInterceptorWorkerOptions,
+  callback: UsingWebSocketWorkerCallback<LocalWebSocketInterceptorWorker | RemoteWebSocketInterceptorWorker>,
+): Promise<void>;
+export async function usingWebSocketInterceptorWorker(
+  workerOptions: WebSocketInterceptorWorkerOptions,
+  options: UsingWorkerOptions,
+  callback: UsingWebSocketWorkerCallback<LocalWebSocketInterceptorWorker | RemoteWebSocketInterceptorWorker>,
+): Promise<void>;
+export async function usingWebSocketInterceptorWorker(
+  workerOptions: WebSocketInterceptorWorkerOptions,
+  callbackOrOptions:
+    | UsingWebSocketWorkerCallback<LocalWebSocketInterceptorWorker>
+    | UsingWebSocketWorkerCallback<RemoteWebSocketInterceptorWorker>
+    | UsingWebSocketWorkerCallback<LocalWebSocketInterceptorWorker | RemoteWebSocketInterceptorWorker>
+    | UsingWorkerOptions,
+  optionalCallback?:
+    | UsingWebSocketWorkerCallback<LocalWebSocketInterceptorWorker>
+    | UsingWebSocketWorkerCallback<RemoteWebSocketInterceptorWorker>
+    | UsingWebSocketWorkerCallback<LocalWebSocketInterceptorWorker | RemoteWebSocketInterceptorWorker>,
+): Promise<void> {
+  const { start: shouldStartWorker = true } = typeof callbackOrOptions === 'function' ? {} : callbackOrOptions;
+  const callback = (optionalCallback ?? callbackOrOptions) as UsingWebSocketWorkerCallback<
+    LocalWebSocketInterceptorWorker | RemoteWebSocketInterceptorWorker
+  >;
+
+  const worker = createWebSocketInterceptorWorker(workerOptions);
 
   try {
     if (shouldStartWorker) {

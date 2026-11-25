@@ -1,102 +1,98 @@
 import { isDefined } from '@zimic/utils/data';
-import { Override } from '@zimic/utils/types';
-import ts from 'typescript';
 
-import { renameComponentReferences } from './components';
+import { HTTP_METHODS, HttpMethod } from '@/types/schema';
+
+import { isReference, OPENAPI_PATH_ITEM_METHODS, OpenAPIDocument, OpenAPIPathItem } from '../document/types';
+import { createJSDocComment } from '../utils/comments';
+import { indexedAccessType, objectType, referenceType, stringLiteral, typeMember } from '../utils/types';
 import { TypeTransformContext } from './context';
-import { normalizeMethod } from './methods';
+import { mergeParameters, transformOperation } from './methods';
+import { createOperationsIdentifier, createReferenceType } from './references';
 
-export function createPathsIdentifier(serviceName: string) {
-  return ts.factory.createIdentifier(`${serviceName}Schema`);
+function isHttpMethod(methodName: string): methodName is HttpMethod {
+  return HTTP_METHODS.includes(methodName as HttpMethod);
 }
 
-type PathsDeclaration = ts.InterfaceDeclaration | ts.TypeAliasDeclaration;
+function matchesPathFilters(methodName: HttpMethod, pathName: string, context: TypeTransformContext) {
+  const { positive: positiveFilters, negative: negativeFilters } = context.filters.paths;
 
-export function isPathsDeclaration(node: ts.Node | undefined): node is PathsDeclaration {
-  return (
-    node !== undefined &&
-    (ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node)) &&
-    node.name.text === 'paths'
+  const matchesPositiveFilters =
+    positiveFilters.length === 0 ||
+    positiveFilters.some((filter) => filter.methodRegex.test(methodName) && filter.pathRegex.test(pathName));
+
+  const matchesNegativeFilters = negativeFilters.some(
+    (filter) => filter.methodRegex.test(methodName) && filter.pathRegex.test(pathName),
   );
+
+  return matchesPositiveFilters && !matchesNegativeFilters;
 }
 
-type Path = Override<
-  ts.PropertySignature,
-  {
-    type: ts.TypeLiteralNode | ts.IndexedAccessTypeNode;
-    name: ts.Identifier | ts.StringLiteral;
-  }
->;
-
-function isPath(node: ts.TypeElement): node is Path {
-  return (
-    ts.isPropertySignature(node) &&
-    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) &&
-    node.type !== undefined &&
-    (ts.isTypeLiteralNode(node.type) || ts.isIndexedAccessTypeNode(node.type))
-  );
+export function getOperationName(operationId: string) {
+  return operationId.replace(/#/g, '/');
 }
 
-function normalizePathNameWithParameters(pathName: string) {
-  return pathName.replace(/{([^}]+)}/g, ':$1');
-}
-
-export function normalizePath(
-  path: ts.TypeElement,
+/**
+ * Generates the methods of a path item that match the path filters, or `undefined` if none does. Operations with an
+ * `operationId` are generated separately and referenced by the methods.
+ */
+export function transformPathItem(
+  pathItem: OpenAPIPathItem,
+  pathName: string,
+  segments: string[],
   context: TypeTransformContext,
-  options: { isComponent?: boolean } = {},
 ) {
-  const { isComponent = false } = options;
+  const methodMembers = OPENAPI_PATH_ITEM_METHODS.map((method) => {
+    const operation = pathItem[method];
+    const methodName = method.toUpperCase();
 
-  /* istanbul ignore if -- @preserve
-   * Path members are always expected to be a path. */
-  if (!isPath(path)) {
-    return undefined;
-  }
-
-  const newPathName = isComponent ? path.name.text : normalizePathNameWithParameters(path.name.text);
-  const newIdentifier = isComponent ? path.name : ts.factory.createStringLiteral(newPathName);
-
-  let newType: ts.TypeNode;
-
-  if (ts.isTypeLiteralNode(path.type)) {
-    const newMethods = path.type.members
-      .map((method) => normalizeMethod(method, context, { pathName: newPathName }))
-      .filter(isDefined);
-
-    if (newMethods.length === 0) {
+    if (!operation || !isHttpMethod(methodName) || !matchesPathFilters(methodName, pathName, context)) {
       return undefined;
     }
 
-    newType = ts.factory.updateTypeLiteralNode(path.type, ts.factory.createNodeArray(newMethods));
-  } else {
-    newType = renameComponentReferences(path.type, context);
-  }
+    let type;
 
-  return ts.factory.updatePropertySignature(path, path.modifiers, newIdentifier, path.questionToken, newType);
+    if (operation.operationId === undefined) {
+      const parameters = mergeParameters(pathItem.parameters ?? [], operation.parameters ?? [], context);
+      type = transformOperation(operation, parameters, [...segments, method], context);
+    } else {
+      const operationName = getOperationName(operation.operationId);
+      context.dependencies.operations.add(operationName);
+
+      const operationsType = referenceType(createOperationsIdentifier(context.serviceName));
+      type = indexedAccessType(operationsType, [operationName]);
+    }
+
+    return typeMember({ key: methodName, type, comment: createJSDocComment(operation, context) });
+  }).filter(isDefined);
+
+  return methodMembers.length > 0 ? objectType(methodMembers) : undefined;
 }
 
-function wrapPathsType(type: ts.TypeLiteralNode, context: TypeTransformContext) {
-  context.typeImports.http.add('HttpSchema');
-
-  const httpSchemaPathsWrapper = ts.factory.createIdentifier('HttpSchema');
-  return ts.factory.createTypeReferenceNode(httpSchemaPathsWrapper, [type]);
+function convertPathParametersToColonSyntax(pathName: string) {
+  return pathName.replace(/{([^}]+)}/g, ':$1');
 }
 
-export function normalizePaths(pathsOrTypeAlias: PathsDeclaration, context: TypeTransformContext) {
-  const newIdentifier = createPathsIdentifier(context.serviceName);
+export function createSchemaIdentifier(serviceName: string) {
+  return `${serviceName}Schema`;
+}
 
-  const paths = ts.isTypeAliasDeclaration(pathsOrTypeAlias)
-    ? ts.factory.createInterfaceDeclaration(pathsOrTypeAlias.modifiers, pathsOrTypeAlias.name, undefined, undefined, [])
-    : pathsOrTypeAlias;
+export function transformPaths(document: OpenAPIDocument, context: TypeTransformContext) {
+  const pathMembers = Object.entries(document.paths ?? {}).map(([rawPathName, pathItem]) => {
+    const pathName = convertPathParametersToColonSyntax(rawPathName);
 
-  const newMembers = paths.members.map((path) => normalizePath(path, context)).filter(isDefined);
-  const newType = ts.factory.createTypeLiteralNode(newMembers);
+    if (isReference(pathItem)) {
+      return typeMember({
+        key: stringLiteral(pathName),
+        type: createReferenceType(pathItem.$ref, context),
+        comment: createJSDocComment(pathItem, context),
+      });
+    }
 
-  return ts.factory.createTypeAliasDeclaration(
-    paths.modifiers,
-    newIdentifier,
-    paths.typeParameters,
-    wrapPathsType(newType, context),
-  );
+    const type = transformPathItem(pathItem, pathName, ['paths', rawPathName], context);
+    return type && typeMember({ key: stringLiteral(pathName), type });
+  });
+
+  context.dependencies.httpImports.add('HttpSchema');
+
+  return referenceType('HttpSchema', [objectType(pathMembers.filter(isDefined))]);
 }

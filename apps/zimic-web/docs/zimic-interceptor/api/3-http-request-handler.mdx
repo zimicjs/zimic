@@ -9,7 +9,7 @@ import TabItem from '@theme/TabItem';
 
 # `HttpRequestHandler`
 
-An HTTP request handler to declare responses for intercepted requests. When multiple handlers of the same interceptor match the same method and path, the _last_ handler created with [`interceptor.<method>(path)`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#declaring-request-handlers) will be used.
+An HTTP request handler to declare responses for intercepted requests. When multiple handlers match the same request, the _last_ handler created with [`interceptor.<method>(path)`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#declaring-request-handlers) will be used, even if the handlers belong to different interceptors or were declared with different paths.
 
 :::tip TIP: <span>Awaiting remote `HttpRequestHandler` operations</span>
 
@@ -317,7 +317,7 @@ await handler.checkTimes();
 
 ## `handler.clear()`
 
-Clears any response declared with [`handler.respond()`](#handlerrespond), restrictions declared with [`handler.with()`](#handlerwith), and intercepted requests, making the handler stop matching requests. The next handler, created before this one, that matches the same method and path will be used if present. If not, the requests of the method and path will not be intercepted.
+Clears any response declared with [`handler.respond()`](#handlerrespond), restrictions declared with [`handler.with()`](#handlerwith), and intercepted requests, making the handler stop matching requests. The next handler, created before this one, that matches the request will be used if present. If not, the request will be unhandled.
 
 To make the handler match requests again, register a new response with [`handler.respond()`](#handlerrespond).
 

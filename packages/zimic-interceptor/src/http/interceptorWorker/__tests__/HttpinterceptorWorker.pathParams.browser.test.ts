@@ -5,10 +5,10 @@ import { getBrowserBaseURL } from '@tests/utils/interceptors';
 import testMatrix from './shared/matrix';
 import { declarePathParamsHttpInterceptorWorkerTests } from './shared/pathParams';
 
-describe.each(testMatrix)('HttpInterceptorWorker methods (browser, $type)', (defaultWorkerOptions) => {
+describe.each(testMatrix)('HttpInterceptorWorker methods (browser, $type)', ({ type }) => {
   declarePathParamsHttpInterceptorWorkerTests({
     platform: 'browser',
-    defaultWorkerOptions,
+    type,
     getBaseURL: getBrowserBaseURL,
   });
 });

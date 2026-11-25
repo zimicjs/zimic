@@ -151,6 +151,7 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
       id: parsedMessage.id,
       channel: parsedMessage.channel,
       data: parsedMessage.data,
+      expectsReply: parsedMessage.expectsReply,
     };
   }
 
@@ -162,7 +163,8 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
       typeof message.id === 'string' &&
       'channel' in message &&
       typeof message.channel === 'string' &&
-      (!('requestId' in message) || typeof message.requestId === 'string')
+      (!('requestId' in message) || typeof message.requestId === 'string') &&
+      (!('expectsReply' in message) || typeof message.expectsReply === 'boolean')
     );
   }
 
@@ -199,7 +201,10 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
 
     const listenerPromises = Array.from(listeners, async (listener) => {
       const replyData = await listener(message, socket);
-      this.reply(message, replyData, { sockets: [socket] });
+
+      if (message.expectsReply) {
+        this.reply(message, replyData, { sockets: [socket] });
+      }
     });
 
     await Promise.all(listenerPromises);
@@ -242,7 +247,10 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
       sockets?: Collection<ClientSocket>;
     } = {},
   ) {
-    const request = this.createEventMessage(channel, requestData);
+    const request: WebSocketEventMessage<Schema, Channel> = {
+      ...this.createEventMessage(channel, requestData),
+      expectsReply: true,
+    };
     this.sendMessage(request, options.sockets);
 
     const response = await this.waitForReply(channel, request, options.sockets);
@@ -266,8 +274,11 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
         reject(timeoutError);
       }, this.messageTimeout);
 
-      const replyListener = this.onChannel('reply', channel, (message) => {
-        if (message.requestId !== request.id) {
+      const targetSockets = new Set(sockets);
+
+      const replyListener = this.onChannel('reply', channel, (message, socket) => {
+        // Request IDs are not secret, so a reply only counts if it comes from a socket the request was sent to.
+        if (message.requestId !== request.id || !targetSockets.has(socket)) {
           return;
         }
 

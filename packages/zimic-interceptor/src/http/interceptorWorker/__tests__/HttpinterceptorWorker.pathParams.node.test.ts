@@ -6,12 +6,12 @@ import { createInternalInterceptorServer } from '@tests/utils/interceptorServers
 import testMatrix from './shared/matrix';
 import { declarePathParamsHttpInterceptorWorkerTests } from './shared/pathParams';
 
-describe.each(testMatrix)('HttpInterceptorWorker path params (node, $type)', (defaultWorkerOptions) => {
+describe.each(testMatrix)('HttpInterceptorWorker path params (node, $type)', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   declarePathParamsHttpInterceptorWorkerTests({
     platform: 'node',
-    defaultWorkerOptions,
+    type,
     startServer: () => server.start(),
     stopServer: () => server.stop(),
     getBaseURL: (type) => getNodeBaseURL(type, server),

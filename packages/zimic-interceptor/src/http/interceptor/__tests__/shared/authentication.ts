@@ -1,4 +1,5 @@
-import { beforeEach, expect, it } from 'vitest';
+import { createInvalidTypeOfCases, ValidationError } from '@zimic/utils/validation';
+import { beforeEach, expect, it, vi } from 'vitest';
 
 import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
 import { usingIgnoredConsole } from '@tests/utils/console';
@@ -6,7 +7,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import RunningHttpInterceptorError from '../../errors/RunningHttpInterceptorError';
 import { createHttpInterceptor } from '../../factory';
-import { HttpInterceptorPlatform } from '../../types/options';
+import { HttpInterceptorAuthOptions, HttpInterceptorPlatform } from '../../types/options';
 
 interface SharedAuthenticationHttpInterceptorTestsOptions {
   platform: HttpInterceptorPlatform;
@@ -209,4 +210,40 @@ export function declareAuthenticationHttpInterceptorTests(options: SharedAuthent
       await interceptor.stop();
     }
   });
+
+  const invalidAuths = createInvalidTypeOfCases('object', { optional: true });
+
+  it.each(invalidAuths)(
+    'should throw an error if provided an authentication option that is not an object ($label)',
+    async ({ value, actualType }) => {
+      const handler = vi.fn();
+
+      // @ts-expect-error Forcing an invalid authentication option type.
+      const invalidAuth: HttpInterceptorAuthOptions = value;
+
+      await expect(async () => {
+        await usingHttpInterceptor({ type: 'remote', baseURL: serverURL, auth: invalidAuth }, handler);
+      }).rejects.toThrow(new ValidationError(`Expected options.auth to be object, but got ${actualType}.`));
+
+      expect(handler).not.toHaveBeenCalled();
+    },
+  );
+
+  const invalidTokens = createInvalidTypeOfCases('string');
+
+  it.each(invalidTokens)(
+    'should throw an error if provided an authentication token that is not a string ($label)',
+    async ({ value, actualType }) => {
+      const handler = vi.fn();
+
+      // @ts-expect-error Forcing an invalid authentication token type.
+      const invalidToken: string = value;
+
+      await expect(async () => {
+        await usingHttpInterceptor({ type: 'remote', baseURL: serverURL, auth: { token: invalidToken } }, handler);
+      }).rejects.toThrow(new ValidationError(`Expected options.auth.token to be string, but got ${actualType}.`));
+
+      expect(handler).not.toHaveBeenCalled();
+    },
+  );
 }

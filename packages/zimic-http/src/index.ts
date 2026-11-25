@@ -3,7 +3,7 @@ export type { JSONValue, JSONSerialized } from '@zimic/utils/types';
 export { HttpFormData } from '@zimic/utils/http';
 export type { HttpFormDataSchema, HttpFormDataSchemaName, HttpFormDataSerialized } from '@zimic/utils/http';
 
-export type { HttpPathParamsSchema, HttpPathParamsSerialized } from '@zimic/utils/http';
+export type { HttpPathParamsSchema, HttpPathParamsSerialized, AllowAnyStringInPathParams } from '@zimic/utils/http';
 
 export { HttpHeaders } from '@zimic/utils/http';
 export type {
@@ -49,7 +49,6 @@ export type {
   HttpMethodSchema,
   HttpMethodsSchema,
   HttpSchemaMethod,
-  AllowAnyStringInPathParams,
   LiteralHttpSchemaPathFromNonLiteral,
   HttpSchemaPath,
   InferPathParams,

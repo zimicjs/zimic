@@ -1,6 +1,6 @@
 {
   "name": "@zimic/interceptor",
-  "description": "Next-gen TypeScript-first HTTP intercepting and mocking",
+  "description": "Next-gen TypeScript-first HTTP and WebSocket intercepting and mocking",
   "keywords": [
     "zimic",
     "typescript",
@@ -9,12 +9,14 @@
     "validation",
     "inference",
     "http",
+    "websocket",
+    "ws",
     "interceptor",
     "mock",
     "api",
     "static"
   ],
-  "version": "1.5.2-canary.14",
+  "version": "1.6.0-canary.10",
   "homepage": "https://zimic.dev/docs/interceptor",
   "repository": {
     "type": "git",
@@ -35,7 +37,7 @@
     "provenance": true
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.15.0"
   },
   "license": "MIT",
   "files": [
@@ -48,6 +50,7 @@
     "!src/**/*.test.ts",
     "bin",
     "dist",
+    "experimental",
     "index.d.ts",
     "http.d.ts",
     "server.d.ts"
@@ -72,6 +75,18 @@
       "require": "./dist/http.js",
       "default": "./dist/http.js"
     },
+    "./experimental/ws": {
+      "types": "./experimental/ws.d.ts",
+      "import": "./dist/experimental/ws.mjs",
+      "require": "./dist/experimental/ws.js",
+      "default": "./dist/experimental/ws.js"
+    },
+    "./experimental/ws/socket.io": {
+      "types": "./experimental/ws/socket.io.d.ts",
+      "import": "./dist/experimental/ws/socket.io.mjs",
+      "require": "./dist/experimental/ws/socket.io.js",
+      "default": "./dist/experimental/ws/socket.io.js"
+    },
     "./server": {
       "types": "./server.d.ts",
       "import": "./dist/server.mjs",
@@ -88,8 +103,8 @@
     "dev": "tsup --watch",
     "cli": "node --enable-source-maps ./dist/cli.js",
     "build": "tsup",
-    "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
-    "lint:turbo": "pnpm lint . --max-warnings 0",
+    "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --max-warnings 0 --fix",
+    "lint:turbo": "pnpm lint .",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write",
@@ -99,7 +114,7 @@
     "postinstall": "node --enable-source-maps -e \"try{require('./dist/scripts/postinstall')}catch(error){console.error(error)}\""
   },
   "dependencies": {
-    "@whatwg-node/server": "0.13.0",
+    "@whatwg-node/server": "0.13.2",
     "isomorphic-ws": "5.0.0",
     "msw": "2.15.0",
     "picocolors": "^1.1.1",
@@ -108,7 +123,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "@types/ws": "^8.18.2",
     "@types/yargs": "^17.0.35",
     "@typescript/native": "npm:typescript@^7.0.2",
@@ -120,20 +135,36 @@
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "concurrently": "^10.0.6",
-    "dotenv-cli": "^11.0.0",
-    "eslint": "^10.12.0",
+    "dotenv-cli": "^11.1.0",
+    "engine.io-parser": "^5.2.3",
+    "eslint": "^10.14.0",
     "playwright": "^1.64.1",
+    "socket.io-client": "^4.8.4",
+    "socket.io-msgpack-parser": "^3.0.2",
+    "socket.io-parser": "^4.2.7",
     "tsup": "^9.0.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "vite": "^8.3.5",
     "vitest": "^5.0.5"
   },
   "peerDependencies": {
     "@zimic/http": "workspace:^1.2.0",
     "@zimic/ws": "workspace:^0.2.0-canary.0",
+    "engine.io-parser": "^5.0.0",
+    "socket.io-parser": "^4.2.5",
     "typescript": "^5.0.0 || ^6.0.0 || ^7.0.0"
   },
   "peerDependenciesMeta": {
+    "@zimic/http": {
+      "optional": true
+    },
     "@zimic/ws": {
+      "optional": true
+    },
+    "engine.io-parser": {
+      "optional": true
+    },
+    "socket.io-parser": {
       "optional": true
     },
     "typescript": {
