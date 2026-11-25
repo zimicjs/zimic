@@ -50,7 +50,7 @@ If you decide to use mocked requests, here are some mocking libraries to get you
 
 With `@zimic/interceptor`, you inherit the same benefits as with `@zimic/fetch`, where all requests and responses are typed with a [centralized schema](/docs/zimic-http/guides/1-schemas.md) describing the structure of the endpoints. This directly reduces the drawbacks of mocking we mentioned earlier, keeping your tests realistic and up to date with the API with type safety and developer experience.
 
-When creating your [interceptors](/docs/zimic-interceptor/2-getting-started.mdx#your-first-http-interceptor), you can import the same schema you used in `@zimic/fetch`. Then, `@zimic/interceptor` will type your mocks by default. As the API evolves, updating the schema automatically flags any affected mocks with type errors, so you can easily spot which tests need to be updated.
+When creating your [interceptors](/docs/zimic-interceptor/2-getting-started.mdx#http-your-first-interceptor), you can import the same schema you used in `@zimic/fetch`. Then, `@zimic/interceptor` will type your mocks by default. As the API evolves, updating the schema automatically flags any affected mocks with type errors, so you can easily spot which tests need to be updated.
 
 ```ts
 import { HttpSchema } from '@zimic/http';
