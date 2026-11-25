@@ -99,9 +99,22 @@ interface WebSocketClientOpenAttempt {
   opening: Promise<unknown>;
   // The outcome of the `open()` that started the attempt, which later calls join.
   opened: Promise<void>;
-  closing: Promise<CloseEvent>;
+  closing: Promise<Event>;
   // A later `open()` starts a new attempt instead of joining an abandoned one.
   isAbandoned: boolean;
+}
+
+// Uses a message channel because a microtask can run between the `error` and `close` listeners of one task, and timers
+// may be faked by callers.
+async function waitForNextTask() {
+  const channel = new MessageChannel();
+
+  await new Promise((resolve) => {
+    channel.port1.onmessage = resolve;
+    channel.port2.postMessage(undefined);
+  });
+
+  channel.port1.close();
 }
 
 /** @see {@link https://zimic.dev/docs/ws/api/websocket-client `WebSocketClient` API reference} */
@@ -299,6 +312,20 @@ export class WebSocketClient<
       opened,
       closing: new Promise((resolve) => {
         socket.addEventListener('close', resolve, { once: true });
+
+        // Node 22 dispatches only `error`, without `close`, when a connection fails before opening. Other runtimes
+        // dispatch `close` in the same task, so the attempt settles on `error` only if no `close` followed it. Remove
+        // this listener when Node 22 support ends.
+        async function resolveIfCloseDoesNotFollow(event: Event) {
+          await waitForNextTask();
+          resolve(event);
+        }
+
+        socket.addEventListener('error', resolveIfCloseDoesNotFollow, { once: true });
+
+        socket.addEventListener('open', () => socket.removeEventListener('error', resolveIfCloseDoesNotFollow), {
+          once: true,
+        });
       }),
       isAbandoned: false,
     };
@@ -307,15 +334,11 @@ export class WebSocketClient<
 
     // Some runtimes leave a socket closed while connecting in the `CLOSING` state after its `close` event, so the
     // client stops reading the state of the attempt once its socket closes.
-    socket.addEventListener(
-      'close',
-      () => {
-        if (this.openAttempt === attempt) {
-          this.openAttempt = undefined;
-        }
-      },
-      { once: true },
-    );
+    void attempt.closing.then(() => {
+      if (this.openAttempt === attempt) {
+        this.openAttempt = undefined;
+      }
+    });
 
     void this.adoptOpenAttemptSocket(attempt, timedOut)
       .finally(() => {

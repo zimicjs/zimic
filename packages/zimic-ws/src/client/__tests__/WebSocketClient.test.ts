@@ -17,6 +17,12 @@ import { openWebSocketClient } from '../utils/lifecycle';
 import { WebSocketClient } from '../WebSocketClient';
 import { delayWebSocketClose, delayWebSocketListenerTrigger } from './utils';
 
+const nodeMajorVersion = typeof window === 'undefined' ? Number(process.versions.node.split('.')[0]) : null;
+
+// Node 22's native WebSocket dispatches only `error` when a connection fails before opening. Browsers and Node 24+
+// follow the spec and dispatch `error`, then `close`. Remove this check when Node 22 support ends.
+const isCloseDispatchedOnFailedConnection = nodeMajorVersion === null || nodeMajorVersion >= 24;
+
 describe('WebSocketClient', () => {
   type Schema = WebSocketSchema<{
     '/': {
@@ -113,6 +119,25 @@ describe('WebSocketClient', () => {
       await firstClosePromise;
       await expect(openPromise).rejects.toHaveProperty('type', 'error');
     });
+
+    /* istanbul ignore else -- @preserve
+     * Ignoring because each test run covers only the behavior of its Node.js version. */
+    // Node 22 dispatches no close event for a connection closed before opening.
+    if (isCloseDispatchedOnFailedConnection) {
+      it('should dispatch the close event before closing finishes if closed while connecting', async () => {
+        webSocketClient = new WebSocketClient<Schema>(baseURL);
+
+        const closeListener = vi.fn();
+        webSocketClient.addEventListener('close', closeListener);
+
+        const openPromise = webSocketClient.open();
+        await webSocketClient.close();
+
+        expect(closeListener).toHaveBeenCalledTimes(1);
+
+        await expect(openPromise).rejects.toHaveProperty('type', 'error');
+      });
+    }
 
     it('should fail opening if closed from an open listener', async () => {
       webSocketClient = new WebSocketClient<Schema>(baseURL);
