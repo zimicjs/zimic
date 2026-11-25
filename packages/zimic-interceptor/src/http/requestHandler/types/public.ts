@@ -52,7 +52,7 @@ export interface LocalHttpRequestHandler<
 > extends HttpRequestHandler<Schema, Method, Path> {
   /**
    * @readonly
-   * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#httprequesthandler `HttpRequestHandler` API reference}
+   * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler `HttpRequestHandler` API reference}
    */
   get type(): 'local';
 
@@ -86,7 +86,7 @@ export interface LocalHttpRequestHandler<
   get requests(): readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[];
 }
 
-/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#httprequesthandler `HttpRequestHandler` API reference} */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler `HttpRequestHandler` API reference} */
 export interface SyncedRemoteHttpRequestHandler<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
@@ -95,7 +95,7 @@ export interface SyncedRemoteHttpRequestHandler<
 > extends HttpRequestHandler<Schema, Method, Path> {
   /**
    * @readonly
-   * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#httprequesthandler `HttpRequestHandler` API reference}
+   * @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler `HttpRequestHandler` API reference}
    */
   get type(): 'remote';
 
@@ -138,14 +138,14 @@ export interface SyncedRemoteHttpRequestHandler<
   get requests(): readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[];
 }
 
-/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#httprequesthandler `HttpRequestHandler` API reference} */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler `HttpRequestHandler` API reference} */
 export interface PendingRemoteHttpRequestHandler<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
   StatusCode extends HttpStatusCode = never,
 > extends SyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode> {
-  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#httprequesthandler `HttpRequestHandler` API reference} */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler `HttpRequestHandler` API reference} */
   then: <FulfilledResult = SyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>, RejectedResult = never>(
     onFulfilled?:
       | ((
@@ -155,18 +155,18 @@ export interface PendingRemoteHttpRequestHandler<
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ) => Promise<FulfilledResult | RejectedResult>;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#httprequesthandler `HttpRequestHandler` API reference} */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler `HttpRequestHandler` API reference} */
   catch: <RejectedResult = never>(
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ) => Promise<SyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode> | RejectedResult>;
 
-  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#httprequesthandler `HttpRequestHandler` API reference} */
+  /** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler `HttpRequestHandler` API reference} */
   finally: (
     onFinally?: (() => void) | null,
   ) => Promise<SyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>>;
 }
 
-/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler#httprequesthandler `HttpRequestHandler` API reference} */
+/** @see {@link https://zimic.dev/docs/interceptor/api/http-request-handler `HttpRequestHandler` API reference} */
 export type RemoteHttpRequestHandler<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,

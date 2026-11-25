@@ -35,7 +35,7 @@ interface BaseWebSocketSchema {
   [path: string]: WebSocketPathSchema;
 }
 
-/** @see {@link https://zimic.dev/docs/ws/api/websocket-schema#websocketschema `WebSocketSchema` API reference} */
+/** @see {@link https://zimic.dev/docs/ws/api/websocket-schema `WebSocketSchema` API reference} */
 export type WebSocketSchema<Schema extends BaseWebSocketSchema = BaseWebSocketSchema> = Branded<
   Schema,
   'WebSocketSchema'
