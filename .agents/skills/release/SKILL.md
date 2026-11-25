@@ -36,8 +36,8 @@ For each selected project:
 
 3. For `zimic-web`, choose what the release ships. Merging into `zimic-web@<major>` publishes its docs to Context7 right away, so they must not document unpublished package behavior outside this session:
    1. Hold `zimic-web` if `branch` in `git show '<release-head>:context7.json'` differs from the long-lived branch, because Context7 reads the branch named there. A major release needs `canary` to name the new branch first.
-   2. Read `git diff '<branch-base>' '<release-head>' -- apps/zimic-web context7.json` hunk by hunk, with `git log --oneline '<branch-base>..<release-head>' -- apps/zimic-web context7.json` for context. Assign each hunk to the packages whose behavior it documents, from the commit scope, the docs section, and the package files the commit changes. One commit can document several packages, such as `fix(fetch,interceptor)`. A package is unpublished when its `canary` version has a pre-release suffix and `npm view '<package>@<stable-version>' version` prints nothing.
-   3. Mark each hunk that documents an unpublished package the user did not select. If no hunk is marked, the head is `canary`. Otherwise, show the user the unmarked hunks grouped by package, ask which to ship, and plan the head as a new branch `release/zimic-web-<stable-version>` with only those hunks. Never ship a marked hunk, and never name the head `zimic-web@*`, because PRs into those branches start releases.
+   2. Read the whole-tree `git diff '<branch-base>' '<release-head>'` hunk by hunk, with `git log --oneline '<branch-base>..<release-head>'` for context. Assign each hunk to the packages whose behavior it changes or documents, from the commit scope, the docs section, and the package files the commit changes: package source, docs, `context7.json` rules, and package `"version"` lines. One commit can touch several packages, such as `fix(fetch,interceptor)`. A package is unpublished when its `canary` version has a pre-release suffix and `npm view '<package>@<stable-version>' version` prints nothing.
+   3. Mark each hunk that belongs to or documents an unpublished package the user did not select. Every other hunk ships, including workflows, actions, root configuration, and website code, because the release workflow runs the actions of the long-lived branch and resolves the `"version"` conflict on merge-back only with the current ones. Keep `pnpm-lock.yaml` consistent with the shipped manifests: ship a manifest's dependency hunks with their lockfile hunks, or mark both. If no hunk is marked, the head is `canary`. Otherwise, plan the head as a new branch `release/zimic-web-<stable-version>` with every unmarked hunk. Never ship a marked hunk, and never name the head `zimic-web@*`, because PRs into those branches start releases.
    4. Record each selected unpublished package documented by a shipped hunk as one the website waits for.
 
 4. Look for an open release PR to reuse:
@@ -75,7 +75,7 @@ For each project:
 
 1. Create a missing long-lived branch with `git push origin '<branch-base>^{commit}:refs/heads/<branch>'`.
 2. For a picked `zimic-web` head, build it from the branch base without touching the working tree:
-   1. Write the selected hunks of `git diff --binary '<branch-base>' '<release-head>' -- apps/zimic-web context7.json` to `./tmp/release-zimic-web-<stable-version>.patch`. Always include the `"version"` hunk of `apps/zimic-web/package.json`, so the `stable` label strips the same pre-release suffix, and the `branch` hunk of `context7.json`, if any.
+   1. Write the unmarked hunks of `git diff --binary '<branch-base>' '<release-head>'` to `./tmp/release-zimic-web-<stable-version>.patch`. Always include the `"version"` hunk of `apps/zimic-web/package.json`, so the `stable` label strips the same pre-release suffix, and the `branch` hunk of `context7.json`, if any.
    2. Create the commit in one shell command, and hold `zimic-web` if `git apply` fails:
 
       ```bash
