@@ -1,8 +1,10 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
+import color from 'picocolors';
 import type { PacketType } from 'socket.io-parser';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import {
   usingSocket,
@@ -378,11 +380,23 @@ export function declareNamespacesSocketIOProtocolTests(options: SharedSocketIOPr
     });
 
     it('should fail with connect_error the connections to a namespace without an interceptor', async () => {
-      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
-        await usingSocket(baseURL, { transports, nsp: '/unknown' }, async (socket) => {
-          await expect(waitForSocketConnection(socket)).rejects.toThrow('Invalid namespace');
-          expect(interceptor.clients).toHaveLength(0);
+      await usingIgnoredConsole(['error'], async (console) => {
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+          await usingSocket(baseURL, { transports, nsp: '/unknown' }, async (socket) => {
+            await expect(waitForSocketConnection(socket)).rejects.toThrow('Invalid namespace');
+            expect(interceptor.clients).toHaveLength(0);
+          });
         });
+
+        expect(console.error).toHaveBeenCalledTimes(1);
+        expect(console.error).toHaveBeenCalledWith(
+          color.cyan('[@zimic/interceptor]'),
+          `Error: Socket.IO namespace connection was not handled and was ${color.red('rejected')}.\n\n `,
+          // Polling clients add a random cache-busting parameter to the URL.
+          expect.stringMatching(/^ws:\/\/.+\/socket\.io\/\?EIO=4&transport=(websocket|polling&t=[\w-]+)$/),
+          '\n    Namespace: /unknown',
+          '\n\nLearn more: https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages#unhandled-connections',
+        );
       });
     });
   });

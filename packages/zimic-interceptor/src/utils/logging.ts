@@ -134,6 +134,15 @@ export async function logUnhandledConnectionError(url: string, protocols: string
   );
 }
 
+export function logUnhandledSocketIONamespaceConnectionError(url: string, namespace: string) {
+  logger.error(
+    `Error: Socket.IO namespace connection was not handled and was ${color.red('rejected')}.\n\n `,
+    url,
+    `\n    Namespace: ${namespace}`,
+    '\n\nLearn more: https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages#unhandled-connections',
+  );
+}
+
 export function logUnexpectedServerDisconnection(serverURL: URL) {
   logger.warn(
     `Warning: The connection to the interceptor server ${serverURL.origin} was closed. ` +
