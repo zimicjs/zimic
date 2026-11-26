@@ -1702,6 +1702,12 @@ describe('Interceptor server', () => {
             : { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
         });
 
+        const closedClientIds: string[] = [];
+
+        worker.onChannel('event', 'interceptors/ws/clients/close', ({ data }) => {
+          closedClientIds.push(data.clientId);
+        });
+
         const otherClient = new WebSocketClient<ChatSchema>(baseURL);
 
         await usingIgnoredConsole(['error'], async (console) => {
@@ -1722,6 +1728,14 @@ describe('Interceptor server', () => {
 
             expect(console.error).toHaveBeenCalledTimes(1);
             expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+
+            await worker.request('interceptors/ws/workers/reset', {
+              interceptors: [{ id: crypto.randomUUID(), baseURL }],
+            });
+
+            // The server notifies the worker in the same task that refuses the client, so this later reply on the
+            // worker socket arrives after every notification for the client.
+            expect(closedClientIds).toEqual([requestedClientIds[0]]);
 
             const receivedMessages = collectWebSocketClientMessages(otherClient);
 
