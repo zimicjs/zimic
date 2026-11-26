@@ -8,6 +8,7 @@ import { usingHttpInterceptor, usingWebSocketInterceptor } from '@tests/utils/in
 import { promiseIfRemote } from '@tests/utils/promises';
 import { usingSocket, waitForSocketConnection } from '@tests/utils/socketIO';
 import {
+  expectWebSocketConnectionToBeRefused,
   usingWebSocketClient,
   waitForWebSocketClientClose,
   waitForWebSocketClientMessage,
@@ -91,6 +92,14 @@ export function declareRoutingSocketIOProtocolTests(options: SharedSocketIOProto
         });
       });
     });
+
+    describe('Without running interceptors', () => {
+      it('should fail with connect_error the WebSocket clients', async () => {
+        await usingSocket(baseURL, { transports: [WebSocketTransport] }, async (socket) => {
+          await expect(waitForSocketConnection(socket)).rejects.toThrow('websocket error');
+        });
+      });
+    });
   }
 
   describe('WebSocket connections outside the Socket.IO path', () => {
@@ -134,21 +143,10 @@ export function declareRoutingSocketIOProtocolTests(options: SharedSocketIOProto
     // Local interceptors let these connections pass through to the network, but the interceptor server is the endpoint
     // of remote connections.
     if (type === 'remote') {
-      it('should close connections to other paths under the base URL without other interceptors', async () => {
+      it('should refuse connections to other paths under the base URL without other interceptors', async () => {
         await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
-          const socket = new WebSocket(`${baseURL}/chat`);
-
-          try {
-            const closeEvent = await new Promise<CloseEvent>((resolve) => {
-              socket.addEventListener('close', resolve, { once: true });
-            });
-
-            expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-            expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
-            expect(interceptor.clients).toHaveLength(0);
-          } finally {
-            socket.close();
-          }
+          await expectWebSocketConnectionToBeRefused(`${baseURL}/chat`);
+          expect(interceptor.clients).toHaveLength(0);
         });
       });
     }

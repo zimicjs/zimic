@@ -85,10 +85,10 @@ interface UserWebSocketConnection {
   isClaimedByProtocol: boolean;
 }
 
-interface UserWebSocketConnectionClosure {
-  code: number;
-  reason?: string;
-}
+// A connection that cannot be set up is refused, as HTTP requests with no interceptor to handle them fail. A
+// connection whose last holder lets it go during setup completes its handshake and closes right after, so the client
+// receives the messages and closes its connection effects sent.
+type PendingUserWebSocketConnectionTermination = 'refuse' | 'close';
 
 // A connection is pending from its upgrade request until its handshake completes, so it has no socket yet.
 interface PendingUserWebSocketConnection extends UserWebSocketConnection {
@@ -96,25 +96,9 @@ interface PendingUserWebSocketConnection extends UserWebSocketConnection {
   // Server messages and closes the worker sends before the handshake completes, such as from connection effects, are
   // delivered in order once it does.
   queuedDeliveries: ((socket: Socket) => void)[];
-  // Set when the connection can no longer be activated, such as after its last holder lets it go. Its handshake still
-  // completes and the connection closes right after, so the client receives the close code and reason.
-  closure?: UserWebSocketConnectionClosure;
+  // Set when the connection can no longer be activated.
+  termination?: PendingUserWebSocketConnectionTermination;
 }
-
-const WEB_SOCKET_CLOSE_REASONS = Object.freeze({
-  CONNECTION_SETUP_FAILED: 'Could not connect to the WebSocket interceptor.',
-  NO_REGISTERED_INTERCEPTOR: 'No WebSocket interceptor is registered for this URL.',
-} as const);
-
-const CONNECTION_SETUP_FAILURE_CLOSURE: UserWebSocketConnectionClosure = Object.freeze({
-  code: WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR,
-  reason: WEB_SOCKET_CLOSE_REASONS.CONNECTION_SETUP_FAILED,
-});
-
-const NO_REGISTERED_INTERCEPTOR_CLOSURE: UserWebSocketConnectionClosure = Object.freeze({
-  code: WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR,
-  reason: WEB_SOCKET_CLOSE_REASONS.NO_REGISTERED_INTERCEPTOR,
-});
 
 interface WebSocketInterceptorServerRuntimeOptions {
   webSocketServer: WebSocketServer<InterceptorServerWebSocketSchema>;
@@ -197,7 +181,7 @@ class WebSocketInterceptorServerRuntime {
 
   removeWorkerBySocket(socket: Socket) {
     for (const interceptor of this.webSocketWorkersBySocket.get(socket)?.interceptors ?? []) {
-      this.detachWebSocketInterceptorConnections(interceptor, { pendingClosure: CONNECTION_SETUP_FAILURE_CLOSURE });
+      this.detachWebSocketInterceptorConnections(interceptor, { pendingTermination: 'refuse' });
     }
 
     this.closeClaimedConnections(socket);
@@ -220,7 +204,7 @@ class WebSocketInterceptorServerRuntime {
   // holder lets it go, whether or not the connection is still being set up.
   private detachWebSocketInterceptorConnections(
     interceptor: RegisteredWebSocketInterceptor,
-    options: { pendingClosure?: UserWebSocketConnectionClosure } = {},
+    options: { pendingTermination?: PendingUserWebSocketConnectionTermination } = {},
   ) {
     for (const userConnection of this.pendingUserWebSocketConnections.values()) {
       if (!userConnection.isClaimedByProtocol && userConnection.holders.includes(interceptor)) {
@@ -233,7 +217,7 @@ class WebSocketInterceptorServerRuntime {
               request.data.clientId === userConnection.clientId,
           });
 
-          userConnection.closure ??= options.pendingClosure ?? { code: WEB_SOCKET_CLOSE_CODES.DEFAULT };
+          userConnection.termination ??= options.pendingTermination ?? 'close';
         }
       }
     }
@@ -251,13 +235,13 @@ class WebSocketInterceptorServerRuntime {
   }
 
   // Resolves with whether to complete the handshake of a user connection. The worker decides it first, so a connection
-  // its handlers reject is refused without opening. Connections that cannot be set up complete the handshake and then
-  // close, which tells the client why.
+  // its handlers reject is refused without opening. Connections with no running interceptor to hold them are refused as
+  // well, as HTTP requests in the same case fail.
   verifyUpgrade = async (request: IncomingMessage) => {
     const connectionTarget = this.findConnectionTargetByRequest(request);
 
     if (!connectionTarget) {
-      return true;
+      return false;
     }
 
     const connection: PendingUserWebSocketConnection = {
@@ -311,9 +295,9 @@ class WebSocketInterceptorServerRuntime {
         connection.holders = connection.holders.filter((holder) => reply.acceptedInterceptorIds.includes(holder.id));
 
         // Local interceptors let connections that no holder accepts pass through to the network, but the interceptor
-        // server is the endpoint of remote connections, so it closes them as if no interceptor were registered.
+        // server is the endpoint of remote connections, so it refuses them as if no interceptor were running.
         if (connection.holders.length === 0) {
-          connection.closure ??= NO_REGISTERED_INTERCEPTOR_CLOSURE;
+          connection.termination ??= 'refuse';
         }
       }
     } catch (error) {
@@ -322,30 +306,45 @@ class WebSocketInterceptorServerRuntime {
         console.error(error);
       }
 
-      connection.closure ??= CONNECTION_SETUP_FAILURE_CLOSURE;
+      connection.termination ??= 'refuse';
     }
 
+    // A client that goes away has already removed the pending connection and told the worker to forget it.
     const isClientStillWaiting = this.pendingUserWebSocketConnections.get(request) === connection;
-    return isClientStillWaiting;
+
+    if (!isClientStillWaiting) {
+      return false;
+    }
+
+    if (connection.termination === 'refuse') {
+      this.removePendingUserWebSocketConnection(request, connection);
+
+      // Some holders may have accepted the connection, so the worker is told to forget the client.
+      this.notifyUserWebSocketClose(connection);
+      return false;
+    }
+
+    return true;
   };
 
   handleConnection = (socket: Socket, request: IncomingMessage) => {
     const connection = this.pendingUserWebSocketConnections.get(request);
 
+    /* istanbul ignore if -- @preserve
+     * Handshakes complete only for connections still pending when their upgrade is verified, and no socket event can
+     * remove them before this runs. */
     if (!connection) {
-      socket.resume();
-      socket.close(NO_REGISTERED_INTERCEPTOR_CLOSURE.code, NO_REGISTERED_INTERCEPTOR_CLOSURE.reason);
-      return;
+      throw new Error('No pending WebSocket connection found for the completed handshake.');
     }
 
     this.removePendingUserWebSocketConnection(request, connection);
 
-    // A worker that disconnects or lets the connection go before this point has already set its closure, and a client
-    // that goes away has already removed the pending connection.
-    if (connection.closure) {
+    // Refused connections never complete their handshake, so a termination here comes from the last holder letting the
+    // connection go during setup.
+    if (connection.termination) {
       socket.resume();
       this.deliverQueuedUserWebSocketDeliveries(socket, connection);
-      socket.close(connection.closure.code, connection.closure.reason);
+      socket.close(WEB_SOCKET_CLOSE_CODES.DEFAULT);
 
       // Some holders may have accepted the connection, so the worker is told to forget the client.
       this.notifyUserWebSocketClose(connection);
