@@ -1,4 +1,5 @@
-import { waitFor } from '@zimic/utils/time';
+import { waitFor, waitForNot } from '@zimic/utils/time';
+import { joinURL } from '@zimic/utils/url';
 import { createInvalidTypeOfCases, ValidationError } from '@zimic/utils/validation';
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -273,8 +274,58 @@ export function declareUnhandledMessageLoggingWebSocketInterceptorTests(
     },
   );
 
-  // No WebSocket counterparts for the cases without interceptors or without an interceptor matching the base URL:
-  // connections only open through a running interceptor with a matching base URL, so no message reaches one otherwise.
+  it('should not log unhandled messages when no interceptors exist', async () => {
+    await usingIgnoredConsole(['warn', 'error'], async (console) => {
+      // Depending on the mode, the interceptor server closes the connection, or the connection reaches the network,
+      // where no WebSocket server accepts it. MSW does not reliably close bypassed connections, so wait for no log
+      // instead of the close.
+      await Promise.allSettled([
+        usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+          const message: Message = { type: 'client', index: 1 };
+          client.send(JSON.stringify(message));
+
+          await waitForNot(() => {
+            expect(console.warn).toHaveBeenCalled();
+          });
+        }),
+      ]);
+
+      expect(console.warn).toHaveBeenCalledTimes(0);
+      expect(console.error).toHaveBeenCalledTimes(0);
+    });
+  });
+
+  it('should not log unhandled messages when no interceptor matching the base URL of the message was found', async () => {
+    const otherBaseURL = joinURL(baseURL, 'other');
+
+    await usingWebSocketInterceptor<MessageSchema>(
+      { ...interceptorOptions, baseURL: otherBaseURL, onUnhandledMessage: { log: true } },
+      async (interceptor) => {
+        await usingIgnoredConsole(['warn', 'error'], async (console) => {
+          expect(baseURL.startsWith(otherBaseURL)).toBe(false);
+
+          // Depending on the mode, the interceptor server closes the connection, or the connection reaches the
+          // network, where no WebSocket server accepts it. MSW does not reliably close bypassed connections, so wait
+          // for no log instead of the close.
+          await Promise.allSettled([
+            usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
+              const message: Message = { type: 'client', index: 1 };
+              client.send(JSON.stringify(message));
+
+              await waitForNot(() => {
+                expect(console.warn).toHaveBeenCalled();
+              });
+            }),
+          ]);
+
+          expect(interceptor.clients).toHaveLength(0);
+
+          expect(console.warn).toHaveBeenCalledTimes(0);
+          expect(console.error).toHaveBeenCalledTimes(0);
+        });
+      },
+    );
+  });
 
   it('should not log unhandled messages when the matched interceptor is not running', async () => {
     await usingWebSocketInterceptor<MessageSchema>(
