@@ -15,7 +15,7 @@ WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. 
 
 :::
 
-A WebSocket connection handler to decide whether intercepted connection attempts are accepted or rejected, and to run effects when they open. When multiple handlers match the same connection, the _last_ handler created with [`interceptor.connection(path)`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#declaring-connection-handlers) decides it, even if the handlers belong to different interceptors holding the connection or were declared with different paths. Connections that match no handler are accepted.
+A WebSocket connection handler to decide whether intercepted connection attempts are accepted or rejected, and to run effects when they open. When multiple handlers match the same connection, the _last_ handler created with [`interceptor.connection(path)`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#declaring-connection-handlers) decides it, even if the handlers belong to different interceptors holding the connection or were declared with different paths. Connections that match no handler are accepted. A handler matches no connections until it has at least one declaration, as described in [`interceptor.connection()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorconnection).
 
 The examples on this page use the following [schema](/docs/zimic-ws/guides/1-schemas.md):
 

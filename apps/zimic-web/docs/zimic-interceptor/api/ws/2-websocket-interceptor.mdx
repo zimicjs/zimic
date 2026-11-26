@@ -197,6 +197,8 @@ This order spans the handlers of all interceptors holding the connection, regard
 
 Creates a [`WebSocketMessageHandler`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx) for client-to-server messages.
 
+A new handler matches no messages until it is declared with [`handler.with()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerwith), [`handler.from()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerfrom), [`handler.respond()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerrespond), [`handler.effect()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlereffect), [`handler.delay()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerdelay), or [`handler.times()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlertimes), so older handlers keep matching until then. To match every message without restricting or responding to it, declare `handler.times(0, Infinity)`.
+
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
 
@@ -247,6 +249,8 @@ The handlers are checked in the same [order as message handlers](#declaring-mess
 ### `interceptor.connection()`
 
 Creates a [`WebSocketConnectionHandler`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx) for connection attempts to the interceptor.
+
+A new handler matches no connections until it is declared with [`handler.with()`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerwith), [`handler.respond()`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerrespond), [`handler.effect()`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlereffect), [`handler.delay()`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerdelay), or [`handler.times()`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlertimes), so older handlers keep matching until then. An undeclared handler saves no connections. Connections that no other handler matches are still accepted. To match every connection without restricting or rejecting it, declare `handler.times(0, Infinity)`.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
