@@ -10,7 +10,7 @@ import { WebSocketCloseTimeoutError, WebSocketOpenTimeoutError } from '@zimic/ut
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { JSONStringified } from '@/types/json';
-import { WebSocketSchema, WebSocketSchemaMessage } from '@/types/schema';
+import { WebSocketMessageData, WebSocketSchema, WebSocketSchemaMessage } from '@/types/schema';
 import { INTERCEPTOR_SERVER_URL } from '@tests/constants';
 
 import { openWebSocketClient } from '../utils/lifecycle';
@@ -1537,6 +1537,79 @@ describe('WebSocketClient', () => {
     it('should not accept undeclared paths', () => {
       // @ts-expect-error The path is not declared in the schema.
       expectTypeOf<WebSocketClient<MultiPathSchema, '/unknown'>>().not.toBeAny();
+    });
+
+    type DirectionalSchema = WebSocketSchema<{
+      '/rooms/:roomId': {
+        message: { type: 'ping' };
+        serverMessage: { type: 'chat:received'; text: string };
+        clientMessage: { type: 'chat:send'; text: string };
+      };
+    }>;
+
+    type DirectionalServerMessage = WebSocketSchemaMessage.Server<DirectionalSchema>;
+    type DirectionalClientMessage = WebSocketSchemaMessage.Client<DirectionalSchema>;
+
+    it('should send the client messages on the client side', () => {
+      function declareClient(client: WebSocketClient<DirectionalSchema>) {
+        client.send(JSON.stringify({ type: 'ping' }));
+        client.send(JSON.stringify({ type: 'chat:send', text: 'hello' }));
+
+        // @ts-expect-error Only the server sends this message.
+        client.send(
+          JSON.stringify({ type: 'chat:received', text: 'hello' }) as JSONStringified<DirectionalServerMessage>,
+        );
+      }
+
+      expectTypeOf(declareClient).toBeFunction();
+    });
+
+    it('should receive the server messages on the client side', () => {
+      expectTypeOf<WebSocketClient.MessageEvent<DirectionalSchema>['data']>().toEqualTypeOf<
+        WebSocketMessageData<DirectionalServerMessage>
+      >();
+
+      function declareClient(client: WebSocketClient<DirectionalSchema>) {
+        client.onmessage = (event) => {
+          expectTypeOf(event.data).toEqualTypeOf<WebSocketMessageData<DirectionalServerMessage>>();
+        };
+
+        client.addEventListener('message', (event) => {
+          expectTypeOf(event.data).toEqualTypeOf<WebSocketMessageData<DirectionalServerMessage>>();
+        });
+      }
+
+      expectTypeOf(declareClient).toBeFunction();
+    });
+
+    it('should send the server messages on the server side', () => {
+      function declareClient(client: WebSocketClient<DirectionalSchema, '/rooms/:roomId', 'server'>) {
+        client.send(JSON.stringify({ type: 'ping' }));
+        client.send(JSON.stringify({ type: 'chat:received', text: 'hello' }));
+
+        // @ts-expect-error Only the client sends this message.
+        client.send(JSON.stringify({ type: 'chat:send', text: 'hello' }) as JSONStringified<DirectionalClientMessage>);
+      }
+
+      expectTypeOf(declareClient).toBeFunction();
+    });
+
+    it('should receive the client messages on the server side', () => {
+      expectTypeOf<WebSocketClient.MessageEvent<DirectionalSchema, '/rooms/:roomId', 'server'>['data']>().toEqualTypeOf<
+        WebSocketMessageData<DirectionalClientMessage>
+      >();
+
+      function declareClient(client: WebSocketClient<DirectionalSchema, '/rooms/:roomId', 'server'>) {
+        client.onmessage = (event) => {
+          expectTypeOf(event.data).toEqualTypeOf<WebSocketMessageData<DirectionalClientMessage>>();
+        };
+
+        client.addEventListener('message', (event) => {
+          expectTypeOf(event.data).toEqualTypeOf<WebSocketMessageData<DirectionalClientMessage>>();
+        });
+      }
+
+      expectTypeOf(declareClient).toBeFunction();
     });
   });
 });

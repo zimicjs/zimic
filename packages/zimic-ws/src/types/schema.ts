@@ -28,7 +28,13 @@ export interface WebSocketPathSchema {
   connection?: WebSocketConnectionSchema;
 
   /** @see {@link https://zimic.dev/docs/ws/guides/schemas#declaring-messages Declaring messages} */
-  message: WebSocketMessageSchema;
+  message?: WebSocketMessageSchema;
+
+  /** @see {@link https://zimic.dev/docs/ws/guides/schemas#declaring-message-directions Declaring message directions} */
+  serverMessage?: WebSocketMessageSchema;
+
+  /** @see {@link https://zimic.dev/docs/ws/guides/schemas#declaring-message-directions Declaring message directions} */
+  clientMessage?: WebSocketMessageSchema;
 }
 
 interface BaseWebSocketSchema {
@@ -102,11 +108,37 @@ export type InferPathParams<
   PathOrSchema extends WebSocketSchema ? OptionalPath : PathOrSchema extends string ? PathOrSchema : never
 >;
 
+type WebSocketPathMessageField = 'message' | 'serverMessage' | 'clientMessage';
+
+type WebSocketPathMessageSchema<
+  PathSchema extends WebSocketPathSchema,
+  Field extends WebSocketPathMessageField,
+> = PathSchema extends WebSocketPathSchema
+  ? Field extends keyof PathSchema
+    ? Default<PathSchema[Field]>
+    : never
+  : never;
+
+/** @see {@link https://zimic.dev/docs/ws/api/websocket-schema#websocketschemamessage-1 `WebSocketSchemaMessage` API reference} */
+export namespace WebSocketSchemaMessage {
+  /** @see {@link https://zimic.dev/docs/ws/api/websocket-schema#websocketschemamessageserver `WebSocketSchemaMessage.Server` API reference} */
+  export type Server<
+    Schema extends WebSocketSchema,
+    Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketSchemaPath.Literal<Schema>,
+  > = WebSocketPathMessageSchema<Schema[Path], 'message' | 'serverMessage'>;
+
+  /** @see {@link https://zimic.dev/docs/ws/api/websocket-schema#websocketschemamessageclient `WebSocketSchemaMessage.Client` API reference} */
+  export type Client<
+    Schema extends WebSocketSchema,
+    Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketSchemaPath.Literal<Schema>,
+  > = WebSocketPathMessageSchema<Schema[Path], 'message' | 'clientMessage'>;
+}
+
 /** @see {@link https://zimic.dev/docs/ws/api/websocket-schema#websocketschemamessage-1 `WebSocketSchemaMessage` API reference} */
 export type WebSocketSchemaMessage<
   Schema extends WebSocketSchema,
   Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketSchemaPath.Literal<Schema>,
-> = Schema[Path]['message'];
+> = WebSocketPathMessageSchema<Schema[Path], WebSocketPathMessageField>;
 
 type WebSocketPathConnectionSchema<PathSchema extends WebSocketPathSchema> = 'connection' extends keyof PathSchema
   ? Default<PathSchema['connection']>

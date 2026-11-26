@@ -3,7 +3,7 @@ import { WebSocketCloseTimeoutError, WebSocketOpenTimeoutError } from '@zimic/ut
 import { createServer as createHttpServer, Server as HttpServer, IncomingMessage } from 'http';
 import { createServer as createHttpsServer } from 'https';
 import { Socket } from 'net';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { WebSocketClient } from '@/client/WebSocketClient';
 import { WebSocketSchema } from '@/types/schema';
@@ -499,6 +499,26 @@ describe('WebSocketServer', () => {
         delayedWebSocketServerClose.restore();
         await webSocketServer.close();
       }
+    });
+  });
+
+  describe('Types', () => {
+    type DirectionalSchema = WebSocketSchema<{
+      '/rooms/:roomId': {
+        message: { type: 'ping' };
+        serverMessage: { type: 'chat:received'; text: string };
+        clientMessage: { type: 'chat:send'; text: string };
+      };
+    }>;
+
+    it('should type connected clients as the server side', () => {
+      function declareServer(server: WebSocketServer<DirectionalSchema>) {
+        server.addEventListener('connection', (client) => {
+          expectTypeOf(client).toEqualTypeOf<WebSocketClient<DirectionalSchema, '/rooms/:roomId', 'server'>>();
+        });
+      }
+
+      expectTypeOf(declareServer).toBeFunction();
     });
   });
 });

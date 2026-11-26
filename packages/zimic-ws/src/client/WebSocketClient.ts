@@ -23,6 +23,20 @@ type WebSocketClientConstructorArgument<Path extends string, Argument> = [Path] 
   ? "This schema has multiple paths. Declare the path of the client: new WebSocketClient<Schema, '/path'>(url)."
   : Argument;
 
+/** The messages a client sends: the client messages on the client side, and the server messages on the server side. */
+type WebSocketClientSentMessage<
+  Schema extends WebSocketSchema,
+  Path extends WebSocketSchemaPath.Literal<Schema>,
+  Side extends WebSocketClient.Side,
+> = Side extends 'server' ? WebSocketSchemaMessage.Server<Schema, Path> : WebSocketSchemaMessage.Client<Schema, Path>;
+
+/** The messages a client receives: the server messages on the client side, and the client messages on the server side. */
+type WebSocketClientReceivedMessage<
+  Schema extends WebSocketSchema,
+  Path extends WebSocketSchemaPath.Literal<Schema>,
+  Side extends WebSocketClient.Side,
+> = Side extends 'server' ? WebSocketSchemaMessage.Client<Schema, Path> : WebSocketSchemaMessage.Server<Schema, Path>;
+
 export namespace WebSocketClient {
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientreadystate `client.readyState` API reference} */
   export type ReadyState =
@@ -36,11 +50,15 @@ export namespace WebSocketClient {
   // eslint-disable-next-line @typescript-eslint/naming-convention
   export type OpenEvent<_Schema extends WebSocketSchema> = globalThis.Event;
 
+  /** @see {@link https://zimic.dev/docs/ws/guides/schemas#declaring-message-directions Declaring message directions} */
+  export type Side = 'client' | 'server';
+
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientonmessage `client.onmessage` API reference} */
   export type MessageEvent<
     Schema extends WebSocketSchema,
     Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketClientDefaultPath<Schema>,
-  > = globalThis.MessageEvent<WebSocketMessageData<WebSocketSchemaMessage<Schema, Path>>>;
+    ClientSide extends Side = 'client',
+  > = globalThis.MessageEvent<WebSocketMessageData<WebSocketClientReceivedMessage<Schema, Path, ClientSide>>>;
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientonclose `client.onclose` API reference} */
   // The schema is not used in the event types, but it's included for consistency and future extensibility.
@@ -56,9 +74,10 @@ export namespace WebSocketClient {
   interface Events<
     Schema extends WebSocketSchema = WebSocketSchema,
     Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketClientDefaultPath<Schema>,
+    ClientSide extends Side = 'client',
   > {
     open: OpenEvent<Schema>;
-    message: MessageEvent<Schema, Path>;
+    message: MessageEvent<Schema, Path, ClientSide>;
     close: CloseEvent<Schema>;
     error: ErrorEvent<Schema>;
   }
@@ -71,14 +90,19 @@ export namespace WebSocketClient {
     Schema extends WebSocketSchema = WebSocketSchema,
     Type extends EventType = EventType,
     Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketClientDefaultPath<Schema>,
-  > = Events<Schema, Path>[Type];
+    ClientSide extends Side = 'client',
+  > = Events<Schema, Path, ClientSide>[Type];
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientaddeventlistener `client.addEventListener()` API reference} */
-  interface EventListenerParameters<Schema extends WebSocketSchema, Path extends WebSocketSchemaPath.Literal<Schema>> {
-    open: [event: Event<Schema, 'open', Path>];
-    message: [event: Event<Schema, 'message', Path>];
-    close: [event: Event<Schema, 'close', Path>];
-    error: [event: Event<Schema, 'error', Path>];
+  interface EventListenerParameters<
+    Schema extends WebSocketSchema,
+    Path extends WebSocketSchemaPath.Literal<Schema>,
+    ClientSide extends Side,
+  > {
+    open: [event: Event<Schema, 'open', Path, ClientSide>];
+    message: [event: Event<Schema, 'message', Path, ClientSide>];
+    close: [event: Event<Schema, 'close', Path, ClientSide>];
+    error: [event: Event<Schema, 'error', Path, ClientSide>];
   }
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientaddeventlistener `client.addEventListener()` API reference} */
@@ -86,9 +110,10 @@ export namespace WebSocketClient {
     Schema extends WebSocketSchema,
     Type extends EventType,
     Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketClientDefaultPath<Schema>,
+    ClientSide extends Side = 'client',
   > = (
-    this: WebSocketClient<Schema, Path>,
-    ...parameters: EventListenerParameters<Schema, Path>[Type]
+    this: WebSocketClient<Schema, Path, ClientSide>,
+    ...parameters: EventListenerParameters<Schema, Path, ClientSide>[Type]
   ) => PossiblePromise<void>;
 }
 
@@ -121,6 +146,7 @@ async function waitForNextTask() {
 export class WebSocketClient<
   Schema extends WebSocketSchema,
   Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketClientDefaultPath<Schema>,
+  Side extends WebSocketClient.Side = 'client',
 > implements Omit<WebSocket, `${string}EventListener` | `on${string}`> {
   private socket?: WebSocket;
   private openAttempt?: WebSocketClientOpenAttempt;
@@ -134,7 +160,7 @@ export class WebSocketClient<
   #binaryType: BinaryType = 'blob';
 
   private unitaryListeners: {
-    [Type in WebSocketClient.EventType]: WebSocketClient.EventListener<Schema, Type, Path> | null;
+    [Type in WebSocketClient.EventType]: WebSocketClient.EventListener<Schema, Type, Path, Side> | null;
   } = {
     open: null,
     message: null,
@@ -144,7 +170,7 @@ export class WebSocketClient<
 
   private listenerToRawListener: {
     [Type in WebSocketClient.EventType]: Map<
-      WebSocketClient.EventListener<Schema, Type, Path>,
+      WebSocketClient.EventListener<Schema, Type, Path, Side>,
       WebSocketClientRawEventListener
     >;
   } = {
@@ -376,7 +402,12 @@ export class WebSocketClient<
 
   private applyListeners(socket: WebSocket) {
     for (const type of ['open', 'message', 'close', 'error'] as const) {
-      const unitaryListener = this[`on${type}`] as WebSocketClient.EventListener<Schema, typeof type, Path> | null;
+      const unitaryListener = this[`on${type}`] as WebSocketClient.EventListener<
+        Schema,
+        typeof type,
+        Path,
+        Side
+      > | null;
       const rawUnitaryListener = unitaryListener ? this.listenerToRawListener[type].get(unitaryListener) : undefined;
 
       if (rawUnitaryListener) {
@@ -446,7 +477,7 @@ export class WebSocketClient<
   }
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientsend `client.send()` API reference} */
-  send(data: WebSocketMessageData<WebSocketSchemaMessage<Schema, Path>>) {
+  send(data: WebSocketMessageData<WebSocketClientSentMessage<Schema, Path, Side>>) {
     const socket = this.socket ?? this.openAttempt?.socket;
 
     // Like a native socket, a client without a socket throws while connecting and discards the data once closed.
@@ -460,7 +491,7 @@ export class WebSocketClient<
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientaddeventlistener `client.addEventListener()` API reference} */
   addEventListener<Type extends WebSocketClient.EventType>(
     type: Type,
-    listener: WebSocketClient.EventListener<Schema, Type, Path>,
+    listener: WebSocketClient.EventListener<Schema, Type, Path, Side>,
     options?: boolean | AddEventListenerOptions,
   ) {
     const rawListener = listener.bind(this) as WebSocketClientRawEventListener;
@@ -474,7 +505,7 @@ export class WebSocketClient<
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientremoveeventlistener `client.removeEventListener()` API reference} */
   removeEventListener<Type extends WebSocketClient.EventType>(
     type: Type,
-    listener: WebSocketClient.EventListener<Schema, Type, Path>,
+    listener: WebSocketClient.EventListener<Schema, Type, Path, Side>,
     options?: boolean | EventListenerOptions,
   ) {
     const rawListener = this.listenerToRawListener[type].get(listener);
@@ -492,7 +523,7 @@ export class WebSocketClient<
     return this.unitaryListeners.open;
   }
 
-  set onopen(listener: WebSocketClient.EventListener<Schema, 'open', Path> | null) {
+  set onopen(listener: WebSocketClient.EventListener<Schema, 'open', Path, Side> | null) {
     this.setEventListener('open', listener);
   }
 
@@ -501,7 +532,7 @@ export class WebSocketClient<
     return this.unitaryListeners.message;
   }
 
-  set onmessage(listener: WebSocketClient.EventListener<Schema, 'message', Path> | null) {
+  set onmessage(listener: WebSocketClient.EventListener<Schema, 'message', Path, Side> | null) {
     this.setEventListener('message', listener);
   }
 
@@ -510,7 +541,7 @@ export class WebSocketClient<
     return this.unitaryListeners.close;
   }
 
-  set onclose(listener: WebSocketClient.EventListener<Schema, 'close', Path> | null) {
+  set onclose(listener: WebSocketClient.EventListener<Schema, 'close', Path, Side> | null) {
     this.setEventListener('close', listener);
   }
 
@@ -519,13 +550,13 @@ export class WebSocketClient<
     return this.unitaryListeners.error;
   }
 
-  set onerror(listener: WebSocketClient.EventListener<Schema, 'error', Path> | null) {
+  set onerror(listener: WebSocketClient.EventListener<Schema, 'error', Path, Side> | null) {
     this.setEventListener('error', listener);
   }
 
   private setEventListener<
     Type extends WebSocketClient.EventType,
-    Listener extends WebSocketClient.EventListener<Schema, Type, Path> | null,
+    Listener extends WebSocketClient.EventListener<Schema, Type, Path, Side> | null,
   >(type: Type, listener: Listener) {
     const socket = this.socket ?? this.openAttempt?.socket;
     const currentListener = this.unitaryListeners[type];
@@ -559,7 +590,7 @@ export class WebSocketClient<
   }
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientdispatchevent `client.dispatchEvent()` API reference} */
-  dispatchEvent<Type extends WebSocketClient.EventType>(event: WebSocketClient.Event<Schema, Type, Path>) {
+  dispatchEvent<Type extends WebSocketClient.EventType>(event: WebSocketClient.Event<Schema, Type, Path, Side>) {
     return (this.socket ?? this.openAttempt?.socket)?.dispatchEvent(event) ?? false;
   }
 }

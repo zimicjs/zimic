@@ -231,6 +231,71 @@ describe('Schema types', () => {
       // @ts-expect-error `/unknown` is not a path of the schema
       expectTypeOf<WebSocketSchemaMessage<Schema, '/unknown'>>();
     });
+
+    type DirectionalSchema = WebSocketSchema<{
+      '/rooms/:roomId': {
+        message: { type: 'ping' };
+        serverMessage: { type: 'chat:received'; text: string };
+        clientMessage: { type: 'chat:send'; text: string };
+      };
+
+      '/notifications': {
+        serverMessage: { type: 'notification' };
+      };
+
+      '/uploads': {
+        clientMessage: Blob;
+      };
+
+      '/empty': {};
+    }>;
+
+    it('should merge the messages of all directions', () => {
+      expectTypeOf<WebSocketSchemaMessage<DirectionalSchema, '/rooms/:roomId'>>().toEqualTypeOf<
+        { type: 'ping' } | { type: 'chat:received'; text: string } | { type: 'chat:send'; text: string }
+      >();
+    });
+
+    it('should extract the messages sent by the server', () => {
+      expectTypeOf<WebSocketSchemaMessage.Server<DirectionalSchema, '/rooms/:roomId'>>().toEqualTypeOf<
+        { type: 'ping' } | { type: 'chat:received'; text: string }
+      >();
+    });
+
+    it('should extract the messages sent by the client', () => {
+      expectTypeOf<WebSocketSchemaMessage.Client<DirectionalSchema, '/rooms/:roomId'>>().toEqualTypeOf<
+        { type: 'ping' } | { type: 'chat:send'; text: string }
+      >();
+    });
+
+    it('should be never if a path declares no messages in a direction', () => {
+      expectTypeOf<WebSocketSchemaMessage.Client<DirectionalSchema, '/notifications'>>().toBeNever();
+      expectTypeOf<WebSocketSchemaMessage.Server<DirectionalSchema, '/uploads'>>().toBeNever();
+    });
+
+    it('should be never if a path declares no messages', () => {
+      expectTypeOf<WebSocketSchemaMessage<DirectionalSchema, '/empty'>>().toBeNever();
+      expectTypeOf<WebSocketSchemaMessage.Server<DirectionalSchema, '/empty'>>().toBeNever();
+      expectTypeOf<WebSocketSchemaMessage.Client<DirectionalSchema, '/empty'>>().toBeNever();
+    });
+
+    it('should merge the messages of each direction of a union of paths', () => {
+      expectTypeOf<WebSocketSchemaMessage.Server<DirectionalSchema, '/notifications' | '/uploads'>>().toEqualTypeOf<{
+        type: 'notification';
+      }>();
+      expectTypeOf<
+        WebSocketSchemaMessage.Client<DirectionalSchema, '/notifications' | '/uploads'>
+      >().toEqualTypeOf<Blob>();
+    });
+
+    it('should merge the messages of each direction of all paths if no path is declared', () => {
+      expectTypeOf<WebSocketSchemaMessage.Server<DirectionalSchema>>().toEqualTypeOf<
+        { type: 'ping' } | { type: 'chat:received'; text: string } | { type: 'notification' }
+      >();
+      expectTypeOf<WebSocketSchemaMessage.Client<DirectionalSchema>>().toEqualTypeOf<
+        { type: 'ping' } | { type: 'chat:send'; text: string } | Blob
+      >();
+    });
   });
 
   describe('WebSocketConnectionSearchParamsSchema', () => {
