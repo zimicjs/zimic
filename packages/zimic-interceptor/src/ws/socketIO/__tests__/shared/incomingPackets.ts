@@ -135,7 +135,7 @@ export function declareIncomingPacketsSocketIOProtocolTests(options: SharedSocke
     await usingWebSocketInterceptor<AnySchema>(
       getSocketIOInterceptorOptions({}, { messageSaving: { enabled: true } }),
       async (interceptor) => {
-        const handler = await interceptor.message();
+        const handler = await interceptor.message().times(1);
 
         await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
           await waitForSocketConnection(socket);
@@ -175,7 +175,7 @@ export function declareIncomingPacketsSocketIOProtocolTests(options: SharedSocke
       await usingWebSocketInterceptor<AnySchema>(
         getSocketIOInterceptorOptions({ parser: bareEventParser }, { messageSaving: { enabled: true } }),
         async (interceptor) => {
-          const handler = await interceptor.message();
+          const handler = await interceptor.message().times(1);
 
           await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
             await waitForSocketConnection(socket);
@@ -216,7 +216,7 @@ export function declareIncomingPacketsSocketIOProtocolTests(options: SharedSocke
     await usingWebSocketInterceptor<AnySchema>(
       getSocketIOInterceptorOptions({ parser: stringAckIdParser }, { messageSaving: { enabled: true } }),
       async (interceptor) => {
-        const handler = await interceptor.message();
+        const handler = await interceptor.message().times(1);
 
         await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
           await waitForSocketConnection(socket);
@@ -235,7 +235,7 @@ export function declareIncomingPacketsSocketIOProtocolTests(options: SharedSocke
     await usingWebSocketInterceptor<AnySchema>(
       getSocketIOInterceptorOptions({}, { messageSaving: { enabled: true } }),
       async (interceptor) => {
-        const handler = await interceptor.message();
+        const handler = await interceptor.message().times(1);
 
         await usingSocket(baseURL, { transports: pollingTransports }, async (socket) => {
           await waitForSocketConnection(socket);
@@ -258,7 +258,7 @@ export function declareIncomingPacketsSocketIOProtocolTests(options: SharedSocke
     await usingWebSocketInterceptor<AnySchema>(
       getSocketIOInterceptorOptions({}, { messageSaving: { enabled: true } }),
       async (interceptor) => {
-        const handler = await interceptor.message();
+        const handler = await interceptor.message().times(1);
 
         const openPacket = await (await fetch(pollingURL)).text();
         const { sid } = JSON.parse(openPacket.slice(1)) as { sid: string };

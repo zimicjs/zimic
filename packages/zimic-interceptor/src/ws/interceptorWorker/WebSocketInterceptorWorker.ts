@@ -310,9 +310,9 @@ abstract class WebSocketInterceptorWorker {
 
   // Handlers that failed only on restrictions record their diffs. The newest handler that failed for any other cause
   // keeps older handlers from being counted. If it exceeded its `times` limit, it is still marked as matched to trigger
-  // a times check error, as in HTTP. A cleared handler is not counted: unlike HTTP, where only `respond` re-enables it
-  // and resets the count, `with`, `delay`, and `times` re-enable it without resetting, so the count would satisfy its
-  // later limits. Handlers whose interceptor let the connection go after their match record nothing.
+  // a times check error, as in HTTP. A handler without declarations is not counted: unlike HTTP, where only `respond`
+  // enables it and resets the count, `with`, `delay`, and `times` enable it without resetting, so the count would satisfy
+  // its later limits. Handlers whose interceptor let the connection go after their match record nothing.
   private markConnectionAsUnhandled(
     failedConnectionMatches: FailedWebSocketConnectionMatch[],
     isHolding: (interceptor: AnyWebSocketInterceptorImplementation) => boolean,
@@ -327,7 +327,7 @@ abstract class WebSocketInterceptorWorker {
         continue;
       }
 
-      if (connectionMatch.cause !== 'clearedHandler') {
+      if (connectionMatch.cause !== 'undeclaredHandler') {
         handler.implementation.markConnectionAsMatched();
       }
 
@@ -559,9 +559,9 @@ abstract class WebSocketInterceptorWorker {
 
   // Handlers that failed only on restrictions record their diffs. The newest handler that failed for any other cause
   // keeps older handlers from being counted. If it exceeded its `times` limit, it is still marked as matched to trigger
-  // a times check error, as in HTTP. A cleared handler is not counted: unlike HTTP, where only `respond` re-enables it
-  // and resets the count, `from`, `with`, `delay`, and `times` re-enable it without resetting, so the count would
-  // satisfy its later limits. Handlers whose holder let the connection go after their match record nothing.
+  // a times check error, as in HTTP. A handler without declarations is not counted: unlike HTTP, where only `respond`
+  // enables it and resets the count, `from`, `with`, `delay`, and `times` enable it without resetting, so the count
+  // would satisfy its later limits. Handlers whose holder let the connection go after their match record nothing.
   private markMessageAsUnhandled(
     message: ReceivedWebSocketMessageData<WebSocketMessageSchema>,
     failedMessageMatches: FailedWebSocketMessageMatch[],
@@ -576,7 +576,7 @@ abstract class WebSocketInterceptorWorker {
         continue;
       }
 
-      if (messageMatch.cause !== 'clearedHandler') {
+      if (messageMatch.cause !== 'undeclaredHandler') {
         handler.markMessageAsMatched();
       }
 

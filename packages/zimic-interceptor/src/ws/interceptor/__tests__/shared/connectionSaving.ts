@@ -84,7 +84,10 @@ export function declareConnectionSavingWebSocketInterceptorTests(
         async (interceptor) => {
           expect(interceptor.connectionSaving.enabled).toBe(true);
 
-          const acceptingHandler = await promiseIfRemote(interceptor.connection('/accepted'), interceptor);
+          const acceptingHandler = await promiseIfRemote(
+            interceptor.connection('/accepted').respond({ action: 'accept' }),
+            interceptor,
+          );
           expect(acceptingHandler.connections).toHaveLength(0);
 
           const rejectingHandler = await promiseIfRemote(
@@ -141,7 +144,7 @@ export function declareConnectionSavingWebSocketInterceptorTests(
       await usingWebSocketInterceptor<MessageSchema>(
         { ...interceptorOptions, connectionSaving: { enabled: true }, messageSaving: { enabled: false } },
         async (interceptor) => {
-          const handler = await promiseIfRemote(interceptor.connection(), interceptor);
+          const handler = await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
 
           await expectWebSocketConnectionToOpen(baseURL);
 
@@ -183,7 +186,7 @@ export function declareConnectionSavingWebSocketInterceptorTests(
           expect(interceptor.connectionSaving.enabled).toBe(false);
           expect(interceptor.connectionSaving.safeLimit).toBe(safeLimit);
 
-          const handler = await promiseIfRemote(interceptor.connection(), interceptor);
+          const handler = await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
 
           await usingIgnoredConsole(['warn'], async (console) => {
             const numberOfConnections = safeLimit * 2;
@@ -208,7 +211,7 @@ export function declareConnectionSavingWebSocketInterceptorTests(
           expect(interceptor.connectionSaving.enabled).toBe(true);
           expect(interceptor.connectionSaving.safeLimit).toBe(safeLimit);
 
-          const handler = await promiseIfRemote(interceptor.connection(), interceptor);
+          const handler = await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
           expect(handler.connections).toHaveLength(0);
 
           await usingIgnoredConsole(['warn'], async (console) => {
@@ -234,7 +237,7 @@ export function declareConnectionSavingWebSocketInterceptorTests(
           expect(interceptor.connectionSaving.enabled).toBe(true);
           expect(interceptor.connectionSaving.safeLimit).toBe(safeLimit);
 
-          const handler = await promiseIfRemote(interceptor.connection(), interceptor);
+          const handler = await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
           expect(handler.connections).toHaveLength(0);
 
           await usingIgnoredConsole(['warn'], async (console) => {
@@ -260,7 +263,7 @@ export function declareConnectionSavingWebSocketInterceptorTests(
           expect(interceptor.connectionSaving.enabled).toBe(true);
           expect(interceptor.connectionSaving.safeLimit).toBe(safeLimit);
 
-          const handler = await promiseIfRemote(interceptor.connection(), interceptor);
+          const handler = await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
           expect(handler.connections).toHaveLength(0);
 
           await usingIgnoredConsole(['warn'], async (console) => {
@@ -293,10 +296,16 @@ export function declareConnectionSavingWebSocketInterceptorTests(
           expect(interceptor.connectionSaving.enabled).toBe(true);
           expect(interceptor.connectionSaving.safeLimit).toBe(safeLimit);
 
-          const handler = await promiseIfRemote(interceptor.connection('/first'), interceptor);
+          const handler = await promiseIfRemote(
+            interceptor.connection('/first').respond({ action: 'accept' }),
+            interceptor,
+          );
           expect(handler.connections).toHaveLength(0);
 
-          const otherHandler = await promiseIfRemote(interceptor.connection('/second'), interceptor);
+          const otherHandler = await promiseIfRemote(
+            interceptor.connection('/second').respond({ action: 'accept' }),
+            interceptor,
+          );
           expect(otherHandler.connections).toHaveLength(0);
 
           await usingIgnoredConsole(['warn'], async (console) => {
@@ -334,7 +343,7 @@ export function declareConnectionSavingWebSocketInterceptorTests(
           expect(interceptor.connectionSaving.enabled).toBe(true);
           expect(interceptor.connectionSaving.safeLimit).toBe(safeLimit);
 
-          const handler = await promiseIfRemote(interceptor.connection(), interceptor);
+          const handler = await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
           expect(handler.connections).toHaveLength(0);
 
           await usingIgnoredConsole(['warn'], async (console) => {
@@ -363,7 +372,7 @@ export function declareConnectionSavingWebSocketInterceptorTests(
           expect(interceptor.connectionSaving.enabled).toBe(true);
           expect(interceptor.connectionSaving.safeLimit).toBe(safeLimit);
 
-          const handler = await promiseIfRemote(interceptor.connection(), interceptor);
+          const handler = await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
           expect(handler.connections).toHaveLength(0);
 
           await usingIgnoredConsole(['warn'], async (console) => {
@@ -392,7 +401,7 @@ export function declareConnectionSavingWebSocketInterceptorTests(
           expect(interceptor.connectionSaving.enabled).toBe(true);
           expect(interceptor.connectionSaving.safeLimit).toBe(safeLimit);
 
-          const handler = await promiseIfRemote(interceptor.connection(), interceptor);
+          const handler = await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
           expect(handler.connections).toHaveLength(0);
 
           await usingIgnoredConsole(['warn'], async (console) => {
@@ -418,7 +427,7 @@ export function declareConnectionSavingWebSocketInterceptorTests(
       await usingWebSocketInterceptor<MessageSchema>(
         { ...interceptorOptions, connectionSaving: { enabled: true, safeLimit } },
         async (interceptor) => {
-          const handler = await promiseIfRemote(interceptor.connection(), interceptor);
+          const handler = await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
 
           await usingIgnoredConsole(['warn'], async (console) => {
             for (let index = 0; index < safeLimit; index++) {
@@ -453,7 +462,7 @@ export function declareConnectionSavingWebSocketInterceptorTests(
           messageSaving: { enabled: true, safeLimit: safeLimit * 2 },
         },
         async (interceptor) => {
-          await promiseIfRemote(interceptor.connection(), interceptor);
+          await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
           await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
 
           await usingIgnoredConsole(['warn'], async (console) => {
@@ -494,7 +503,7 @@ export function declareConnectionSavingWebSocketInterceptorTests(
           messageSaving: { enabled: true, safeLimit },
         },
         async (interceptor) => {
-          await promiseIfRemote(interceptor.connection(), interceptor);
+          await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
           await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 1 }), interceptor);
 
           await usingIgnoredConsole(['warn'], async (console) => {
@@ -530,7 +539,7 @@ export function declareConnectionSavingWebSocketInterceptorTests(
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, connectionSaving: { enabled: true } },
       async (interceptor) => {
-        const handler = await promiseIfRemote(interceptor.connection(), interceptor);
+        const handler = await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
 
         expect(interceptor.connectionSaving).toEqual<WebSocketInterceptorConnectionSaving>({
           enabled: true,
