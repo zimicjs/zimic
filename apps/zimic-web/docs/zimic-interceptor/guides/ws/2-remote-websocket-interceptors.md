@@ -176,6 +176,8 @@ afterAll(async () => {
 });
 ```
 
+After the interceptor stops, the interceptor server refuses the handshake of connections that no other running interceptor handles, so clients fail to connect.
+
 ### Mocking messages
 
 You can now use the interceptor to handle client messages and send mock server messages. All paths, messages, restrictions, and responses are typed by default based on the schema.
