@@ -7,7 +7,7 @@ import { declareConnectionsWebSocketInterceptorTests } from './shared/connection
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Connections', ({ type }) => {
-  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false, logUnhandledConnections: false });
 
   beforeAll(async () => {
     if (type === 'remote') {

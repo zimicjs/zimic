@@ -4,6 +4,8 @@ import { PROCESS_EXIT_EVENTS, PROCESS_EXIT_CODE_BY_EXIT_EVENT, CommandError } fr
 import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@zimic/utils/server';
 import { waitFor, waitForDelay } from '@zimic/utils/time';
 import { PossiblePromise } from '@zimic/utils/types';
+import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
+import { WebSocketSchema } from '@zimic/ws';
 import fs from 'fs';
 import path from 'path';
 import color from 'picocolors';
@@ -19,8 +21,9 @@ import {
 import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/server/constants';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 import WebSocketServer from '@/utils/webSocket/WebSocketServer';
+import { verifyUnhandledConnectionError } from '@/ws/interceptor/__tests__/shared/utils';
 import { usingIgnoredConsole } from '@tests/utils/console';
-import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { usingHttpInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 
 import runCLI from '../../cli';
 import { serverSingleton as server } from '../start';
@@ -30,6 +33,10 @@ describe('CLI > Server start', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
   const processOffSpy = vi.spyOn(process, 'off');
   const processExitSpy = vi.spyOn(process, 'exit').mockReturnValue(undefined as never);
+
+  type ChatSchema = WebSocketSchema<{
+    '/': { message: string };
+  }>;
 
   const temporarySaveDirectory = path.resolve('tmp');
   const temporarySaveFile = path.join(temporarySaveDirectory, 'tmp.txt');
@@ -44,30 +51,38 @@ describe('CLI > Server start', () => {
     '                                                                        [string]',
     '',
     'Options:',
-    '      --help                    Show help                              [boolean]',
-    '      --version                 Show version number                    [boolean]',
-    '  -h, --hostname                The hostname to start the server on.',
+    '      --help                       Show help                           [boolean]',
+    '      --version                    Show version number                 [boolean]',
+    '  -h, --hostname                   The hostname to start the server on.',
     '                                                 [string] [default: "localhost"]',
-    '  -p, --port                    The port to start the server on.        [number]',
-    '  -e, --ephemeral               Whether the server should stop automatically',
-    '                                after the on-ready command finishes. If no',
-    '                                on-ready command is provided and ephemeral is',
-    '                                true, the server will stop immediately after',
-    '                                starting.             [boolean] [default: false]',
-    '  -l, --log-unhandled-requests  Whether to log a warning when no interceptors',
-    '                                were found for the base URL of a request. If an',
-    '                                interceptor was matched, the logging behavior',
-    '                                for that base URL is configured in the',
-    '                                interceptor itself, unless the interceptor',
-    '                                disconnects or fails before responding.[boolean]',
-    '  -t, --tokens-dir              The directory where the authorized interceptor',
-    '                                authentication tokens are saved. If provided,',
-    '                                only remote interceptors bearing a valid token',
-    '                                will be accepted. While authentication is',
-    '                                optional for private development servers, it is',
-    '                                strongly recommended when the server is not',
-    '                                bound to localhost, 127.0.0.1, or ::1, or when',
-    '                                it is shared over a network.            [string]',
+    '  -p, --port                       The port to start the server on.     [number]',
+    '  -e, --ephemeral                  Whether the server should stop automatically',
+    '                                   after the on-ready command finishes. If no',
+    '                                   on-ready command is provided and ephemeral is',
+    '                                   true, the server will stop immediately after',
+    '                                   starting.          [boolean] [default: false]',
+    '  -l, --log-unhandled-requests     Whether to log a warning when no interceptors',
+    '                                   were found for the base URL of a request. If',
+    '                                   an interceptor was matched, the logging',
+    '                                   behavior for that base URL is configured in',
+    '                                   the interceptor itself, unless the',
+    '                                   interceptor disconnects or fails before',
+    '                                   responding.                         [boolean]',
+    '      --log-unhandled-connections  Whether to log an error when no interceptors',
+    '                                   were found for the URL of a WebSocket',
+    '                                   connection. If an interceptor was matched,',
+    '                                   the connection is handled by the interceptor',
+    '                                   itself, unless the interceptor disconnects or',
+    '                                   fails before accepting it.          [boolean]',
+    '  -t, --tokens-dir                 The directory where the authorized',
+    '                                   interceptor authentication tokens are saved.',
+    '                                   If provided, only remote interceptors bearing',
+    '                                   a valid token will be accepted. While',
+    '                                   authentication is optional for private',
+    '                                   development servers, it is strongly',
+    '                                   recommended when the server is not bound to',
+    '                                   localhost, 127.0.0.1, or ::1, or when it is',
+    '                                   shared over a network.               [string]',
   ].join('\n');
 
   function watchExitEventListeners(exitEvent: (typeof PROCESS_EXIT_EVENTS)[number]) {
@@ -880,6 +895,220 @@ describe('CLI > Server start', () => {
       } finally {
         await interceptor.stop();
       }
+    });
+  });
+
+  it.each([undefined, 'true'])(
+    'should show an error if logging is enabled when a connection is received and does not match any interceptors (flag %s)',
+    async (flagValue) => {
+      processArgvSpy.mockReturnValue([
+        'node',
+        './dist/cli.js',
+        'server',
+        'start',
+        ...(flagValue === undefined ? [] : ['--log-unhandled-connections', flagValue]),
+      ]);
+
+      await usingIgnoredConsole(['log', 'warn', 'error'], async (console) => {
+        await runCLI();
+
+        expect(server).toBeDefined();
+        expect(server!.isRunning).toBe(true);
+        expect(server!.logUnhandledConnections).toBe(true);
+
+        expect(console.warn).toHaveBeenCalledTimes(0);
+        expect(console.error).toHaveBeenCalledTimes(0);
+
+        const url = `ws://localhost:${server!.port}/chat?room=general`;
+        const socket = new WebSocket(url, ['chat']);
+
+        try {
+          const closeEvent = await new Promise<CloseEvent>((resolve) => {
+            socket.addEventListener('close', resolve, { once: true });
+          });
+
+          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
+          expect(closeEvent.reason).toBe('Connection was not handled and was rejected.');
+        } finally {
+          socket.close();
+        }
+
+        expect(console.warn).toHaveBeenCalledTimes(0);
+        expect(console.error).toHaveBeenCalledTimes(1);
+
+        await verifyUnhandledConnectionError(console.error.mock.calls[0], {
+          url,
+          searchParams: { room: 'general' },
+          protocols: ['chat'],
+        });
+      });
+    },
+  );
+
+  it.each(['false'])(
+    'should not show an error if logging is disabled when a connection is received and does not match any interceptors (flag %s)',
+    async (flagValue) => {
+      processArgvSpy.mockReturnValue([
+        'node',
+        './dist/cli.js',
+        'server',
+        'start',
+        '--log-unhandled-connections',
+        flagValue,
+      ]);
+
+      await usingIgnoredConsole(['log', 'warn', 'error'], async (console) => {
+        await runCLI();
+
+        expect(server).toBeDefined();
+        expect(server!.isRunning).toBe(true);
+        expect(server!.logUnhandledConnections).toBe(false);
+
+        const socket = new WebSocket(`ws://localhost:${server!.port}/chat`);
+
+        try {
+          const closeEvent = await new Promise<CloseEvent>((resolve) => {
+            socket.addEventListener('close', resolve, { once: true });
+          });
+
+          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
+          expect(closeEvent.reason).toBe('Connection was not handled and was rejected.');
+        } finally {
+          socket.close();
+        }
+
+        expect(console.warn).toHaveBeenCalledTimes(0);
+        expect(console.error).toHaveBeenCalledTimes(0);
+      });
+    },
+  );
+
+  it('should log an error and close the connection if it could not be handled due to an error', async () => {
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--log-unhandled-connections']);
+
+    await usingIgnoredConsole(['log', 'error'], async (console) => {
+      await runCLI();
+
+      expect(server).toBeDefined();
+      expect(server!.isRunning).toBe(true);
+
+      const baseURL = `ws://localhost:${server!.port}/chat`;
+
+      await usingWebSocketInterceptor<ChatSchema>({ type: 'remote', baseURL }, async () => {
+        const webSocketServerRequestSpy = vi.spyOn(WebSocketServer.prototype, 'request');
+
+        const error = new Error('An error ocurred.');
+        webSocketServerRequestSpy.mockRejectedValueOnce(error);
+
+        const socket = new WebSocket(baseURL);
+
+        try {
+          const closeEvent = await new Promise<CloseEvent>((resolve) => {
+            socket.addEventListener('close', resolve, { once: true });
+          });
+
+          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
+          expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
+
+          expect(console.error).toHaveBeenCalledTimes(2);
+          expect(console.error).toHaveBeenNthCalledWith(1, error);
+
+          await verifyUnhandledConnectionError(console.error.mock.calls[1], {
+            url: baseURL,
+            searchParams: {},
+            protocols: [],
+          });
+        } finally {
+          socket.close();
+          webSocketServerRequestSpy.mockRestore();
+        }
+      });
+    });
+  });
+
+  it('should not log connections rejected by the remote interceptor', async () => {
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--log-unhandled-connections']);
+
+    await usingIgnoredConsole(['log', 'error'], async (console) => {
+      await runCLI();
+
+      expect(server).toBeDefined();
+      expect(server!.isRunning).toBe(true);
+
+      const baseURL = `ws://localhost:${server!.port}/chat`;
+
+      await usingWebSocketInterceptor<ChatSchema>({ type: 'remote', baseURL }, async (interceptor) => {
+        await interceptor.connection().respond({ action: 'reject' });
+
+        const socket = new WebSocket(baseURL);
+
+        try {
+          await new Promise<Event>((resolve) => {
+            socket.addEventListener('error', resolve, { once: true });
+          });
+
+          expect(socket.readyState).not.toBe(WebSocket.OPEN);
+          expect(interceptor.clients).toHaveLength(0);
+        } finally {
+          socket.close();
+        }
+
+        expect(console.error).toHaveBeenCalledTimes(0);
+      });
+    });
+  });
+
+  // No WebSocket counterpart for "should log and reject requests if the worker stops before responding": a stopping
+  // worker accepts the connections it is deciding and then closes them, so they are handled.
+
+  it('should log and close connections if the internal web socket client of the worker closes before accepting them', async () => {
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--log-unhandled-connections']);
+
+    await usingIgnoredConsole(['log', 'error'], async (console) => {
+      await runCLI();
+
+      expect(server).toBeDefined();
+      expect(server!.isRunning).toBe(true);
+
+      const baseURL = `ws://localhost:${server!.port}/chat`;
+
+      await usingWebSocketInterceptor<ChatSchema>({ type: 'remote', baseURL }, async (interceptor) => {
+        const responseFactoryPromise = createPromiseWithResolvers<{ action: 'accept' }>();
+        const responseFactory = vi.fn(() => responseFactoryPromise);
+
+        await interceptor.connection().respond(responseFactory);
+
+        const socket = new WebSocket(baseURL);
+
+        try {
+          const closeEventPromise = new Promise<CloseEvent>((resolve) => {
+            socket.addEventListener('close', resolve, { once: true });
+          });
+
+          await waitFor(() => {
+            expect(responseFactory).toHaveBeenCalledTimes(1);
+          });
+
+          // @ts-expect-error Force the internal web socket client to stop.
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+          await interceptor.implementation.worker.webSocketClient.stop();
+
+          const closeEvent = await closeEventPromise;
+          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
+          expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
+
+          expect(console.error).toHaveBeenCalledTimes(1);
+
+          await verifyUnhandledConnectionError(console.error.mock.calls[0], {
+            url: baseURL,
+            searchParams: {},
+            protocols: [],
+          });
+        } finally {
+          socket.close();
+          responseFactoryPromise.resolve({ action: 'accept' });
+        }
+      });
     });
   });
 });

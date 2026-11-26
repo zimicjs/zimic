@@ -6,6 +6,7 @@ import type { WebSocket as Socket } from 'isomorphic-ws';
 import { WebSocket as ClientSocket } from 'ws';
 import * as z from 'zod';
 
+import { logUnhandledConnectionError } from '@/utils/logging';
 import { isURLUnderBaseURL } from '@/utils/urls';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
@@ -103,7 +104,7 @@ interface PendingUserWebSocketConnection extends UserWebSocketConnection {
 
 const WEB_SOCKET_CLOSE_REASONS = Object.freeze({
   CONNECTION_SETUP_FAILED: 'Could not connect to the WebSocket interceptor.',
-  NO_REGISTERED_INTERCEPTOR: 'No WebSocket interceptor is registered for this URL.',
+  UNHANDLED_CONNECTION: 'Connection was not handled and was rejected.',
 } as const);
 
 const CONNECTION_SETUP_FAILURE_CLOSURE: UserWebSocketConnectionClosure = Object.freeze({
@@ -111,19 +112,21 @@ const CONNECTION_SETUP_FAILURE_CLOSURE: UserWebSocketConnectionClosure = Object.
   reason: WEB_SOCKET_CLOSE_REASONS.CONNECTION_SETUP_FAILED,
 });
 
-const NO_REGISTERED_INTERCEPTOR_CLOSURE: UserWebSocketConnectionClosure = Object.freeze({
+const UNHANDLED_CONNECTION_CLOSURE: UserWebSocketConnectionClosure = Object.freeze({
   code: WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR,
-  reason: WEB_SOCKET_CLOSE_REASONS.NO_REGISTERED_INTERCEPTOR,
+  reason: WEB_SOCKET_CLOSE_REASONS.UNHANDLED_CONNECTION,
 });
 
 interface WebSocketInterceptorServerRuntimeOptions {
   webSocketServer: WebSocketServer<InterceptorServerWebSocketSchema>;
   isWebSocketWorkerSocket: (socket: Socket) => boolean;
+  shouldLogUnhandledConnections: () => boolean;
 }
 
 class WebSocketInterceptorServerRuntime {
   private webSocketServer: WebSocketInterceptorServerRuntimeOptions['webSocketServer'];
   private isWebSocketWorkerSocket: WebSocketInterceptorServerRuntimeOptions['isWebSocketWorkerSocket'];
+  private shouldLogUnhandledConnections: WebSocketInterceptorServerRuntimeOptions['shouldLogUnhandledConnections'];
 
   // Workers are kept in the order of their first reset, which registers their first interceptor and decides the worker
   // that holds a connection. Each worker keeps that position until its socket disconnects, even if all of its
@@ -135,6 +138,7 @@ class WebSocketInterceptorServerRuntime {
   constructor(options: WebSocketInterceptorServerRuntimeOptions) {
     this.webSocketServer = options.webSocketServer;
     this.isWebSocketWorkerSocket = options.isWebSocketWorkerSocket;
+    this.shouldLogUnhandledConnections = options.shouldLogUnhandledConnections;
 
     this.webSocketServer.onChannel('event', 'interceptors/ws/workers/reset', this.resetWorker);
     this.webSocketServer.onChannel('event', 'interceptors/ws/messages/send', this.sendMessage);
@@ -257,6 +261,7 @@ class WebSocketInterceptorServerRuntime {
     const connectionTarget = this.findConnectionTargetByRequest(request);
 
     if (!connectionTarget) {
+      await this.logUnhandledConnectionIfNecessary(request);
       return true;
     }
 
@@ -308,12 +313,16 @@ class WebSocketInterceptorServerRuntime {
       if (reply.action === 'claim') {
         connection.isClaimedByProtocol = true;
       } else {
+        // Unlike unhandled HTTP requests, connections accepted by an interceptor without a matching connection handler
+        // are handled and not logged. Connections are accepted by default, so logging them would warn on every
+        // connection to interceptors that declare no connection handlers.
         connection.holders = connection.holders.filter((holder) => reply.acceptedInterceptorIds.includes(holder.id));
 
         // Local interceptors let connections that no holder accepts pass through to the network, but the interceptor
         // server is the endpoint of remote connections, so it closes them as if no interceptor were registered.
         if (connection.holders.length === 0) {
-          connection.closure ??= NO_REGISTERED_INTERCEPTOR_CLOSURE;
+          connection.closure ??= UNHANDLED_CONNECTION_CLOSURE;
+          await this.logUnhandledConnectionIfNecessary(request);
         }
       }
     } catch (error) {
@@ -323,6 +332,9 @@ class WebSocketInterceptorServerRuntime {
       }
 
       connection.closure ??= CONNECTION_SETUP_FAILURE_CLOSURE;
+
+      // The reply was not received or cannot be trusted, so the connection is logged as if no interceptor held it.
+      await this.logUnhandledConnectionIfNecessary(request);
     }
 
     const isClientStillWaiting = this.pendingUserWebSocketConnections.get(request) === connection;
@@ -334,7 +346,7 @@ class WebSocketInterceptorServerRuntime {
 
     if (!connection) {
       socket.resume();
-      socket.close(NO_REGISTERED_INTERCEPTOR_CLOSURE.code, NO_REGISTERED_INTERCEPTOR_CLOSURE.reason);
+      socket.close(UNHANDLED_CONNECTION_CLOSURE.code, UNHANDLED_CONNECTION_CLOSURE.reason);
       return;
     }
 
@@ -490,6 +502,17 @@ class WebSocketInterceptorServerRuntime {
     // the newest worker with a running interceptor whose base URL is a prefix of the connection URL, even if that
     // interceptor has no handlers, as HTTP requests do.
     return workers.findLast((target) => target.holders.length > 0);
+  }
+
+  private async logUnhandledConnectionIfNecessary(request: IncomingMessage) {
+    if (!this.shouldLogUnhandledConnections()) {
+      return;
+    }
+
+    await logUnhandledConnectionError(
+      this.getWebSocketRequestURL(request).href,
+      this.getWebSocketRequestProtocols(request),
+    );
   }
 
   private getWebSocketRequestURL(request: IncomingMessage) {

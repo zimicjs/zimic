@@ -8,7 +8,7 @@ import testMatrix from '../../interceptor/__tests__/shared/matrix';
 import { declareEventsSocketIOProtocolTests } from './shared/events';
 
 describe.each(testMatrix)('SocketIOProtocol (node, $type) > Events', ({ type }) => {
-  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false, logUnhandledConnections: false });
 
   beforeAll(async () => {
     if (type === 'remote') {

@@ -7,8 +7,8 @@ import { declareBaseURLWebSocketInterceptorTests } from './shared/baseURLs';
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Base URLs', ({ type }) => {
-  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
-  const otherServer = createInternalInterceptorServer({ logUnhandledRequests: false });
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false, logUnhandledConnections: false });
+  const otherServer = createInternalInterceptorServer({ logUnhandledRequests: false, logUnhandledConnections: false });
 
   let baseURL: string;
   let otherBaseURL: string;

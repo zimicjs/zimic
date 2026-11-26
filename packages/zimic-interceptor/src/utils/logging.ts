@@ -115,6 +115,25 @@ export async function logUnhandledMessageWarning(data: unknown, url: string) {
   );
 }
 
+export async function logUnhandledConnectionError(url: string, protocols: string[]) {
+  const searchParams = new HttpSearchParams(new URL(url).searchParams);
+
+  const [formattedSearchParams, formattedProtocols] = await Promise.all([
+    formatValueToLog(searchParams.toObject()),
+    formatValueToLog(protocols),
+  ]);
+
+  logger.error(
+    `Error: Connection was not handled and was ${color.red('rejected')}.\n\n `,
+    url,
+    '\n    Search params:',
+    formattedSearchParams,
+    '\n    Protocols:',
+    formattedProtocols,
+    '\n\nLearn more: https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages#unhandled-connections',
+  );
+}
+
 export function logUnexpectedServerDisconnection(serverURL: URL) {
   logger.warn(
     `Warning: The connection to the interceptor server ${serverURL.origin} was closed. ` +

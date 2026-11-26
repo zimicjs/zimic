@@ -23,6 +23,7 @@ import { DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT, WebSocketMessageTimeoutError } from
 import InvalidWebSocketMessageError from '@/utils/webSocket/errors/InvalidWebSocketMessageError';
 import UnauthorizedWebSocketConnectionError from '@/utils/webSocket/errors/UnauthorizedWebSocketConnectionError';
 import InterceptorServerWebSocketClient from '@/utils/webSocket/WebSocketClient';
+import { verifyUnhandledConnectionError } from '@/ws/interceptor/__tests__/shared/utils';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import {
   createInternalHttpInterceptor,
@@ -39,7 +40,7 @@ import {
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
 
-import { DEFAULT_HOSTNAME, DEFAULT_LOG_UNHANDLED_REQUESTS } from '../constants';
+import { DEFAULT_HOSTNAME, DEFAULT_LOG_UNHANDLED_CONNECTIONS, DEFAULT_LOG_UNHANDLED_REQUESTS } from '../constants';
 import RunningInterceptorServerError from '../errors/RunningInterceptorServerError';
 import InterceptorServer from '../InterceptorServer';
 import type { InterceptorServerWebSocketSchema, WebSocketClientConnectionReply } from '../types/schema';
@@ -925,7 +926,7 @@ describe('Interceptor server', () => {
 
           const closeEvent = await closeEventPromise;
           expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-          expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
+          expect(closeEvent.reason).toBe('Connection was not handled and was rejected.');
         } finally {
           await httpWorkerClient.stop();
           await Promise.allSettled(rejectedRequests);
@@ -1328,7 +1329,7 @@ describe('Interceptor server', () => {
 
           const closeEvent = await closeEventPromise;
           expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-          expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
+          expect(closeEvent.reason).toBe('Connection was not handled and was rejected.');
           expect(connectionListener).not.toHaveBeenCalled();
         } finally {
           await client.close();
@@ -1407,7 +1408,7 @@ describe('Interceptor server', () => {
 
             const otherCloseEvent = await otherCloseEventPromise;
             expect(otherCloseEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-            expect(otherCloseEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
+            expect(otherCloseEvent.reason).toBe('Connection was not handled and was rejected.');
           } finally {
             await Promise.all([client.close(), otherClient.close()]);
             await worker.stop();
@@ -1454,7 +1455,7 @@ describe('Interceptor server', () => {
 
             const closeEvent = await closeEventPromise;
             expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-            expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
+            expect(closeEvent.reason).toBe('Connection was not handled and was rejected.');
           } finally {
             await client.close();
             await worker.stop();
@@ -1709,7 +1710,7 @@ describe('Interceptor server', () => {
       });
 
       it('should close client connections when the connection reply is malformed and accept later connections', async () => {
-        server = createInternalInterceptorServer();
+        server = createInternalInterceptorServer({ logUnhandledConnections: false });
         await server.start();
 
         const baseURL = `ws://${server.hostname}:${server.port}/chat`;
@@ -1779,7 +1780,7 @@ describe('Interceptor server', () => {
       });
 
       it('should close pending client connections when their interceptor is removed by a worker reset and accept later connections', async () => {
-        server = createInternalInterceptorServer();
+        server = createInternalInterceptorServer({ logUnhandledConnections: false });
         await server.start();
 
         const baseURL = `ws://${server.hostname}:${server.port}/chat`;
@@ -2038,7 +2039,7 @@ describe('Interceptor server', () => {
       });
 
       it('should close pending client connections when the worker disconnects before confirming them', async () => {
-        server = createInternalInterceptorServer();
+        server = createInternalInterceptorServer({ logUnhandledConnections: false });
         await server.start();
 
         const baseURL = `ws://${server.hostname}:${server.port}/chat`;
@@ -2133,7 +2134,7 @@ describe('Interceptor server', () => {
       });
 
       it('should log and close pending client connections when the worker does not confirm them in time', async () => {
-        server = createInternalInterceptorServer();
+        server = createInternalInterceptorServer({ logUnhandledConnections: false });
         await server.start();
 
         const baseURL = `ws://${server.hostname}:${server.port}/chat`;
@@ -2196,6 +2197,59 @@ describe('Interceptor server', () => {
             expect(console.error).toHaveBeenCalledWith(expect.any(WebSocketMessageTimeoutError));
           } finally {
             client?.close();
+            await worker.stop();
+          }
+        });
+      });
+
+      it('should log and close client connections that the worker accepts with none of their interceptors', async () => {
+        server = createInternalInterceptorServer();
+        await server.start();
+
+        const baseURL = `ws://${server.hostname}:${server.port}/chat`;
+
+        const worker = new InterceptorServerWebSocketClient<InterceptorServerWebSocketSchema>({
+          url: `ws://${server.hostname}:${server.port}`,
+        });
+
+        // A worker accepts a connection with none of its interceptors when all of them stop while it decides.
+        worker.onChannel('event', 'interceptors/ws/clients/connect', () => ({
+          action: 'accept',
+          acceptedInterceptorIds: [],
+        }));
+
+        const client = new WebSocketClient<ChatSchema>(baseURL);
+
+        await usingIgnoredConsole(['error'], async (console) => {
+          try {
+            await worker.start({
+              parameters: {
+                [INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER]: 'ws',
+                [INTERCEPTOR_SERVER_RPC_VERSION_PARAMETER]: String(INTERCEPTOR_SERVER_RPC_VERSION),
+              },
+              waitForAuthentication: true,
+            });
+
+            await worker.request('interceptors/ws/workers/reset', {
+              interceptors: [{ id: crypto.randomUUID(), baseURL }],
+            });
+
+            const closeEventPromise = waitForWebSocketClientClose(client);
+            await client.open();
+
+            const closeEvent = await closeEventPromise;
+            expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
+            expect(closeEvent.reason).toBe('Connection was not handled and was rejected.');
+
+            expect(console.error).toHaveBeenCalledTimes(1);
+
+            await verifyUnhandledConnectionError(console.error.mock.calls[0], {
+              url: baseURL,
+              searchParams: {},
+              protocols: [],
+            });
+          } finally {
+            await client.close();
             await worker.stop();
           }
         });
@@ -3155,6 +3209,73 @@ describe('Interceptor server', () => {
         expect(() => {
           createInternalInterceptorServer({ logUnhandledRequests: invalidLogUnhandledRequests });
         }).toThrow(new ValidationError(`Expected options.logUnhandledRequests to be boolean, but got ${actualType}.`));
+      },
+    );
+  });
+
+  describe('Log unhandled connections', () => {
+    it('should start correctly with a defined log unhandled connections setting', async () => {
+      server = createInternalInterceptorServer({ logUnhandledConnections: false });
+
+      expect(server.isRunning).toBe(false);
+      expect(server.logUnhandledConnections).toBe(false);
+
+      await server.start();
+
+      expect(server.isRunning).toBe(true);
+      expect(server.logUnhandledConnections).toBe(false);
+    });
+
+    it('should start correctly with an undefined log unhandled connections setting', async () => {
+      server = createInternalInterceptorServer({ logUnhandledConnections: undefined });
+
+      expect(server.isRunning).toBe(false);
+      expect(server.logUnhandledConnections).toBe(DEFAULT_LOG_UNHANDLED_CONNECTIONS);
+
+      await server.start();
+
+      expect(server.isRunning).toBe(true);
+      expect(server.logUnhandledConnections).toBe(DEFAULT_LOG_UNHANDLED_CONNECTIONS);
+    });
+
+    it('should support changing the log unhandled connections setting while running', async () => {
+      server = createInternalInterceptorServer({ logUnhandledConnections: true });
+      await server.start();
+
+      server.logUnhandledConnections = false;
+      expect(server.logUnhandledConnections).toBe(false);
+
+      const client = new WebSocketClient(`ws://${server.hostname}:${server.port}/chat`);
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        try {
+          const closeEventPromise = waitForWebSocketClientClose(client);
+          await client.open();
+
+          const closeEvent = await closeEventPromise;
+          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
+          expect(closeEvent.reason).toBe('Connection was not handled and was rejected.');
+
+          expect(console.error).not.toHaveBeenCalled();
+        } finally {
+          await client.close();
+        }
+      });
+    });
+
+    const invalidLogUnhandledConnectionsSettings = createInvalidTypeOfCases('boolean', { optional: true });
+
+    it.each(invalidLogUnhandledConnectionsSettings)(
+      'should throw an error if provided a log unhandled connections setting that is not a boolean ($label)',
+      ({ value, actualType }) => {
+        // @ts-expect-error Forcing an invalid log unhandled connections setting type.
+        const invalidLogUnhandledConnections: boolean = value;
+
+        expect(() => {
+          createInternalInterceptorServer({ logUnhandledConnections: invalidLogUnhandledConnections });
+        }).toThrow(
+          new ValidationError(`Expected options.logUnhandledConnections to be boolean, but got ${actualType}.`),
+        );
       },
     );
   });

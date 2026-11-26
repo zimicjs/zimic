@@ -75,6 +75,13 @@ async function runCLI() {
                   'interceptor itself, unless the interceptor disconnects or fails before responding.',
                 alias: 'l',
               })
+              .option('log-unhandled-connections', {
+                type: 'boolean',
+                description:
+                  'Whether to log an error when no interceptors were found for the URL of a WebSocket connection. ' +
+                  'If an interceptor was matched, the connection is handled by the interceptor itself, unless the ' +
+                  'interceptor disconnects or fails before accepting it.',
+              })
               .option('tokens-dir', {
                 type: 'string',
                 description:
@@ -93,6 +100,7 @@ async function runCLI() {
               port: cliArguments.port,
               ephemeral: cliArguments.ephemeral,
               logUnhandledRequests: cliArguments.logUnhandledRequests,
+              logUnhandledConnections: cliArguments.logUnhandledConnections,
               tokensDirectory: cliArguments.tokensDir,
               onReady: onReadyCommand
                 ? {

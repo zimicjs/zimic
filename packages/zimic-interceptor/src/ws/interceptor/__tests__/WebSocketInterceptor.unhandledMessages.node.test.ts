@@ -8,7 +8,7 @@ import { declareUnhandledMessageFactoriesWebSocketInterceptorTests } from './sha
 import { declareUnhandledMessageLoggingWebSocketInterceptorTests } from './shared/unhandledMessages.logging';
 
 describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Unhandled messages', ({ type }) => {
-  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false, logUnhandledConnections: false });
 
   let baseURL: string;
 

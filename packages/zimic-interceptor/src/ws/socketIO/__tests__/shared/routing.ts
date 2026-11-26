@@ -144,7 +144,7 @@ export function declareRoutingSocketIOProtocolTests(options: SharedSocketIOProto
             });
 
             expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-            expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
+            expect(closeEvent.reason).toBe('Connection was not handled and was rejected.');
             expect(interceptor.clients).toHaveLength(0);
           } finally {
             socket.close();

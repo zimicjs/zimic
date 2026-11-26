@@ -1,4 +1,5 @@
 import { WebSocketSchema } from '@zimic/ws';
+import color from 'picocolors';
 import { expect } from 'vitest';
 
 import { formatValueToLog } from '@/utils/logging';
@@ -55,4 +56,26 @@ export async function verifyUnhandledMessageWarning(
   }
 
   expect(message).toContain('Learn more: https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages');
+}
+
+export async function verifyUnhandledConnectionError(
+  errorArguments: unknown[],
+  options: {
+    url: string;
+    searchParams: Record<string, string>;
+    protocols: string[];
+  },
+) {
+  const { url, searchParams, protocols } = options;
+
+  expect(errorArguments).toEqual([
+    color.cyan('[@zimic/interceptor]'),
+    `Error: Connection was not handled and was ${color.red('rejected')}.\n\n `,
+    url,
+    '\n    Search params:',
+    await formatValueToLog(searchParams),
+    '\n    Protocols:',
+    await formatValueToLog(protocols),
+    '\n\nLearn more: https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages#unhandled-connections',
+  ]);
 }

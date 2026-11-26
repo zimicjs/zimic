@@ -9,7 +9,7 @@ import testMatrix from './shared/matrix';
 // The HTTP Node suite checks that a local worker removes its MSW handler after the MSW worker fails to start. Local
 // WebSocket workers register no MSW handler on start, so there is no WebSocket counterpart.
 describe.each(testMatrix)('WebSocketInterceptorWorker (node, $type)', ({ type }) => {
-  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false, logUnhandledConnections: false });
 
   declareDefaultWebSocketInterceptorWorkerTests({
     platform: 'node',

@@ -13,6 +13,7 @@ describe('WebSocketInterceptor (node, remote) > Authentication', () => {
   const server = createInternalInterceptorServer({
     tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     logUnhandledRequests: false,
+    logUnhandledConnections: false,
   });
 
   let token: Awaited<ReturnType<typeof createInterceptorToken>>;
