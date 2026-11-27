@@ -130,7 +130,7 @@ type Schema = WebSocketSchema<{
 
 ### Supported message data
 
-`message` accepts values compatible with native WebSocket message data:
+`message`, `serverMessage`, and `clientMessage` accept values compatible with native WebSocket message data:
 
 - JSON-compatible values
 - `string`

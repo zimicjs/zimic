@@ -50,7 +50,7 @@ export namespace WebSocketClient {
   // eslint-disable-next-line @typescript-eslint/naming-convention
   export type OpenEvent<_Schema extends WebSocketSchema> = globalThis.Event;
 
-  /** @see {@link https://zimic.dev/docs/ws/guides/schemas#declaring-message-directions Declaring message directions} */
+  /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#constructor `WebSocketClient` constructor API reference} */
   export type Side = 'client' | 'server';
 
   /** @see {@link https://zimic.dev/docs/ws/api/websocket-client#clientonmessage `client.onmessage` API reference} */
