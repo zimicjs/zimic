@@ -1426,21 +1426,7 @@ export function declareBaseURLWebSocketInterceptorTests(options: RuntimeSharedWe
 
         await promiseIfRemote(interceptor.message().respond({ type: 'server', index: 2 }), interceptor);
 
-        const oldOriginMessageListener = vi.fn();
-
-        await Promise.allSettled([
-          usingWebSocketClient<MessageSchema>(baseURL, async (client) => {
-            client.addEventListener('message', oldOriginMessageListener);
-            client.send(JSON.stringify({ type: 'client', index: 2 }));
-
-            // No interceptor holds this connection to answer a probe, and MSW does not reliably close bypassed
-            // connections, so no ordering signal exists here.
-            await waitForNot(() => {
-              expect(oldOriginMessageListener).toHaveBeenCalled();
-            });
-          }),
-        ]);
-        expect(oldOriginMessageListener).not.toHaveBeenCalled();
+        await expectWebSocketConnectionToBeRefused(baseURL);
 
         await usingWebSocketClient<MessageSchema>(otherBaseURL, async (client) => {
           const messagePromise = waitForWebSocketClientMessage(client);
