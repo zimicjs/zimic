@@ -379,6 +379,10 @@ class HttpInterceptorImplementation<
     }
   }
 
+  markHandlerAsCleared(handler: AnyHttpRequestHandlerImplementation) {
+    this.worker?.markHandlerAsCleared(handler);
+  }
+
   clear() {
     this.requestSavingGeneration = {};
 

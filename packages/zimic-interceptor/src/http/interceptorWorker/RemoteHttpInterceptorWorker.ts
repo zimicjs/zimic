@@ -21,6 +21,7 @@ import HttpInterceptorImplementation, {
   AnyHttpInterceptorImplementation,
 } from '../interceptor/HttpInterceptorImplementation';
 import { HttpInterceptorPlatform, UnhandledRequestStrategy } from '../interceptor/types/options';
+import { AnyHttpRequestHandlerImplementation } from '../requestHandler/HttpRequestHandlerImplementation';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { RemoteHttpInterceptorWorkerOptions } from './types/options';
 
@@ -28,6 +29,15 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
   private isConnectedToServer = false;
   private auth?: RemoteHttpInterceptorWorkerOptions['auth'];
+
+  // Counted per server connection, as the resets sent and the replies received on it.
+  private numberOfResets = 0;
+  private numberOfAcknowledgedResets = 0;
+  // The number of resets sent when each interceptor or handler was last cleared.
+  private numberOfResetsWhenCleared = new WeakMap<
+    AnyHttpInterceptorImplementation | AnyHttpRequestHandlerImplementation,
+    number
+  >();
 
   constructor(options: RemoteHttpInterceptorWorkerOptions) {
     super();
@@ -54,7 +64,12 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async start() {
     await super.sharedStart(async () => {
+      this.numberOfResets = 0;
+      this.numberOfAcknowledgedResets = 0;
+      this.numberOfResetsWhenCleared = new WeakMap();
+
       this.webSocketClient.onChannel('event', 'interceptors/http/requests/handle', this.handleRequest);
+      this.webSocketClient.onChannel('reply', 'interceptors/http/workers/reset', this.acknowledgeReset);
 
       await this.webSocketClient.start({
         parameters: {
@@ -92,12 +107,31 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     await this.resetServerWorker();
   }
 
+  // The server replies to resets in the order it reads them and before the frames it sends afterward, so the replies
+  // received when a request arrives count the resets the server read before forwarding it. Replies are counted as their
+  // frames are read, because a request frame read in the same chunk is handled before a reply promise settles.
+  private acknowledgeReset = () => {
+    this.numberOfAcknowledgedResets++;
+  };
+
   private handleRequest = async (
     message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/http/requests/handle'>,
   ) => {
+    // Clears do not wait for the server, so a request sent right after a clear can reach the server before the reset
+    // does and be handled as sent before the clear. No synchronous clear can tell these requests apart.
+    const numberOfResetsBeforeRequest = this.numberOfAcknowledgedResets;
+
     const request = deserializeRequest(message.data.request);
 
-    const { response: rawResponse, matchedSomeHandler } = await this.createResponseWithHandlers(request);
+    const { response: rawResponse, matchedSomeHandler } = await this.createResponseWithHandlers(request, {
+      wasClearedAfterRequest: (handler) => {
+        const numberOfResetsWhenCleared = Math.max(
+          this.numberOfResetsWhenCleared.get(handler.interceptor) ?? 0,
+          this.numberOfResetsWhenCleared.get(handler.implementation) ?? 0,
+        );
+        return numberOfResetsWhenCleared > numberOfResetsBeforeRequest;
+      },
+    });
 
     if (!rawResponse) {
       // The server answers an unmatched preflight request with its default preflight response, so it is not warned.
@@ -136,6 +170,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   async stop() {
     await super.sharedStop(async () => {
       this.webSocketClient.offChannel('event', 'interceptors/http/requests/handle', this.handleRequest);
+      this.webSocketClient.offChannel('reply', 'interceptors/http/workers/reset', this.acknowledgeReset);
 
       this.clearHandlers();
 
@@ -156,6 +191,8 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     if (!this.isConnectedToServer || !this.webSocketClient.isRunning) {
       return;
     }
+
+    this.numberOfResets++;
 
     const reset: HttpWorkerReset = {
       interceptorBaseURLs: this.runningInterceptors.map((interceptor) => interceptor.baseURLAsString),
@@ -209,6 +246,29 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     }
 
     this.clearHttpHandlers(options.interceptor);
+
+    if (options.interceptor) {
+      this.markAsCleared(options.interceptor);
+    }
+  }
+
+  markHandlerAsCleared(handler: AnyHttpRequestHandlerImplementation) {
+    this.markAsCleared(handler);
+  }
+
+  // The reset tells requests the server forwarded before reading it apart from the ones it forwarded after, so clears
+  // send it without waiting for the reply.
+  private markAsCleared(target: AnyHttpInterceptorImplementation | AnyHttpRequestHandlerImplementation) {
+    this.resetServerWorker().catch(
+      /* istanbul ignore next -- @preserve
+       * Clears return nothing to reject, so failures other than aborts are logged. They happen only if the server stops
+       * replying, which tests do not simulate. */
+      (error: unknown) => {
+        console.error(error);
+      },
+    );
+
+    this.numberOfResetsWhenCleared.set(target, this.numberOfResets);
   }
 }
 

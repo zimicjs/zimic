@@ -8,7 +8,7 @@ import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 import { expectHttpTimesCheckError } from '@/http/requestHandler/__tests__/shared/utils';
 import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
-import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { usingHeldInterceptorWorkerMessages, usingHttpInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
@@ -270,6 +270,78 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
       });
     });
   });
+
+  // Local interceptors receive requests in the same process, so a request sent before a clear cannot arrive after it.
+  if (type === 'remote') {
+    // An older interceptor handles the request, because browsers resend requests rejected on a reused connection, and
+    // the resent request reaches the server after the clear.
+    it('should not handle requests sent before cleared with handlers declared after cleared', async () => {
+      await usingHeldInterceptorWorkerMessages(async (messages) => {
+        await usingHttpInterceptor<{
+          '/users': { GET: MethodSchema };
+        }>(interceptorOptions, async (olderInterceptor) => {
+          const olderHandler = await promiseIfRemote(
+            olderInterceptor.get('/users').respond({ status: 204 }),
+            olderInterceptor,
+          );
+
+          await usingHttpInterceptor<{
+            '/users': { GET: MethodSchema };
+          }>(interceptorOptions, async (interceptor) => {
+            // Browsers may send a CORS preflight before the request, which is not held.
+            const heldMessagePromise = messages.hold((message) => {
+              return message.channel === 'interceptors/http/requests/handle' && message.data.request.method === 'GET';
+            });
+
+            const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+            await heldMessagePromise;
+
+            await promiseIfRemote(interceptor.clear(), interceptor);
+            const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+
+            messages.release();
+
+            const response = await responsePromise;
+            expect(response.status).toBe(204);
+
+            expect(handler.requests).toHaveLength(0);
+            expect(olderHandler.requests).toHaveLength(1);
+          });
+        });
+      });
+    });
+
+    it('should handle requests sent before another interceptor is cleared', async () => {
+      await usingHeldInterceptorWorkerMessages(async (messages) => {
+        await usingHttpInterceptor<{
+          '/users': { GET: MethodSchema };
+        }>({ ...interceptorOptions, baseURL: joinURL(baseURL, '/other') }, async (otherInterceptor) => {
+          await usingHttpInterceptor<{
+            '/users': { GET: MethodSchema };
+          }>(interceptorOptions, async (interceptor) => {
+            const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 204 }), interceptor);
+
+            // Browsers may send a CORS preflight before the request, which is not held.
+            const heldMessagePromise = messages.hold((message) => {
+              return message.channel === 'interceptors/http/requests/handle' && message.data.request.method === 'GET';
+            });
+
+            const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+            await heldMessagePromise;
+
+            await promiseIfRemote(otherInterceptor.clear(), otherInterceptor);
+
+            messages.release();
+
+            const response = await responsePromise;
+            expect(response.status).toBe(204);
+
+            expect(handler.requests).toHaveLength(1);
+          });
+        });
+      });
+    });
+  }
 
   // No HTTP counterpart for "should apply the unhandled message strategy of an older interceptor if the last started one
   // is cleared while messages are being handled": clearing a WebSocket interceptor detaches it from its connections, so

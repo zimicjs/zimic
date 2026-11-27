@@ -1,7 +1,9 @@
 import { HttpSchema, HttpMethod } from '@zimic/http';
+import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { PossiblePromise } from '@zimic/utils/types';
 import { joinURL } from '@zimic/utils/url';
 import { WebSocketSchema } from '@zimic/ws';
+import ClientSocket from 'isomorphic-ws';
 import { expect, inject } from 'vitest';
 
 import { createHttpInterceptor } from '@/http';
@@ -22,7 +24,10 @@ import {
   LocalHttpInterceptorWorkerOptions,
   RemoteHttpInterceptorWorkerOptions,
 } from '@/http/interceptorWorker/types/options';
+import { INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER } from '@/interceptor/constants';
 import InterceptorServer from '@/server/InterceptorServer';
+import { InterceptorServerWebSocketSchema } from '@/server/types/schema';
+import { WebSocketChannel, WebSocketEventMessage } from '@/utils/webSocket/types';
 import { createWebSocketInterceptor } from '@/ws/interceptor/factory';
 import LocalWebSocketInterceptor from '@/ws/interceptor/LocalWebSocketInterceptor';
 import RemoteWebSocketInterceptor from '@/ws/interceptor/RemoteWebSocketInterceptor';
@@ -354,6 +359,119 @@ export async function usingWebSocketInterceptorWorker(
     await callback(worker);
   } finally {
     await worker.stop();
+  }
+}
+
+type InterceptorServerEventMessage = {
+  [Channel in WebSocketChannel<InterceptorServerWebSocketSchema>]: WebSocketEventMessage<
+    InterceptorServerWebSocketSchema,
+    Channel
+  >;
+}[WebSocketChannel<InterceptorServerWebSocketSchema>];
+
+interface HeldInterceptorWorkerMessages {
+  // Holds the first message received by a worker socket that matches `isFirstHeldMessage` and every message after it.
+  // Resolves once the first one is held.
+  hold: (isFirstHeldMessage: (message: InterceptorServerEventMessage) => boolean) => Promise<void>;
+  // Dispatches the held messages in the order they were received, in a single task, as when several frames arrive in
+  // one chunk.
+  release: () => void;
+}
+
+// No public path makes an interceptor worker read a server message late, so this holds the messages received by worker
+// sockets. Workers register their message listeners when they start, so the interceptors must start in the callback.
+export async function usingHeldInterceptorWorkerMessages(
+  callback: (messages: HeldInterceptorWorkerMessages) => Promise<void>,
+) {
+  const prototype = ClientSocket.prototype;
+  const originalAddEventListener = prototype.addEventListener;
+  const originalRemoveEventListener = prototype.removeEventListener;
+
+  // Servers select the first protocol offered by a worker socket, which declares its RPC protocol.
+  const workerSocketProtocolPrefix = encodeURIComponent(INTERCEPTOR_SERVER_RPC_PROTOCOL_PARAMETER);
+
+  let isFirstHeldMessage: ((message: InterceptorServerEventMessage) => boolean) | undefined;
+  let heldMessageDispatches: (() => void)[] | undefined;
+  let heldMessagePromise = createPromiseWithResolvers<void>();
+
+  // Server sockets in the same process have no URL, so the messages they receive from workers are not held.
+  function isWorkerSocket(socket: ClientSocket) {
+    return (socket.url as string | undefined) !== undefined && socket.protocol.startsWith(workerSocketProtocolPrefix);
+  }
+
+  function getHeldMessageDispatches(event: ClientSocket.MessageEvent) {
+    if (
+      !heldMessageDispatches &&
+      isFirstHeldMessage?.(JSON.parse(event.data as string) as InterceptorServerEventMessage)
+    ) {
+      heldMessageDispatches = [];
+    }
+    return heldMessageDispatches;
+  }
+
+  type MessageListener = (event: ClientSocket.MessageEvent) => void;
+  const holdableListeners = new WeakMap<MessageListener, MessageListener>();
+
+  prototype.addEventListener = function (
+    this: ClientSocket,
+    type: string,
+    listener: MessageListener,
+    options?: ClientSocket.EventListenerOptions,
+  ) {
+    if (type !== 'message') {
+      Reflect.apply(originalAddEventListener, this, [type, listener, options]);
+      return;
+    }
+
+    function holdableListener(this: ClientSocket, event: ClientSocket.MessageEvent) {
+      const dispatches = isWorkerSocket(this) ? getHeldMessageDispatches(event) : undefined;
+
+      if (dispatches) {
+        dispatches.push(() => listener.call(this, event));
+        heldMessagePromise.resolve();
+      } else {
+        listener.call(this, event);
+      }
+    }
+
+    holdableListeners.set(listener, holdableListener);
+    Reflect.apply(originalAddEventListener, this, [type, holdableListener, options]);
+  } as typeof prototype.addEventListener;
+
+  // Workers remove listeners that must not see later messages, such as the one waiting for authentication.
+  prototype.removeEventListener = function (
+    this: ClientSocket,
+    type: string,
+    listener: MessageListener,
+    options?: ClientSocket.EventListenerOptions,
+  ) {
+    Reflect.apply(originalRemoveEventListener, this, [type, holdableListeners.get(listener) ?? listener, options]);
+  } as typeof prototype.removeEventListener;
+
+  const messages: HeldInterceptorWorkerMessages = {
+    hold(isFirstMessage) {
+      isFirstHeldMessage = isFirstMessage;
+      heldMessagePromise = createPromiseWithResolvers<void>();
+      return heldMessagePromise;
+    },
+
+    release() {
+      const dispatches = heldMessageDispatches ?? [];
+      isFirstHeldMessage = undefined;
+      heldMessageDispatches = undefined;
+
+      for (const dispatch of dispatches) {
+        dispatch();
+      }
+    },
+  };
+
+  try {
+    await callback(messages);
+  } finally {
+    prototype.addEventListener = originalAddEventListener;
+    prototype.removeEventListener = originalRemoveEventListener;
+    messages.release();
   }
 }
 

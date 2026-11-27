@@ -187,8 +187,12 @@ abstract class HttpInterceptorWorker {
   }
 
   // The handlers of all interceptors in the worker are tried together, from the last created to the first, so a newer
-  // handler wins regardless of the start order of its interceptor or the path it was declared with.
-  protected async createResponseWithHandlers(request: HttpRequest): Promise<HttpRequestHandling> {
+  // handler wins regardless of the start order of its interceptor or the path it was declared with. Handlers cleared
+  // after the request was sent are skipped as if they were not declared.
+  protected async createResponseWithHandlers(
+    request: HttpRequest,
+    options: { wasClearedAfterRequest?: (handler: HttpHandler) => boolean } = {},
+  ): Promise<HttpRequestHandling> {
     const requestURL = createPathMatchingURL(request.url);
 
     const failedRequestMatches: FailedHttpRequestMatch[] = [];
@@ -202,7 +206,11 @@ abstract class HttpInterceptorWorker {
 
     // Handlers can be added or cleared while a response is created, so the request is matched against a copy.
     for (const handler of methodHandlers.toReversed()) {
-      if (!this.isHandlerRegistered(method, handler) || !this.matchesHandlerRoute(requestURL, handler)) {
+      if (
+        !this.isHandlerRegistered(method, handler) ||
+        options.wasClearedAfterRequest?.(handler) ||
+        !this.matchesHandlerRoute(requestURL, handler)
+      ) {
         continue;
       }
 
@@ -398,6 +406,8 @@ abstract class HttpInterceptorWorker {
   abstract clearHandlers<Schema extends HttpSchema>(options?: {
     interceptor?: HttpInterceptorImplementation<Schema>;
   }): void;
+
+  abstract markHandlerAsCleared(handler: AnyHttpRequestHandlerImplementation): void;
 
   static setResponseAction(response: Response, action: UnhandledRequestStrategy.Action) {
     Object.defineProperty(response, RESPONSE_ACTION_SYMBOL, {

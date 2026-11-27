@@ -10,7 +10,11 @@ import RemoteHttpInterceptor from '@/http/interceptor/RemoteHttpInterceptor';
 import { HttpInterceptorType, UnhandledRequestStrategy } from '@/http/interceptor/types/options';
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '@/http/interceptorWorker/LocalHttpInterceptorWorker';
-import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
+import {
+  createInternalHttpInterceptor,
+  usingHeldInterceptorWorkerMessages,
+  usingHttpInterceptor,
+} from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 
 import { HttpRequestHandlerRequestMatch } from '../../HttpRequestHandlerImplementation';
@@ -191,6 +195,49 @@ export function declareDefaultHttpRequestHandlerTests(
       },
     );
   });
+
+  // Local interceptors receive requests in the same process, so a request sent before a clear cannot arrive after it.
+  if (type === 'remote') {
+    // An older handler handles the request, because browsers resend requests rejected on a reused connection, and the
+    // resent request reaches the server after the clear.
+    it('should not match requests sent before cleared and redeclared', async () => {
+      // Messages are held only by workers started while holding them, so the worker of the default interceptor stops.
+      await interceptor.stop();
+
+      await usingHeldInterceptorWorkerMessages(async (messages) => {
+        await usingHttpInterceptor<Schema>({ type, baseURL, requestSaving: { enabled: true } }, async (interceptor) => {
+          const olderHandler = await promiseIfRemote(
+            interceptor.post('/users').respond({ status: 200, body: { success: true } }),
+            interceptor,
+          );
+
+          const handler = await promiseIfRemote(
+            interceptor.post('/users').respond({ status: 200, body: { success: true } }),
+            interceptor,
+          );
+
+          // Browsers may send a CORS preflight before the request, which is not held.
+          const heldMessagePromise = messages.hold((message) => {
+            return message.channel === 'interceptors/http/requests/handle' && message.data.request.method === 'POST';
+          });
+
+          const responsePromise = fetch(joinURL(baseURL, '/users'), { method: 'POST' });
+          await heldMessagePromise;
+
+          await promiseIfRemote(handler.clear(), interceptor);
+          await promiseIfRemote(handler.respond({ status: 200, body: { success: true } }), interceptor);
+
+          messages.release();
+
+          const response = await responsePromise;
+          expect(response.status).toBe(200);
+
+          expect(handler.requests).toHaveLength(0);
+          expect(olderHandler.requests).toHaveLength(1);
+        });
+      });
+    });
+  }
 
   // No HTTP counterpart for "should match messages again if cleared and declared with $declaration": a request needs a
   // response, so only `respond` makes a cleared HTTP handler match again, as covered above.
