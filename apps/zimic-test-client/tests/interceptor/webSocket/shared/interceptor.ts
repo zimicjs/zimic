@@ -58,14 +58,17 @@ function getBinaryBaseURL(type: WebSocketInterceptorType) {
 
 async function waitForResponseMessage<
   Schema extends UserWebSocketSchema | NotificationWebSocketSchema,
-  ResponseMessageType extends Extract<WebSocketSchemaMessage<Schema>, { type: string }>['type'],
+  ResponseMessageType extends Extract<WebSocketSchemaMessage.Server<Schema>, { type: string }>['type'],
+  // A type parameter keeps the message type opaque. TypeScript 5.0 cannot assign the expanded `Extract` to the
+  // `T | PromiseLike<T>` parameter of `resolve`.
+  ResponseMessage extends { type: string } = Extract<
+    WebSocketSchemaMessage.Server<Schema>,
+    { type: ResponseMessageType }
+  >,
 >(socket: ClientTestWebSocket<Schema>, responseMessageType: ResponseMessageType) {
-  return new Promise<Extract<WebSocketSchemaMessage<Schema>, { type: ResponseMessageType }>>((resolve) => {
+  return new Promise<ResponseMessage>((resolve) => {
     function messageListener(event: ClientTestWebSocketMessageEvent<Schema>) {
-      const message = JSON.parse(event.data as string) as Extract<
-        WebSocketSchemaMessage<Schema>,
-        { type: ResponseMessageType }
-      >;
+      const message = JSON.parse(event.data as string) as ResponseMessage;
 
       if (message.type === responseMessageType) {
         socket.removeEventListener('message', messageListener);
