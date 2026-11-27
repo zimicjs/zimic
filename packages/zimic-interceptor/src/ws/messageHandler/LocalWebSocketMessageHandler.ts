@@ -28,7 +28,10 @@ class LocalWebSocketMessageHandler<
 
   implementation: WebSocketMessageHandlerImplementation<Schema, Path, RestrictedMessage>;
 
-  constructor(interceptorImplementation: AnyWebSocketInterceptorImplementation, path: Path | undefined) {
+  constructor(
+    private interceptorImplementation: AnyWebSocketInterceptorImplementation,
+    path: Path | undefined,
+  ) {
     this.implementation = new WebSocketMessageHandlerImplementation<Schema, Path, RestrictedMessage>(
       interceptorImplementation,
       path,
@@ -89,6 +92,7 @@ class LocalWebSocketMessageHandler<
 
   clear(): PublicLocalWebSocketMessageHandler<Schema, Path> {
     this.implementation.clear();
+    this.interceptorImplementation.markHandlerAsCleared(this.implementation);
     return this as PublicLocalWebSocketMessageHandler<Schema, Path>;
   }
 

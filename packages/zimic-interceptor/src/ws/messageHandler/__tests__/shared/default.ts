@@ -2,7 +2,11 @@ import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import {
+  createInternalWebSocketInterceptor,
+  usingHeldInterceptorWorkerMessages,
+  usingWebSocketInterceptor,
+} from '@tests/utils/interceptors';
 import { usingWebSocketClient, waitForWebSocketClientMessage } from '@tests/utils/webSocket';
 
 import { WebSocketInterceptorClient } from '../../../interceptor/types/messages';
@@ -161,6 +165,44 @@ export function declareDefaultWebSocketMessageHandlerTests(
       },
     );
   });
+
+  // Local interceptors receive messages in the same process, so a message sent before a clear cannot arrive after it.
+  if (type === 'remote') {
+    it('should not match messages sent before cleared and redeclared', async () => {
+      await usingHeldInterceptorWorkerMessages(async (messages) => {
+        await usingWebSocketInterceptor<Schema>(
+          { type, baseURL, messageSaving: { enabled: true } },
+          async (interceptor) => {
+            const olderHandler = await interceptor.message().respond({ type: 'delete', id: 'older' });
+            const handler = await interceptor.message().respond({ type: 'delete', id: '1' });
+
+            await usingWebSocketClient<Schema>(baseURL, async (client) => {
+              await waitFor(() => {
+                expect(interceptor.clients).toHaveLength(1);
+              });
+
+              const heldMessagePromise = messages.hold((message) => {
+                return message.channel === 'interceptors/ws/messages/handle';
+              });
+
+              const response = waitForWebSocketClientMessage(client);
+              client.send(JSON.stringify({ type: 'create', body: { text: 'pending' } }));
+              await heldMessagePromise;
+
+              await handler.clear().respond({ type: 'delete', id: '1' });
+
+              messages.release();
+
+              await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'older' }));
+
+              expect(handler.messages).toHaveLength(0);
+              expect(olderHandler.messages).toHaveLength(1);
+            });
+          },
+        );
+      });
+    });
+  }
 
   it.each<{
     declaration: string;

@@ -23,7 +23,11 @@ class LocalHttpRequestHandler<
 
   implementation: HttpRequestHandlerImplementation<Schema, Method, Path, StatusCode>;
 
-  constructor(interceptor: HttpInterceptorImplementation<Schema>, method: Method, path: Path) {
+  constructor(
+    private interceptor: HttpInterceptorImplementation<Schema>,
+    method: Method,
+    path: Path,
+  ) {
     this.implementation = new HttpRequestHandlerImplementation(interceptor, method, path, this);
   }
 
@@ -68,6 +72,7 @@ class LocalHttpRequestHandler<
 
   clear(): this {
     this.implementation.clear();
+    this.interceptor.markHandlerAsCleared(this.implementation);
     return this;
   }
 

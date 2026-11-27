@@ -538,6 +538,11 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
     mswWorker.resetHandlers(...remainingHandlers);
   }
+
+  markHandlerAsCleared() {
+    // Local handlers receive messages and connections in the same process, so one sent before a clear cannot arrive
+    // after it.
+  }
 }
 
 export default LocalWebSocketInterceptorWorker;

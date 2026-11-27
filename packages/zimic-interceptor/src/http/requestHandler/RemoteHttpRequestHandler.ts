@@ -32,7 +32,7 @@ class RemoteHttpRequestHandler<
   private synced: this;
 
   constructor(
-    interceptor: HttpInterceptorImplementation<Schema, typeof RemoteHttpRequestHandler>,
+    private interceptor: HttpInterceptorImplementation<Schema, typeof RemoteHttpRequestHandler>,
     method: Method,
     path: Path,
   ) {
@@ -110,6 +110,7 @@ class RemoteHttpRequestHandler<
 
   clear() {
     this.implementation.clear();
+    this.interceptor.markHandlerAsCleared(this.implementation);
     return this.pending;
   }
 

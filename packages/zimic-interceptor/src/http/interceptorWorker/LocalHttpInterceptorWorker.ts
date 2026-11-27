@@ -179,6 +179,10 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
     this.clearHttpHandlers(options.interceptor);
   }
+
+  markHandlerAsCleared() {
+    // Local handlers receive requests in the same process, so a request sent before a clear cannot arrive after it.
+  }
 }
 
 export default LocalHttpInterceptorWorker;

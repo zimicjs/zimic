@@ -476,6 +476,12 @@ class WebSocketInterceptorImplementation<
     }
   }
 
+  markHandlerAsCleared(
+    handler: AnyWebSocketMessageHandlerImplementation | AnyWebSocketConnectionHandlerImplementation,
+  ) {
+    this.worker?.markHandlerAsCleared(handler);
+  }
+
   clear() {
     return this.clearAndOptionallyUnregister({ preserveInterceptorRegistration: true });
   }

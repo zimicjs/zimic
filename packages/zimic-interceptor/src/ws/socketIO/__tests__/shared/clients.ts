@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import WebSocketInterceptorStore from '@/ws/interceptor/WebSocketInterceptorStore';
 import { usingIgnoredConsole } from '@tests/utils/console';
-import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { usingHeldInterceptorWorkerMessages, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import {
   usingSocket,
   usingSocketManager,
@@ -55,6 +55,70 @@ export function declareClientsSocketIOProtocolTests(options: SharedSocketIOProto
     if (transports?.some((transport) => transport === WebSocketTransport)) {
       await waitFor(() => expect(socket.io.engine.transport.name).toBe('websocket'));
     }
+  }
+
+  // Local interceptors receive connections in the same process, so a connection sent before a clear cannot arrive after
+  // it. Only connections sent over WebSocket are checked, because polling requests reach the server through another
+  // worker connection.
+  if (type === 'remote') {
+    it('should not intercept connections sent before their handler is cleared and redeclared', async () => {
+      await usingHeldInterceptorWorkerMessages(async (messages) => {
+        await usingWebSocketInterceptor<AnySchema>(
+          getSocketIOInterceptorOptions({}, { connectionSaving: { enabled: true } }),
+          async (interceptor) => {
+            const olderHandler = await interceptor.connection().respond({ action: 'accept' });
+            const handler = await interceptor.connection().respond({ action: 'accept' });
+
+            // Clients send their namespace connection in the first message after the WebSocket handshake.
+            const heldMessagePromise = messages.hold((message) => {
+              return message.channel === 'interceptors/ws/messages/handle';
+            });
+
+            await usingSocket(baseURL, { transports: [WebSocketTransport] }, async (socket) => {
+              const connectionPromise = waitForSocketConnection(socket);
+              await heldMessagePromise;
+
+              await handler.clear().respond({ action: 'accept' });
+
+              messages.release();
+
+              await connectionPromise;
+
+              expect(handler.connections).toHaveLength(0);
+              expect(olderHandler.connections).toHaveLength(1);
+            });
+          },
+        );
+      });
+    });
+
+    it('should not intercept connections sent before cleared with handlers declared after cleared', async () => {
+      await usingHeldInterceptorWorkerMessages(async (messages) => {
+        await usingWebSocketInterceptor<AnySchema>(
+          getSocketIOInterceptorOptions({}, { connectionSaving: { enabled: true } }),
+          async (interceptor) => {
+            // Clients send their namespace connection in the first message after the WebSocket handshake.
+            const heldMessagePromise = messages.hold((message) => {
+              return message.channel === 'interceptors/ws/messages/handle';
+            });
+
+            await usingSocket(baseURL, { transports: [WebSocketTransport] }, async (socket) => {
+              const connectionPromise = waitForSocketConnection(socket);
+              await heldMessagePromise;
+
+              await interceptor.clear();
+              const handler = await interceptor.connection().respond({ action: 'reject' });
+
+              messages.release();
+
+              await connectionPromise;
+
+              expect(handler.connections).toHaveLength(0);
+            });
+          },
+        );
+      });
+    });
   }
 
   describe.each(getSocketIOTransportCases(options))('Transport: $transportName', ({ transports }) => {

@@ -25,7 +25,10 @@ class RemoteWebSocketConnectionHandler<
   private pending: this;
   private synced: this;
 
-  constructor(interceptorImplementation: AnyWebSocketInterceptorImplementation, path: Path | undefined) {
+  constructor(
+    private interceptorImplementation: AnyWebSocketInterceptorImplementation,
+    path: Path | undefined,
+  ) {
     this.implementation = new WebSocketConnectionHandlerImplementation<Schema, Path>(
       interceptorImplementation,
       path,
@@ -99,6 +102,7 @@ class RemoteWebSocketConnectionHandler<
 
   clear() {
     this.implementation.clear();
+    this.interceptorImplementation.markHandlerAsCleared(this.implementation);
     return this.pending;
   }
 

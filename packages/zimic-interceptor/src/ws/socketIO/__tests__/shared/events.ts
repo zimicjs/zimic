@@ -5,7 +5,7 @@ import msgpackParser from 'socket.io-msgpack-parser';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
-import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { usingHeldInterceptorWorkerMessages, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { usingSocket, waitForSocketConnection } from '@tests/utils/socketIO';
 
 import { verifyUnhandledMessageWarning } from '../../../interceptor/__tests__/shared/utils';
@@ -56,7 +56,7 @@ interface EventsSocketIOProtocolTestsOptions extends SharedSocketIOProtocolTests
 }
 
 export function declareEventsSocketIOProtocolTests(options: EventsSocketIOProtocolTestsOptions) {
-  const { platform, type, getBaseURL: getServerBaseURL } = options;
+  const { platform, type, getBaseURL: getServerBaseURL, WebSocketTransport } = options;
 
   let baseURL: string;
   let polling: SocketIOPollingInterceptor;
@@ -71,6 +71,40 @@ export function declareEventsSocketIOProtocolTests(options: EventsSocketIOProtoc
     savingOptions?: SocketIOTestSavingOptions,
   ) {
     return createSocketIOInterceptorOptions<Message>({ type, baseURL, polling }, protocolOptions, savingOptions);
+  }
+
+  // Local interceptors receive events in the same process, so an event sent before a clear cannot arrive after it. Only
+  // events sent over WebSocket are checked, because polling requests reach the server through another worker connection.
+  if (type === 'remote') {
+    it('should not intercept events sent before their handler is cleared and redeclared', async () => {
+      await usingHeldInterceptorWorkerMessages(async (messages) => {
+        await usingWebSocketInterceptor<ChatSchema>(
+          getSocketIOInterceptorOptions({}, { messageSaving: { enabled: true } }),
+          async (interceptor) => {
+            const olderHandler = await interceptor.message().with({ type: 'user:join' });
+            const handler = await interceptor.message().with({ type: 'user:join' });
+
+            await usingSocket(baseURL, { transports: [WebSocketTransport] }, async (socket) => {
+              await waitForSocketConnection(socket);
+
+              const heldMessagePromise = messages.hold((message) => {
+                return message.channel === 'interceptors/ws/messages/handle';
+              });
+
+              socket.emit('user:join', { name: 'Name' });
+              await heldMessagePromise;
+
+              await handler.clear().with({ type: 'user:join' });
+
+              messages.release();
+
+              await waitFor(() => expect(olderHandler.messages).toHaveLength(1));
+              expect(handler.messages).toHaveLength(0);
+            });
+          },
+        );
+      });
+    });
   }
 
   describe.each(getSocketIOTransportCases(options))('Transport: $transportName', ({ transports }) => {
