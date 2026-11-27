@@ -80,7 +80,7 @@ async function runCLI() {
                 description:
                   'Whether to log an error when no interceptors were found for the URL of a WebSocket connection. ' +
                   'If an interceptor was matched, the connection is handled by the interceptor itself, unless the ' +
-                  'interceptor disconnects or fails before accepting it.',
+                  'interceptor stops, disconnects, or fails before accepting it.',
               })
               .option('tokens-dir', {
                 type: 'string',

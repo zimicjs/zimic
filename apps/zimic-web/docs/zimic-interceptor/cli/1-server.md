@@ -54,8 +54,9 @@ Options:
                                    were found for the URL of a WebSocket
                                    connection. If an interceptor was matched,
                                    the connection is handled by the interceptor
-                                   itself, unless the interceptor disconnects or
-                                   fails before accepting it.          [boolean]
+                                   itself, unless the interceptor stops,
+                                   disconnects, or fails before accepting it.
+                                                                       [boolean]
   -t, --tokens-dir                 The directory where the authorized
                                    interceptor authentication tokens are saved.
                                    If provided, only remote interceptors bearing

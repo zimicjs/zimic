@@ -100,7 +100,7 @@ The [interceptor server](/docs/zimic-interceptor/cli/1-server.md) of [remote int
 Learn more: https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages#unhandled-connections
 ```
 
-The server also logs a connection whose interceptor disconnects or fails before accepting it. In this case, the connection may close with another code and reason, such as `1002` and `'Could not connect to the WebSocket interceptor.'`. Disable these logs with the [`--log-unhandled-connections`](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-start) option of the CLI, or with [`logUnhandledConnections`](/docs/zimic-interceptor/api/server/1-create-interceptor-server.md) in programmatic servers.
+The server also logs a connection whose interceptor stops, is cleared, disconnects, or fails before accepting it. A connection whose interceptor stops or is cleared closes normally with code `1000`. A connection whose interceptor disconnects or fails closes with code `1002` and reason `'Could not connect to the WebSocket interceptor.'`. Disable these logs with the [`--log-unhandled-connections`](/docs/zimic-interceptor/cli/1-server.md#zimic-interceptor-server-start) option of the CLI, or with [`logUnhandledConnections`](/docs/zimic-interceptor/api/server/1-create-interceptor-server.md) in programmatic servers.
 
 :::tip FAQ: <span>Why was my connection unhandled?</span>
 

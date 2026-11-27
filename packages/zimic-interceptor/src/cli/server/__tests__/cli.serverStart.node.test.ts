@@ -72,8 +72,9 @@ describe('CLI > Server start', () => {
     '                                   were found for the URL of a WebSocket',
     '                                   connection. If an interceptor was matched,',
     '                                   the connection is handled by the interceptor',
-    '                                   itself, unless the interceptor disconnects or',
-    '                                   fails before accepting it.          [boolean]',
+    '                                   itself, unless the interceptor stops,',
+    '                                   disconnects, or fails before accepting it.',
+    '                                                                       [boolean]',
     '  -t, --tokens-dir                 The directory where the authorized',
     '                                   interceptor authentication tokens are saved.',
     '                                   If provided, only remote interceptors bearing',
@@ -1058,8 +1059,55 @@ describe('CLI > Server start', () => {
     });
   });
 
-  // No WebSocket counterpart for "should log and reject requests if the worker stops before responding": a stopping
-  // worker accepts the connections it is deciding and then closes them, so they are handled.
+  it('should log and close connections if the worker stops before accepting them', async () => {
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--log-unhandled-connections']);
+
+    await usingIgnoredConsole(['log', 'error'], async (console) => {
+      await runCLI();
+
+      expect(server).toBeDefined();
+      expect(server!.isRunning).toBe(true);
+
+      const baseURL = `ws://localhost:${server!.port}/chat`;
+
+      await usingWebSocketInterceptor<ChatSchema>({ type: 'remote', baseURL }, async (interceptor) => {
+        const responseFactoryPromise = createPromiseWithResolvers<{ action: 'accept' }>();
+        const responseFactory = vi.fn(() => responseFactoryPromise);
+
+        await interceptor.connection().respond(responseFactory);
+
+        const socket = new WebSocket(baseURL);
+
+        try {
+          const closeEventPromise = new Promise<CloseEvent>((resolve) => {
+            socket.addEventListener('close', resolve, { once: true });
+          });
+
+          await waitFor(() => {
+            expect(responseFactory).toHaveBeenCalledTimes(1);
+          });
+
+          await interceptor.stop();
+          expect(interceptor.isRunning).toBe(false);
+
+          const closeEvent = await closeEventPromise;
+          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.DEFAULT);
+          expect(closeEvent.reason).toBe('');
+
+          expect(console.error).toHaveBeenCalledTimes(1);
+
+          await verifyUnhandledConnectionError(console.error.mock.calls[0], {
+            url: baseURL,
+            searchParams: {},
+            protocols: [],
+          });
+        } finally {
+          socket.close();
+          responseFactoryPromise.resolve({ action: 'accept' });
+        }
+      });
+    });
+  });
 
   it('should log and close connections if the internal web socket client of the worker closes before accepting them', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--log-unhandled-connections']);
