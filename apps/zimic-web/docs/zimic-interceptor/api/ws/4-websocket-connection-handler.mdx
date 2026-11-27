@@ -68,9 +68,9 @@ The path declared in [`interceptor.connection(path)`](/docs/zimic-interceptor/ap
 
 ## `handler.with()`
 
-Declares a restriction to intercepted connection matches. `searchParams` and `protocols` are supported to limit which connections will match the handler. If multiple restrictions are declared, either in a single object or with multiple calls to `handler.with()`, all of them must be met, creating an AND condition.
+Declares a restriction to intercepted connection matches. `searchParams`, `protocols`, and, in [Socket.IO](/docs/zimic-interceptor/guides/ws/9-socket-io.mdx#connections-and-clients) interceptors, `auth` are supported to limit which connections will match the handler. If multiple restrictions are declared, either in a single object or with multiple calls to `handler.with()`, all of them must be met, creating an AND condition.
 
-By default, restrictions use `exact: false`, meaning that any connection **containing** the declared restrictions will match the handler, regardless of having more search params or subprotocols. If you want to match only connections with the exact values declared, use `exact: true`.
+By default, restrictions use `exact: false`, meaning that any connection **containing** the declared restrictions will match the handler, regardless of having more search params, subprotocols, or `auth` properties. If you want to match only connections with the exact values declared, use `exact: true`.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -105,9 +105,13 @@ await handler.with((request) => matchesRequest);
 
      The subprotocols that the client must request to match the handler. The client must request all of these, in any order. If exact is `true`, the client must request exactly these subprotocols, in the same order, because clients list them in order of preference.
 
+   - **auth**: `DeepPartial<Auth> | undefined`
+
+     The `auth` payload that the [Socket.IO](/docs/zimic-interceptor/guides/ws/9-socket-io.mdx#connections-and-clients) client must send to match the handler. The payload must contain these properties, compared deeply as JSON. If exact is `true`, the payload must be equal to this one. Accepted only in interceptors of a `SocketIOSchema`.
+
    - **exact**: `boolean | undefined` (default: `false`)
 
-     If `true`, the connection must contain **exactly** the search params and subprotocols declared in this restriction. Otherwise, the connection must contain **at least** them.
+     If `true`, the connection must contain **exactly** the search params, subprotocols, and `auth` declared in this restriction. Otherwise, the connection must contain **at least** them.
 
    Restrictions can also be [computed](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#computed-restrictions), declared as a function to dynamically decide whether the connection matches:
 
@@ -130,6 +134,10 @@ await handler.with((request) => matchesRequest);
       - **pathParams**: `InferPathParams<Path>`
 
         The URI-decoded path params of the connection URL, parsed from the path declared in `interceptor.connection(path)`. Empty if the handler declares no path.
+
+      - **auth**: `Auth`
+
+        The `auth` payload that the [Socket.IO](/docs/zimic-interceptor/guides/ws/9-socket-io.mdx#connections-and-clients) client sent when connecting to the namespace, or `{}` if it sent none. Present only in interceptors of a `SocketIOSchema`.
 
    **Returns**: `Promise<boolean> | boolean`
 
@@ -253,10 +261,14 @@ await handler.respond((request) => declaration);
 
    The handshake response or a factory to create it.
 
-   If declared as a static object, the declaration has the following property:
+   If declared as a static object, the declaration has the following properties:
    - **action**: `'accept' | 'reject'`
 
      If set to `'accept'`, the connection opens. If set to `'reject'`, the connection is refused before it opens. Both actions are supported by local and remote interceptors.
+
+   - **error**: `{ message: string; data?: unknown } | undefined`
+
+     The error sent to a rejected [Socket.IO](/docs/zimic-interceptor/guides/ws/9-socket-io.mdx#connections-and-clients) socket, which receives it as the `message` and `data` of its `connect_error`, as with `next(error)` in a Socket.IO server. Accepted only with `action: 'reject'` and in schemas that declare it, such as `SocketIOSchema`. If not set, the socket receives the message `'Connection rejected'`.
 
    A declaration can also be a function to dynamically decide how to respond to the connection:
 
@@ -265,7 +277,7 @@ await handler.respond((request) => declaration);
 
       The intercepted [connection request](#handlerwith) to respond to.
 
-   **Returns**: `Promise<WebSocketConnectionHandlerResponseStaticDeclaration> | WebSocketConnectionHandlerResponseStaticDeclaration`
+   **Returns**: `Promise<WebSocketConnectionHandlerResponseStaticDeclaration<Schema, Path>> | WebSocketConnectionHandlerResponseStaticDeclaration<Schema, Path>`
 
 **Returns**: `WebSocketConnectionHandler<Schema, Path>`
 
@@ -478,7 +490,7 @@ The connection attempts that matched this handler, whether accepted or rejected.
 
 **Type**: `readonly WebSocketInterceptorConnectionRequest<Schema, Path>[]`
 
-Each attempt is a [connection request](#handlerwith), with its `url`, `protocols`, `searchParams`, and `pathParams`.
+Each attempt is a [connection request](#handlerwith).
 
 Calling [`handler.clear()`](#handlerclear), [`handler.respond()`](#handlerrespond), or [`handler.effect()`](#handlereffect) empties `handler.connections`.
 

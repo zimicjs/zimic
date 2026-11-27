@@ -1,7 +1,6 @@
 import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
-import { WebSocketInterceptorClient } from '../interceptor/types/messages';
 import { WebSocketInterceptorPathMessage } from '../interceptor/types/schema';
 import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
 import { WebSocketMessageHandlerDelayFactory } from './types/messages';
@@ -15,6 +14,7 @@ import {
 import {
   WebSocketMessageHandlerRestriction,
   WebSocketMessageHandlerRestrictionOptionsArguments,
+  WebSocketMessageHandlerSenderRestriction,
 } from './types/restrictions';
 import WebSocketMessageHandlerImplementation from './WebSocketMessageHandlerImplementation';
 
@@ -71,25 +71,25 @@ class RemoteWebSocketMessageHandler<
     return PENDING_PROPERTIES.has(property);
   }
 
-  from(sender: WebSocketInterceptorClient<Schema>) {
+  from(sender: WebSocketMessageHandlerSenderRestriction<Schema, Path>) {
     this.implementation.from(sender);
     return this.pending;
   }
 
-  with<Restriction extends WebSocketMessageHandlerRestriction<RestrictedMessage>>(
+  with<Restriction extends WebSocketMessageHandlerRestriction<Schema, Path, RestrictedMessage>>(
     restriction: Restriction,
-    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<RestrictedMessage, Restriction>
+    ...options: WebSocketMessageHandlerRestrictionOptionsArguments<Schema, Path, RestrictedMessage, Restriction>
   ): RemoteWebSocketMessageHandler<
     Schema,
     Path,
-    WebSocketMessageHandlerMessageWithRestriction<RestrictedMessage, Restriction>
+    WebSocketMessageHandlerMessageWithRestriction<Schema, Path, RestrictedMessage, Restriction>
   > {
     this.implementation.with(restriction, ...options);
 
     const pending = this.pending as unknown as RemoteWebSocketMessageHandler<
       Schema,
       Path,
-      WebSocketMessageHandlerMessageWithRestriction<RestrictedMessage, Restriction>
+      WebSocketMessageHandlerMessageWithRestriction<Schema, Path, RestrictedMessage, Restriction>
     >;
     return pending;
   }

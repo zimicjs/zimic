@@ -1,7 +1,11 @@
-import { PossiblePromise } from '@zimic/utils/types';
+import { IfNever, PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
-import { WebSocketInterceptorClient, WebSocketInterceptorConnectionRequest } from '@/ws/interceptor/types/messages';
+import {
+  WebSocketInterceptorClient,
+  WebSocketInterceptorConnectionError,
+  WebSocketInterceptorConnectionRequest,
+} from '@/ws/interceptor/types/messages';
 
 import WebSocketConnectionHandlerImplementation from '../WebSocketConnectionHandlerImplementation';
 import { WebSocketConnectionHandlerDelayFactory } from './connections';
@@ -29,9 +33,46 @@ export type WebSocketConnectionHandlerConnectionCallback<
  *
  * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
  */
-export interface WebSocketConnectionHandlerResponseStaticDeclaration {
+export type WebSocketConnectionHandlerResponseStaticDeclaration<
+  Schema extends WebSocketSchema = WebSocketSchema,
+  Path extends string = string,
+> = WebSocketConnectionHandlerAcceptDeclaration | WebSocketConnectionHandlerRejectDeclaration<Schema, Path>;
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
+ */
+export interface WebSocketConnectionHandlerAcceptDeclaration {
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference} */
-  action: 'accept' | 'reject';
+  action: 'accept';
+}
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
+ */
+export type WebSocketConnectionHandlerRejectDeclaration<
+  Schema extends WebSocketSchema = WebSocketSchema,
+  Path extends string = string,
+> = IfNever<
+  WebSocketInterceptorConnectionError<Schema, Path>,
+  BaseWebSocketConnectionHandlerRejectDeclaration,
+  BaseWebSocketConnectionHandlerRejectDeclaration & {
+    /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference} */
+    error?: WebSocketInterceptorConnectionError<Schema, Path>;
+  }
+>;
+
+/**
+ * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
+ *
+ * @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference}
+ */
+export interface BaseWebSocketConnectionHandlerRejectDeclaration {
+  /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-connection-handler#handlerrespond `handler.respond()` API reference} */
+  action: 'reject';
 }
 
 /**
@@ -44,7 +85,7 @@ export type WebSocketConnectionHandlerResponseComputedDeclaration<
   Path extends string = string,
 > = (
   request: WebSocketInterceptorConnectionRequest<Schema, Path>,
-) => PossiblePromise<WebSocketConnectionHandlerResponseStaticDeclaration>;
+) => PossiblePromise<WebSocketConnectionHandlerResponseStaticDeclaration<Schema, Path>>;
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -55,7 +96,7 @@ export type WebSocketConnectionHandlerResponseDeclaration<
   Schema extends WebSocketSchema = WebSocketSchema,
   Path extends string = string,
 > =
-  | WebSocketConnectionHandlerResponseStaticDeclaration
+  | WebSocketConnectionHandlerResponseStaticDeclaration<Schema, Path>
   | WebSocketConnectionHandlerResponseComputedDeclaration<Schema, Path>;
 
 /**

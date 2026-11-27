@@ -1,5 +1,6 @@
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
+import color from 'picocolors';
 import type { ManagerOptions, Socket } from 'socket.io-client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,6 +13,7 @@ import {
   waitForSocketConnection,
   waitForSocketDisconnection,
 } from '@tests/utils/socketIO';
+import { expectWebSocketTimesCheckError } from '@tests/utils/webSocket';
 
 import type { SocketIOProtocolOptions } from '../../types/options';
 import {
@@ -201,6 +203,291 @@ export function declareClientsSocketIOProtocolTests(options: SharedSocketIOProto
           await disconnectionPromise;
 
           expect(interceptor.clients).toHaveLength(0);
+        });
+      });
+    });
+
+    it('should expose the auth of a socket on its connection request', async () => {
+      const auth = { token: 'abc' };
+      const receivedAuths: unknown[] = [];
+
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        await interceptor
+          .connection()
+          .with((request) => {
+            receivedAuths.push(request.auth);
+            return true;
+          })
+          .respond((request) => {
+            receivedAuths.push(request.auth);
+            return { action: 'accept' };
+          })
+          .effect((_client, request) => {
+            receivedAuths.push(request.auth);
+          });
+
+        await usingSocket(baseURL, { transports, auth }, async (socket) => {
+          await waitForSocketConnection(socket);
+
+          await waitFor(() => expect(receivedAuths).toEqual([auth, auth, auth]));
+        });
+      });
+    });
+
+    it('should expose the auth of a socket on its client', async () => {
+      const auth = { token: 'abc' };
+      const effectClientAuthPromise = createPromiseWithResolvers<unknown>();
+
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        await interceptor.connection().effect((client) => {
+          effectClientAuthPromise.resolve(client.auth);
+        });
+
+        await usingSocket(baseURL, { transports, auth }, async (socket) => {
+          await waitForSocketConnection(socket);
+
+          expect(await effectClientAuthPromise).toEqual(auth);
+          expect(interceptor.clients[0].auth).toEqual(auth);
+        });
+      });
+    });
+
+    it('should expose an empty auth for a socket that sends none', async () => {
+      const requestAuthPromise = createPromiseWithResolvers<unknown>();
+
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        await interceptor.connection().effect((_client, request) => {
+          requestAuthPromise.resolve(request.auth);
+        });
+
+        await usingSocket(baseURL, { transports }, async (socket) => {
+          await waitForSocketConnection(socket);
+
+          expect(await requestAuthPromise).toEqual({});
+          expect(interceptor.clients[0].auth).toEqual({});
+        });
+      });
+    });
+
+    it('should save the auth of a socket in the connections of its handler', async () => {
+      const auth = { token: 'abc' };
+
+      await usingWebSocketInterceptor<AnySchema>(
+        getSocketIOInterceptorOptions({}, { connectionSaving: { enabled: true } }),
+        async (interceptor) => {
+          const handler = await interceptor.connection().times(1);
+
+          await usingSocket(baseURL, { transports, auth }, async (socket) => {
+            await waitForSocketConnection(socket);
+
+            expect(handler.connections).toHaveLength(1);
+            expect(handler.connections[0].auth).toEqual(auth);
+          });
+        },
+      );
+    });
+
+    it.each([{ exact: false }, { exact: undefined }])(
+      'should match only specific connections if contains a declared response, a static auth restriction, and exact $exact',
+      async ({ exact }) => {
+        await usingWebSocketInterceptor<AnySchema>(
+          getSocketIOInterceptorOptions({}, { connectionSaving: { enabled: true } }),
+          async (interceptor) => {
+            const handler = await interceptor
+              .connection()
+              .with({ auth: { token: 'abc' }, exact })
+              .respond({ action: 'reject' });
+
+            for (const matchingAuth of [{ token: 'abc' }, { token: 'abc', user: 'u' }]) {
+              await usingSocket(baseURL, { transports, auth: matchingAuth }, async (socket) => {
+                await expect(waitForSocketConnection(socket)).rejects.toThrow('Connection rejected');
+              });
+            }
+
+            expect(handler.connections.map((connection) => connection.auth)).toEqual([
+              { token: 'abc' },
+              { token: 'abc', user: 'u' },
+            ]);
+
+            for (const mismatchingAuth of [{ token: 'xyz' }, {}]) {
+              await usingSocket(baseURL, { transports, auth: mismatchingAuth }, async (socket) => {
+                await waitForSocketConnection(socket);
+              });
+            }
+
+            expect(handler.connections).toHaveLength(2);
+          },
+        );
+      },
+    );
+
+    it.each([{ exact: true }])(
+      'should match only specific connections if contains a declared response, a static auth restriction, and exact $exact',
+      async ({ exact }) => {
+        await usingWebSocketInterceptor<AnySchema>(
+          getSocketIOInterceptorOptions({}, { connectionSaving: { enabled: true } }),
+          async (interceptor) => {
+            const handler = await interceptor
+              .connection()
+              .with({ auth: { token: 'abc' }, exact })
+              .respond({ action: 'reject' });
+
+            await usingSocket(baseURL, { transports, auth: { token: 'abc' } }, async (socket) => {
+              await expect(waitForSocketConnection(socket)).rejects.toThrow('Connection rejected');
+            });
+
+            expect(handler.connections).toHaveLength(1);
+            expect(handler.connections[0].auth).toEqual({ token: 'abc' });
+
+            for (const mismatchingAuth of [{ token: 'abc', user: 'u' }, { token: 'xyz' }, {}]) {
+              await usingSocket(baseURL, { transports, auth: mismatchingAuth }, async (socket) => {
+                await waitForSocketConnection(socket);
+              });
+            }
+
+            expect(handler.connections).toHaveLength(1);
+          },
+        );
+      },
+    );
+
+    it('should consider connections unmatched due to auth restrictions in times check errors', async () => {
+      await usingWebSocketInterceptor<AnySchema>(
+        getSocketIOInterceptorOptions({}, { connectionSaving: { enabled: true } }),
+        async (interceptor) => {
+          const handler = await interceptor
+            .connection()
+            .with({ auth: { token: 'abc' } })
+            .respond({ action: 'reject' })
+            .times(1);
+
+          await usingSocket(baseURL, { transports, auth: { token: 'xyz' } }, async (socket) => {
+            await waitForSocketConnection(socket);
+
+            await expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+              handler: 'connection',
+              message: [
+                'Expected exactly 1 matching connection, but got 0.',
+                '',
+                'Connections evaluated by this handler:',
+                '',
+                `  ${color.green('- Expected')}`,
+                `  ${color.red('+ Received')}`,
+                '',
+                `1: ${interceptor.clients[0].url}`,
+                '     Auth:',
+                `       ${color.green('- { "token": "abc" }')}`,
+                `       ${color.red('+ { "token": "xyz" }')}`,
+              ].join('\n'),
+              expectedNumberOfMatches: 1,
+            });
+          });
+        },
+      );
+    });
+
+    it('should match only messages from a restricted sender if contains a static auth restriction', async () => {
+      await usingWebSocketInterceptor<AnySchema>(
+        getSocketIOInterceptorOptions({}, { messageSaving: { enabled: true } }),
+        async (interceptor) => {
+          const fallbackHandler = await interceptor.message().with({ type: 'event' });
+          const handler = await interceptor
+            .message()
+            .from({ auth: { token: 'abc' } })
+            .with({ type: 'event' });
+
+          const socketAuths = [{ token: 'abc' }, { token: 'abc', user: 'u' }, { token: 'xyz' }, {}];
+
+          for (const [index, auth] of socketAuths.entries()) {
+            await usingSocket(baseURL, { transports, auth }, async (socket) => {
+              await waitForSocketConnection(socket);
+
+              socket.emit('event', 'data');
+
+              await waitFor(() => {
+                expect(handler.messages.length + fallbackHandler.messages.length).toBe(index + 1);
+              });
+            });
+          }
+
+          expect(handler.messages.map((message) => message.sender.auth)).toEqual([
+            { token: 'abc' },
+            { token: 'abc', user: 'u' },
+          ]);
+          expect(fallbackHandler.messages.map((message) => message.sender.auth)).toEqual([{ token: 'xyz' }, {}]);
+        },
+      );
+    });
+
+    it('should consider messages unmatched due to static sender auth restrictions in times check errors', async () => {
+      await usingWebSocketInterceptor<AnySchema>(
+        getSocketIOInterceptorOptions({}, { messageSaving: { enabled: true } }),
+        async (interceptor) => {
+          const handler = await interceptor
+            .message()
+            .from({ auth: { token: 'abc' } })
+            .times(1);
+
+          await usingSocket(baseURL, { transports, auth: { token: 'xyz' } }, async (socket) => {
+            await waitForSocketConnection(socket);
+
+            socket.emit('event', 'data');
+
+            await waitFor(() =>
+              expectWebSocketTimesCheckError(() => handler.checkTimes(), {
+                handler: 'message',
+                message: [
+                  'Expected exactly 1 matching message, but got 0.',
+                  '',
+                  'Messages evaluated by this handler:',
+                  '',
+                  `  ${color.green('- Expected')}`,
+                  `  ${color.red('+ Received')}`,
+                  '',
+                  '1: { "type": "event", "data": "data" }',
+                  '     Sender:',
+                  '       Auth:',
+                  `         ${color.green('- { "token": "abc" }')}`,
+                  `         ${color.red('+ { "token": "xyz" }')}`,
+                ].join('\n'),
+                expectedNumberOfMatches: 1,
+              }),
+            );
+          });
+        },
+      );
+    });
+
+    const rejectionError = { message: 'Token has expired', data: { code: 'EXPIRED' } };
+
+    it.each([
+      { declarationKind: 'static', declaration: { action: 'reject' as const, error: rejectionError } },
+      { declarationKind: 'computed', declaration: () => ({ action: 'reject' as const, error: rejectionError }) },
+    ])(
+      'should fail with connect_error of the declared error the sockets whose connection handler rejects them ($declarationKind)',
+      async ({ declaration }) => {
+        await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+          await interceptor.connection().respond(declaration);
+
+          await usingSocket(baseURL, { transports }, async (socket) => {
+            // As in `socket.io-client`, the error of `connect_error` carries the data of the rejection.
+            const expectedConnectError = Object.assign(new Error(rejectionError.message), {
+              data: rejectionError.data,
+            });
+
+            await expect(waitForSocketConnection(socket)).rejects.toThrow(expectedConnectError);
+          });
+        });
+      },
+    );
+
+    it('should fail with connect_error without data the sockets whose connection handler rejects them with an error without data', async () => {
+      await usingWebSocketInterceptor<AnySchema>(getSocketIOInterceptorOptions(), async (interceptor) => {
+        await interceptor.connection().respond({ action: 'reject', error: { message: 'Token has expired' } });
+
+        await usingSocket(baseURL, { transports }, async (socket) => {
+          const expectedConnectError = Object.assign(new Error('Token has expired'), { data: undefined });
+          await expect(waitForSocketConnection(socket)).rejects.toThrow(expectedConnectError);
         });
       });
     });

@@ -120,6 +120,23 @@ export function declareNamespacesSocketIOProtocolTests(options: SharedSocketIOPr
       );
     });
 
+    it('should expose the auth of each namespace on its own client', async () => {
+      const rootAuth = { token: 'root' };
+      const adminAuth = { token: 'admin' };
+
+      await usingNamespaceInterceptors({}, async (rootInterceptor, adminInterceptor) => {
+        await usingSocketManager(baseURL, { transports }, async (manager) => {
+          await Promise.all([
+            waitForSocketConnection(manager.socket('/', { auth: rootAuth })),
+            waitForSocketConnection(manager.socket('/admin', { auth: adminAuth })),
+          ]);
+
+          expect(rootInterceptor.clients[0].auth).toEqual(rootAuth);
+          expect(adminInterceptor.clients[0].auth).toEqual(adminAuth);
+        });
+      });
+    });
+
     it('should open one Engine.IO connection for the namespaces of a manager', async () => {
       await usingNamespaceInterceptors({}, async () => {
         await usingSocketManager(baseURL, { transports }, async (manager) => {

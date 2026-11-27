@@ -80,6 +80,19 @@ interceptor.connection('/rooms/:roomId').effect((client) => {
 });
 ```
 
+## `client.auth`
+
+The `auth` payload that the [Socket.IO](/docs/zimic-interceptor/guides/ws/9-socket-io.mdx#connections-and-clients) client sent when connecting to the namespace, as `socket.handshake.auth` in a Socket.IO server. `{}` if the client sent none. Present only in interceptors of a `SocketIOSchema`, typed by its `Auth` parameter.
+
+**Type**: `Auth` (readonly)
+
+```ts
+// Connected with io(url, { auth: { token: 'abc' } })
+interceptor.connection().effect((client) => {
+  console.log(client.auth); // { token: 'abc' }
+});
+```
+
 ## `client.messages`
 
 The client-to-server messages sent by this client that matched a [message handler](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx), along with sender and receiver handles. Each message has the same properties as in [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages).

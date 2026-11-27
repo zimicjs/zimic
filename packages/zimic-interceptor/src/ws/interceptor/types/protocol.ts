@@ -37,6 +37,12 @@ export interface WebSocketInterceptorProtocolClientOptions<Message> {
   /** Matched by connection handlers and exposed as `client.url`. */
   url: string;
 
+  /**
+   * The payload the client authenticates with, such as the data of a Socket.IO `CONNECT` packet. Matched by connection
+   * handlers and exposed as `request.auth` and `client.auth`.
+   */
+  auth: Record<string, unknown>;
+
   /** Aborting it releases the client, at any time, removing it from `interceptor.clients`. */
   signal: AbortSignal;
 
@@ -56,9 +62,11 @@ export interface WebSocketInterceptorProtocolClientOptions<Message> {
 }
 
 // `accepted` if the connection handlers accepted the client, `rejected` if they rejected it, or `aborted` if its signal
-// was aborted while they decided it.
+// was aborted while they decided it. A rejection carries the `error` declared by the rejecting handler, if any, which
+// comes from user code that may bypass the schema types, so the protocol validates it before sending it.
 /** The outcome of opening a client on a protocol. */
-export type WebSocketInterceptorProtocolOpenClientResult = 'accepted' | 'rejected' | 'aborted';
+export type WebSocketInterceptorProtocolOpenClientResult =
+  { result: 'accepted' } | { result: 'rejected'; error?: unknown } | { result: 'aborted' };
 
 /** The context given to a protocol when its interceptor starts. */
 export interface WebSocketInterceptorProtocolContext<Message> {

@@ -66,8 +66,12 @@ type SocketIOAckMessages<Events extends object> = {
 export type SocketIOSchema<
   ServerToClientEvents extends object = SocketIOEventsMap,
   ClientToServerEvents extends object = SocketIOEventsMap,
+  Auth extends Record<string, unknown> = Record<string, unknown>,
 > = WebSocketSchema<{
   '/': {
+    // Socket.IO clients request no subprotocols. Declaring none also makes the connection share a key with
+    // `WebSocketConnectionSchema`, whose keys are all optional, so TypeScript accepts it.
+    connection: { auth: Auth; error: { message: string; data?: unknown }; protocols?: never };
     message:
       | SocketIOServerEventMessages<ServerToClientEvents>
       | SocketIOClientEventMessages<ClientToServerEvents>

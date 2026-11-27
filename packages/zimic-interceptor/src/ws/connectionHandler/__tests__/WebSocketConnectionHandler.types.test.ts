@@ -89,6 +89,35 @@ describe('WebSocketConnectionHandler > Types', () => {
     expectTypeOf(declareHandlers).toBeFunction();
   });
 
+  it('should not type auth on paths that declare none', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      interceptor.connection('/rooms/:roomId').effect((client, request) => {
+        expectTypeOf(client).not.toHaveProperty('auth');
+        expectTypeOf(request).not.toHaveProperty('auth');
+      });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
+  it('should not accept auth restrictions on paths that declare none', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      // @ts-expect-error The path declares no auth.
+      interceptor.connection('/rooms/:roomId').with({ auth: { token: 'value' } });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
+  it('should not accept rejection errors on paths that declare none', () => {
+    function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      // @ts-expect-error The path declares no rejection error.
+      interceptor.connection('/rooms/:roomId').respond({ action: 'reject', error: { message: 'Rejected' } });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
   it('should type client search params from the declared path', () => {
     function declareHandlers(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
       interceptor.connection('/rooms/:roomId').effect((client) => {

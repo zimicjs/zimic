@@ -631,6 +631,14 @@ export function declareTimesWebSocketConnectionHandlerTests(
         );
       });
 
+      // No WebSocket connection counterpart for "should consider messages unmatched due to static sender search params
+      // restrictions in times check errors": a connection attempt has no sender, and its own search params are
+      // restricted by `handler.with()`.
+
+      // No WebSocket connection counterpart for "should consider messages unmatched due to static sender protocols
+      // restrictions in times check errors": a connection attempt has no sender, and its own protocols are restricted by
+      // `handler.with()`.
+
       it('should consider connections unmatched due to search params and protocols restrictions in times check errors', async () => {
         await usingWebSocketInterceptor<Schema>(
           { type, baseURL, connectionSaving: { enabled: true } },

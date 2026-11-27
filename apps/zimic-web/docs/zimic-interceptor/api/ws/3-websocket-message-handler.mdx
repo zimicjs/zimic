@@ -76,7 +76,7 @@ By default, static restrictions use `exact: false`, meaning that any message **c
 ```ts
 handler.with(restriction);
 handler.with(restriction, { exact: true });
-handler.with((message) => matchesMessage);
+handler.with((message, context) => matchesMessage);
 ```
 
   </TabItem>
@@ -86,7 +86,7 @@ handler.with((message) => matchesMessage);
 ```ts
 await handler.with(restriction);
 await handler.with(restriction, { exact: true });
-await handler.with((message) => matchesMessage);
+await handler.with((message, context) => matchesMessage);
 ```
 
   </TabItem>
@@ -94,7 +94,7 @@ await handler.with((message) => matchesMessage);
 
 **Arguments**:
 
-1. **restriction**: `WebSocketMessageHandlerRestriction<RestrictedMessage>`
+1. **restriction**: `WebSocketMessageHandlerRestriction<Schema, Path, RestrictedMessage>`
 
    The restriction to match intercepted messages. It can be [static](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#static-restrictions), declared as one of the following:
    - A partial JSON object or array, matching JSON messages that contain it.
@@ -110,9 +110,13 @@ await handler.with((message) => matchesMessage);
 
       The intercepted message data to check against the restriction.
 
+   2. **context**: `WebSocketMessageHandlerMessageContext<Schema, Path>`
+
+      The handles of the intercepted message, with the same properties as in [`handler.effect()`](#handlereffect). Use `context.sender` to match messages by the client that sent them.
+
    **Returns**: `Promise<boolean> | boolean`
 
-   A boolean indicating whether the intercepted message matches the restriction. If the function is a type guard, such as `(message) => message is Message`, the handler message type is narrowed to the guarded type.
+   A boolean indicating whether the intercepted message matches the restriction. If the function is a type guard, such as `(message, context) => message is Message`, the handler message type is narrowed to the guarded type.
 
 2. **options**: `WebSocketMessageHandlerStaticRestrictionOptions | undefined`
 
@@ -174,13 +178,14 @@ If the interceptor is local, the restriction is immediately applied to the handl
 
 ## `handler.from()`
 
-Restricts the handler to messages sent by a specific connected client.
+Restricts the handler to messages sent by a specific connected client, or by clients whose connection meets a static restriction. A handler has one sender restriction, so each call to `handler.from()` replaces the previous one. To match messages from several clients, declare one handler per client.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
 
 ```ts
 handler.from(client);
+handler.from({ searchParams, protocols, exact });
 ```
 
   </TabItem>
@@ -189,6 +194,7 @@ handler.from(client);
 
 ```ts
 await handler.from(client);
+await handler.from({ searchParams, protocols, exact });
 ```
 
   </TabItem>
@@ -196,13 +202,41 @@ await handler.from(client);
 
 **Arguments**:
 
-1. **client**: `WebSocketInterceptorClient<Schema>`
+1. **sender**: `WebSocketMessageHandlerSenderRestriction<Schema, Path>`
 
-   The connected client that must send the message for this handler to match.
+   The sender restriction, declared as one of the following:
+   - A connected client, as a `WebSocketInterceptorClient<Schema>`. Only messages sent by this client match.
+   - A static restriction of the sender's connection, with the same fields and matching rules as the static restriction of [`connectionHandler.with()`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerwith): `searchParams`, `protocols`, `exact`, and, in [Socket.IO](/docs/zimic-interceptor/guides/ws/9-socket-io.mdx#connections-and-clients) schemas, `auth`. Messages match if their sender connected with a handshake that meets every declared field.
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+// Matches only messages from clients connected with ?room=general
+interceptor
+  .message('/rooms/:roomId')
+  .from({ searchParams: { room: 'general' } })
+  .respond({ type: 'presence', data: { online: true } });
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+// Matches only messages from clients connected with ?room=general
+await interceptor
+  .message('/rooms/:roomId')
+  .from({ searchParams: { room: 'general' } })
+  .respond({ type: 'presence', data: { online: true } });
+```
+
+  </TabItem>
+</Tabs>
 
 **Returns**: `WebSocketMessageHandler<Schema, Path, RestrictedMessage>`
 
-The same handler, now considering only messages sent by the client.
+The same handler, now considering only messages from the restricted sender. When [`messageSaving.enabled`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptormessagesaving) is `true`, [`handler.checkTimes()`](#handlerchecktimes) reports which field of a static sender restriction each unmatched message did not meet.
 
 **Related**:
 

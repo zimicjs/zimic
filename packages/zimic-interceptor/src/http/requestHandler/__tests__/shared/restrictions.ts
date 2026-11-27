@@ -616,6 +616,21 @@ export function declareRestrictionHttpRequestHandlerTests(
 
   // No HTTP counterpart for "By protocols": HTTP requests negotiate no subprotocols.
 
+  // No HTTP counterpart for "should match only messages from a restricted sender if contains a static search params
+  // restriction and exact $exact": an HTTP request is not sent through a connected client.
+
+  // No HTTP counterpart for "should match only messages from a restricted sender if contains a static protocol
+  // restriction and exact $exact": an HTTP request is not sent through a connected client.
+
+  // No HTTP counterpart for "should match only messages from the last restricted sender if a client is replaced by a
+  // static restriction": an HTTP request is not sent through a connected client.
+
+  // No HTTP counterpart for "should match only messages from the last restricted sender if a static restriction is
+  // replaced by a client": an HTTP request is not sent through a connected client.
+
+  // No HTTP counterpart for "should match only messages from a restricted sender if contains a computed restriction": an
+  // HTTP request is not sent through a connected client.
+
   it.each([{ exact: true }])(
     'should match only specific requests if contains a declared response, a static restriction of search params and headers, and exact $exact',
     async ({ exact }) => {

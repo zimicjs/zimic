@@ -1,4 +1,4 @@
-import { ValidationError } from '@zimic/utils/validation';
+import { assertTypeOf, ValidationError } from '@zimic/utils/validation';
 import {
   decodePacket,
   decodePayload,
@@ -124,6 +124,22 @@ function encodeSocketIOPacket(
 
     return normalizeBufferSource(encodedChunk);
   });
+}
+
+// As `next(error)` in a Socket.IO server, which sends the message and data of the error in its `CONNECT_ERROR` packet.
+// Rejection errors come from user code that may bypass the schema types.
+function createConnectErrorData(error: unknown) {
+  if (error === undefined) {
+    return { message: 'Connection rejected' };
+  }
+
+  assertTypeOf('error', error, 'object');
+
+  const message: unknown = Reflect.get(error, 'message');
+  assertTypeOf('error.message', message, 'string');
+
+  const data: unknown = Reflect.get(error, 'data');
+  return data === undefined ? { message } : { message, data };
 }
 
 function reportUnsupportedEngineIOVersion(version: string | null) {
@@ -285,7 +301,10 @@ class SocketIOEngine {
     }
 
     if (packet.type === PacketType.CONNECT) {
-      this.receiveNamespaceConnect(protocol, session);
+      // Parsers reject `CONNECT` packets whose data is neither an object nor absent. As `socket.handshake.auth` in
+      // Socket.IO servers, the auth of clients that send none is an empty object.
+      const auth = (packet.data as Record<string, unknown> | undefined) ?? {};
+      this.receiveNamespaceConnect(protocol, session, auth);
       return;
     }
 
@@ -446,7 +465,11 @@ class SocketIOEngine {
     connection?.releaseController.abort();
   }
 
-  private receiveNamespaceConnect(protocol: AnySocketIOProtocol, session: SocketIOEngineSession) {
+  private receiveNamespaceConnect(
+    protocol: AnySocketIOProtocol,
+    session: SocketIOEngineSession,
+    auth: Record<string, unknown>,
+  ) {
     if (session.connections.has(protocol.namespace)) {
       return;
     }
@@ -455,7 +478,7 @@ class SocketIOEngine {
     const pendingConnection: SocketIONamespaceConnection = { state: 'pending', releaseController };
     session.connections.set(protocol.namespace, pendingConnection);
 
-    void this.openNamespaceClient(protocol, session, releaseController)
+    void this.openNamespaceClient(protocol, session, auth, releaseController)
       .catch((error: unknown) => {
         console.error(error);
       })
@@ -469,10 +492,12 @@ class SocketIOEngine {
   private async openNamespaceClient(
     protocol: AnySocketIOProtocol,
     session: SocketIOEngineSession,
+    auth: Record<string, unknown>,
     releaseController: AbortController,
   ) {
     const openClientResult = await protocol.openClient({
       url: session.url,
+      auth,
       signal: releaseController.signal,
       send: (message: SocketIOMessage) => this.sendSocketPacket(session, protocol.createMessagePacket(message)),
       close: () => this.disconnectNamespace(protocol, session),
@@ -481,11 +506,11 @@ class SocketIOEngine {
       },
     });
 
-    if (openClientResult === 'rejected') {
+    if (openClientResult.result === 'rejected') {
       this.sendSocketPacket(session, {
         type: PacketType.CONNECT_ERROR,
         nsp: protocol.namespace,
-        data: { message: 'Connection rejected' },
+        data: createConnectErrorData(openClientResult.error),
       });
     }
   }

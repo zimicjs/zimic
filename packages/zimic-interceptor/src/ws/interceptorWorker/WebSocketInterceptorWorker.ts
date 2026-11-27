@@ -9,8 +9,8 @@ import { createPathMatchingURL, parsePathParams } from '@/utils/urls';
 
 import type {
   AnyWebSocketConnectionHandlerImplementation,
-  WebSocketConnectionHandlerAction,
   WebSocketConnectionHandlerConnectionMatch,
+  WebSocketConnectionHandlerDecision,
 } from '../connectionHandler/WebSocketConnectionHandlerImplementation';
 import {
   ReceivedWebSocketMessageData,
@@ -72,8 +72,8 @@ interface FailedWebSocketConnectionMatch {
   connectionMatch: Extract<WebSocketConnectionHandlerConnectionMatch, { success: false }>;
 }
 
-export interface WebSocketConnectionHandling {
-  action: WebSocketConnectionHandlerAction;
+interface AcceptedWebSocketConnectionHandling {
+  action: 'accept';
   // The handler that accepted the connection, whose effects run with the request it parsed once its interceptor lists
   // the client.
   acceptance?: {
@@ -82,7 +82,14 @@ export interface WebSocketConnectionHandling {
   };
 }
 
+export type WebSocketConnectionHandling =
+  AcceptedWebSocketConnectionHandling | Extract<WebSocketConnectionHandlerDecision, { action: 'reject' }>;
+
 const UNHANDLED_CONNECTION_HANDLING: WebSocketConnectionHandling = Object.freeze({ action: 'accept' });
+
+// Only protocols such as Socket.IO authenticate clients, so plain WebSocket handshakes have no `auth`.
+type WebSocketConnectionHandshake = Pick<WebSocketInterceptorConnectionRequest, 'url' | 'protocols'> &
+  Partial<Pick<WebSocketInterceptorProtocolClientOptions<unknown>, 'auth'>>;
 
 abstract class WebSocketInterceptorWorker {
   platform: WebSocketInterceptorPlatform | null = null;
@@ -213,7 +220,7 @@ abstract class WebSocketInterceptorWorker {
   // created to the first, and the first match decides the handshake. The connection is accepted if no handler handles
   // it. Interceptors that let the connection go while it is decided no longer hold it, as reported by `isHolding`.
   protected async handleConnectionWithHandlers(
-    connection: Pick<WebSocketInterceptorConnectionRequest, 'url' | 'protocols'>,
+    connection: WebSocketConnectionHandshake,
     isHolding: (interceptor: AnyWebSocketInterceptorImplementation) => boolean,
   ): Promise<WebSocketConnectionHandling> {
     const connectionURL = createPathMatchingURL(connection.url);
@@ -251,13 +258,17 @@ abstract class WebSocketInterceptorWorker {
           continue;
         }
 
-        const action = await holder.handleMatchedConnection(handler.implementation, request);
+        const decision = await holder.handleMatchedConnection(handler.implementation, request);
 
-        if (action === null) {
+        if (decision === null) {
           return UNHANDLED_CONNECTION_HANDLING;
         }
 
-        return { action, acceptance: action === 'accept' ? { handler, request } : undefined };
+        if (decision.action === 'reject') {
+          return decision;
+        }
+
+        return { action: 'accept', acceptance: { handler, request } };
       } catch (error) {
         console.error(error);
 
@@ -282,13 +293,12 @@ abstract class WebSocketInterceptorWorker {
   }
 
   private parseConnectionRequest(
-    connection: Pick<WebSocketInterceptorConnectionRequest, 'url' | 'protocols'>,
+    connection: WebSocketConnectionHandshake,
     connectionURL: string,
     handler: WebSocketConnectionHandler,
   ): WebSocketInterceptorConnectionRequest {
     return {
-      url: connection.url,
-      protocols: connection.protocols,
+      ...connection,
       searchParams: new HttpSearchParams(new URL(connection.url).searchParams),
       pathParams: parsePathParams({
         url: connectionURL,
@@ -329,7 +339,7 @@ abstract class WebSocketInterceptorWorker {
   // effect waiting for a message from its client does not keep the connection from opening. Failures are logged because
   // no caller awaits them.
   protected async applyConnectionEffect(
-    handling: WebSocketConnectionHandling,
+    handling: AcceptedWebSocketConnectionHandling,
     holders: RegisteredWebSocketConnectionHolder[],
   ) {
     const { acceptance } = handling;
@@ -404,20 +414,24 @@ abstract class WebSocketInterceptorWorker {
       return candidate === interceptor && !options.signal.aborted;
     }
 
-    const handling = await this.handleConnectionWithHandlers({ url: options.url, protocols: [] }, isHolding);
+    const handling = await this.handleConnectionWithHandlers(
+      { url: options.url, protocols: [], auth: options.auth },
+      isHolding,
+    );
 
     if (!isHolding(interceptor)) {
-      return 'aborted';
+      return { result: 'aborted' };
     }
 
     if (handling.action === 'reject') {
-      return 'rejected';
+      return { result: 'rejected', error: handling.error };
     }
 
     // A client retained after its interceptor lets it go does nothing, as with WebSocket connection clients.
     const client = createWebSocketInterceptorClient({
       url: options.url,
       protocols: [],
+      auth: options.auth,
       send: (message) => {
         if (interceptor.clients.includes(client)) {
           // Clients are schema-erased and user code may bypass types, so protocols validate what they send.
@@ -449,7 +463,7 @@ abstract class WebSocketInterceptorWorker {
 
     await this.applyConnectionEffect(handling, [{ registeredInterceptor: { interceptor }, client }]);
 
-    return 'accepted';
+    return { result: 'accepted' };
   }
 
   // The handlers of all interceptors holding the connection are tried together, from the last created to the first, so

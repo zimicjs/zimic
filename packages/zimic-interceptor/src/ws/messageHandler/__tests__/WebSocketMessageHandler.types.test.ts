@@ -12,6 +12,7 @@ import type {
   LocalWebSocketMessageHandler,
   PendingRemoteWebSocketMessageHandler,
   SyncedRemoteWebSocketMessageHandler,
+  WebSocketMessageHandlerMessageContext,
 } from '../types/public';
 import { ChatMessage, Schema } from './shared/utils';
 
@@ -90,6 +91,15 @@ describe('WebSocketMessageHandler > Types', () => {
       interceptor.connection('/rooms/:roomId').effect((client) => {
         interceptor.message().from(client);
       });
+    }
+
+    expectTypeOf(declareHandler).toBeFunction();
+  });
+
+  it('should not accept auth sender restrictions on paths that declare none', () => {
+    function declareHandler(interceptor: LocalWebSocketInterceptor<PathKeyedSchema>) {
+      // @ts-expect-error The path declares no auth.
+      interceptor.message('/rooms/:roomId').from({ auth: { token: 'value' } });
     }
 
     expectTypeOf(declareHandler).toBeFunction();
@@ -312,6 +322,28 @@ describe('WebSocketMessageHandler > Types', () => {
     }
 
     expectTypeOf(declareBooleanRestriction).toBeFunction();
+  });
+
+  it('should narrow message schemas through type-guard restrictions that receive the message context', () => {
+    function declareContextTypeGuardRestriction(
+      handler: LocalWebSocketMessageHandler<Schema>,
+      restrictedSender: WebSocketInterceptorClient<Schema>,
+    ) {
+      handler
+        .with((message, context): message is CreateMessage => {
+          expectTypeOf(context).toEqualTypeOf<WebSocketMessageHandlerMessageContext<Schema>>();
+          return context.sender === restrictedSender && message.type === 'create';
+        })
+        .effect((message) => {
+          expectTypeOf(message).toEqualTypeOf<CreateMessage>();
+        })
+        .respond((message) => {
+          expectTypeOf(message).toEqualTypeOf<CreateMessage>();
+          return { type: 'delete', id: message.body.text };
+        });
+    }
+
+    expectTypeOf(declareContextTypeGuardRestriction).toBeFunction();
   });
 
   it('should receive binary schema members as ArrayBuffer', () => {

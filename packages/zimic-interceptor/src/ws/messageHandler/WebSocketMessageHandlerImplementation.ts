@@ -5,6 +5,11 @@ import { WebSocketMessageSchema, WebSocketSchema } from '@zimic/ws';
 
 import { random } from '@/utils/numbers';
 
+import {
+  LooseWebSocketConnectionStaticRestriction,
+  matchWebSocketConnectionStaticRestriction,
+  WebSocketConnectionHandshake,
+} from '../connectionHandler/staticRestrictions';
 import WebSocketTimesCheckError from '../errors/WebSocketTimesCheckError';
 import WebSocketTimesDeclarationPointer from '../errors/WebSocketTimesDeclarationPointer';
 import { ReceivedWebSocketMessageData, WebSocketInterceptorClient } from '../interceptor/types/messages';
@@ -12,6 +17,7 @@ import { WebSocketInterceptorPathMessage } from '../interceptor/types/schema';
 import {
   InternalWebSocketInterceptorClient,
   InternalWebSocketInterceptorServer,
+  WebSocketInterceptorClientImplementation,
 } from '../interceptor/WebSocketInterceptorHandle';
 import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
 import {
@@ -33,6 +39,7 @@ import {
   WebSocketMessageHandlerRestriction,
   WebSocketMessageHandlerRestrictionDiffs,
   WebSocketMessageHandlerRestrictionMatch,
+  WebSocketMessageHandlerSenderRestriction,
   WebSocketMessageHandlerStaticRestriction,
   WebSocketMessageHandlerStaticRestrictionOptions,
 } from './types/restrictions';
@@ -68,11 +75,11 @@ class WebSocketMessageHandlerImplementation<
   >,
 > {
   private restrictions: {
-    restriction: WebSocketMessageHandlerRestriction<RestrictedMessage>;
+    restriction: WebSocketMessageHandlerRestriction<Schema, Path, RestrictedMessage>;
     options: WebSocketMessageHandlerStaticRestrictionOptions;
   }[] = [];
 
-  private restrictedSender?: WebSocketInterceptorClient<Schema>;
+  private senderRestriction?: WebSocketMessageHandlerSenderRestriction<Schema, Path>;
 
   private limits = {
     numberOfMessages: DEFAULT_NUMBER_OF_MESSAGE_LIMITS,
@@ -110,14 +117,14 @@ class WebSocketMessageHandlerImplementation<
     this.savedMessageIndex = createWebSocketInterceptorMessageHandlerIndex<Schema, Path, RestrictedMessage>();
   }
 
-  from(sender: WebSocketInterceptorClient<Schema>) {
-    this.restrictedSender = sender;
+  from(sender: WebSocketMessageHandlerSenderRestriction<Schema, Path>) {
+    this.senderRestriction = sender;
     this.isCleared = false;
     return this;
   }
 
   with(
-    restriction: WebSocketMessageHandlerRestriction<RestrictedMessage>,
+    restriction: WebSocketMessageHandlerRestriction<Schema, Path, RestrictedMessage>,
     options: WebSocketMessageHandlerStaticRestrictionOptions = {},
   ) {
     this.restrictions.push({ restriction, options });
@@ -195,7 +202,7 @@ class WebSocketMessageHandlerImplementation<
         numberOfMatches: this.numberOfMatchedMessages,
         declarationPointer: this.timesPointer,
         unmatchedGroups: this.unmatchedMessageGroups,
-        hasRestrictions: this.restrictions.length > 0 || this.restrictedSender !== undefined,
+        hasRestrictions: this.restrictions.length > 0 || this.senderRestriction !== undefined,
         messageSaving: this.interceptor.messageSaving,
       });
     }
@@ -210,7 +217,7 @@ class WebSocketMessageHandlerImplementation<
     this.isCleared = true;
 
     this.restrictions.length = 0;
-    this.restrictedSender = undefined;
+    this.senderRestriction = undefined;
 
     this.limits = {
       numberOfMessages: DEFAULT_NUMBER_OF_MESSAGE_LIMITS,
@@ -277,16 +284,15 @@ class WebSocketMessageHandlerImplementation<
     message: ReceivedWebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
     context: WebSocketMessageHandlerApplyContext<Schema, Path>,
   ): Promise<WebSocketMessageHandlerRestrictionMatch<WebSocketInterceptorPathMessage<Schema, Path>>> {
-    if (this.restrictedSender && context.sender !== this.restrictedSender) {
-      return {
-        success: false,
-        diff: { sender: { expected: true, received: false } },
-      };
+    const senderMatch = this.matchesSenderRestriction(context.sender);
+
+    if (!senderMatch.success) {
+      return senderMatch;
     }
 
     for (const { restriction, options } of this.restrictions) {
       if (this.isComputedMessageRestriction(restriction)) {
-        const matchesComputedRestriction = await restriction(this.assumeMessageMatchesRestrictions(message));
+        const matchesComputedRestriction = await restriction(this.assumeMessageMatchesRestrictions(message), context);
 
         if (!matchesComputedRestriction) {
           return {
@@ -310,9 +316,40 @@ class WebSocketMessageHandlerImplementation<
     return { success: true };
   }
 
+  private matchesSenderRestriction(
+    sender: InternalWebSocketInterceptorClient<Schema, Path>,
+  ): WebSocketMessageHandlerRestrictionMatch<WebSocketInterceptorPathMessage<Schema, Path>> {
+    if (this.senderRestriction === undefined) {
+      return { success: true };
+    }
+
+    if (this.isClientSenderRestriction(this.senderRestriction)) {
+      return sender === this.senderRestriction
+        ? { success: true }
+        : { success: false, diff: { sender: { expected: true, received: false } } };
+    }
+
+    // Static restrictions compare runtime values, so the schema that typed them does not apply here.
+    const staticRestrictionMatch = matchWebSocketConnectionStaticRestriction(
+      sender as WebSocketConnectionHandshake,
+      this.senderRestriction as LooseWebSocketConnectionStaticRestriction,
+    );
+
+    return staticRestrictionMatch.success
+      ? { success: true }
+      : { success: false, diff: { sender: staticRestrictionMatch.diff } };
+  }
+
+  // Clients also have search params and protocols, so only their class tells them apart from static restrictions.
+  private isClientSenderRestriction(
+    restriction: WebSocketMessageHandlerSenderRestriction<Schema, Path>,
+  ): restriction is WebSocketInterceptorClient<Schema> {
+    return restriction instanceof WebSocketInterceptorClientImplementation;
+  }
+
   private isComputedMessageRestriction(
-    restriction: WebSocketMessageHandlerRestriction<RestrictedMessage>,
-  ): restriction is WebSocketMessageHandlerComputedRestriction<RestrictedMessage> {
+    restriction: WebSocketMessageHandlerRestriction<Schema, Path, RestrictedMessage>,
+  ): restriction is WebSocketMessageHandlerComputedRestriction<Schema, Path, RestrictedMessage> {
     return typeof restriction === 'function';
   }
 
@@ -368,7 +405,7 @@ class WebSocketMessageHandlerImplementation<
   ) {
     const shouldSaveUnmatchedMessages =
       this.interceptor.messageSaving.enabled &&
-      (this.restrictions.length > 0 || this.restrictedSender !== undefined) &&
+      (this.restrictions.length > 0 || this.senderRestriction !== undefined) &&
       this.timesPointer !== undefined;
 
     if (shouldSaveUnmatchedMessages) {

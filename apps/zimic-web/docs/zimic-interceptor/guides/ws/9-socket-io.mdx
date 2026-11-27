@@ -275,10 +275,59 @@ A socket connecting to a namespace without an interceptor fails with a `connect_
 
 As with the `connection` event of a Socket.IO server, an interceptor lists a [client](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx) in [`interceptor.clients`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclients) and runs its [connection handlers](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx) when a socket joins its namespace.
 
-- A connection handler rejecting a socket fails it with a `connect_error` of message `'Connection rejected'`. Other namespaces on the same connection stay connected.
 - `socket.disconnect()` in the client removes its client from the interceptor of its namespace.
 - [`client.close()`](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx#clientclose) disconnects the socket from the namespace, as `socket.disconnect()` in a Socket.IO server. Socket.IO has no close codes, so the code and reason are ignored. The socket receives the disconnect reason `'io server disconnect'` and does not reconnect automatically.
 - [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear) and [`interceptor.stop()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorstop) disconnect the sockets of the namespace and close the connections that no other namespace uses.
+
+The `auth` option of the socket is available as `request.auth` in connection handlers, as [`client.auth`](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx#clientauth), and in saved [`handler.connections`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerconnections), as `socket.handshake.auth` in a Socket.IO server. It is `{}` if the socket sends none. Each namespace a socket joins has its own `auth`. Declare its type as the third parameter of `SocketIOSchema`, which defaults to `Record<string, unknown>`.
+
+```ts
+type Schema = SocketIOSchema<ServerToClientEvents, ClientToServerEvents, { token: string }>;
+
+// Connected with io(url, { auth: { token: 'abc' } })
+interceptor.connection().effect((client, request) => {
+  console.log(client.auth.token); // 'abc'
+  console.log(request.auth.token); // 'abc'
+});
+```
+
+To match sockets by their `auth`, declare it in a static [`handler.with()`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerwith) restriction. As with request bodies in HTTP handlers, a socket matches if its `auth` contains the declared values, or only if it is equal to them with `exact: true`.
+
+```ts
+// Rejects sockets connected with an auth containing { token: 'expired' }
+interceptor
+  .connection()
+  .with({ auth: { token: 'expired' } })
+  .respond({ action: 'reject' });
+```
+
+To match events by the `auth` of the socket that sent them, declare it in [`handler.from()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerfrom) of a message handler, with the same matching rules.
+
+```ts
+// Matches only events from sockets connected with an auth containing { token: 'abc' }
+interceptor
+  .message()
+  .from({ auth: { token: 'abc' } })
+  .with({ type: 'user:create' })
+  .respond({ type: 'user:created', data: { id: '1' } });
+```
+
+A connection handler rejecting a socket fails it with a `connect_error` of message `'Connection rejected'`. To send another error, as `next(error)` does in a Socket.IO server, declare an `error` in [`handler.respond()`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerrespond). The socket receives its `message` and `data` in `connect_error`. Other namespaces on the same connection stay connected.
+
+```ts
+interceptor.connection().respond({
+  action: 'reject',
+  error: { message: 'Token has expired', data: { code: 'EXPIRED' } },
+});
+
+// In the client
+socket.on('connect_error', (error) => {
+  console.log(error.message); // 'Token has expired'
+  console.log(error.data); // { code: 'EXPIRED' }
+});
+```
+
+If the `error` is not an object with a string `message`, the interceptor logs a `ValidationError` and sends no reply, so the socket waits until its connection times out.
 
 A Socket.IO interceptor receives every connection to its base URL. Interceptors without a protocol on the same base URL do not.
 
