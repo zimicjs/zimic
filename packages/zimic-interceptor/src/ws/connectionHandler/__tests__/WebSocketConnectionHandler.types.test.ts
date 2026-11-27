@@ -21,6 +21,14 @@ type PathKeyedSchema = WebSocketSchema<{
   };
 }>;
 
+type DirectionalSchema = WebSocketSchema<{
+  '/rooms/:roomId': {
+    message: { type: 'ping' };
+    serverMessage: { type: 'chat:received'; text: string };
+    clientMessage: { type: 'chat:send'; text: string };
+  };
+}>;
+
 // The handlers below are only type-checked. The functions declaring them are never called.
 describe('WebSocketConnectionHandler > Types', () => {
   it('should accept only declared paths and their concrete forms', () => {
@@ -216,6 +224,21 @@ describe('WebSocketConnectionHandler > Types', () => {
 
         // @ts-expect-error The message belongs to another path.
         client.send(healthMessage);
+      });
+    }
+
+    expectTypeOf(declareHandlers).toBeFunction();
+  });
+
+  it('should type clients with the messages sent by the server', () => {
+    function declareHandlers(
+      interceptor: LocalWebSocketInterceptor<DirectionalSchema> | RemoteWebSocketInterceptor<DirectionalSchema>,
+    ) {
+      interceptor.connection('/rooms/:roomId').effect((client) => {
+        client.send({ type: 'chat:received', text: 'hello' });
+
+        // @ts-expect-error Only clients send this message.
+        client.send({ type: 'chat:send', text: 'hello' });
       });
     }
 

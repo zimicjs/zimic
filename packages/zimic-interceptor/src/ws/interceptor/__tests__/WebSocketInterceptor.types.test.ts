@@ -80,17 +80,6 @@ describe('WebSocketInterceptor > Types', () => {
     });
   });
 
-  it('should send the messages sent by the server to connected clients', () => {
-    declareWebSocketInterceptorTypes<DirectionalSchema>((interceptor) => {
-      interceptor.connection('/rooms/:roomId').effect((client) => {
-        client.send({ type: 'chat:received', text: 'hello' });
-
-        // @ts-expect-error Only clients send this message.
-        client.send({ type: 'chat:send', text: 'hello' });
-      });
-    });
-  });
-
   it('should type the messages received by the interceptor server as the messages sent by clients', () => {
     declareWebSocketInterceptorTypes<DirectionalSchema>((interceptor) => {
       expectTypeOf(interceptor.server.messages[0].data).toEqualTypeOf<
