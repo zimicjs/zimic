@@ -209,7 +209,7 @@ interceptor.message(path);
 
 - **path** (optional): `string`
 
-  The path of the connections whose messages to match, relative to the base URL of the interceptor. It can be a path declared in the schema, such as `/rooms/:roomId`, or a concrete form of one, such as `/rooms/1`. With a path, the handler matches only messages of connections to that path and is typed with the messages of that path. Without a path, the handler matches messages of every connection to the interceptor and is typed with the messages of all paths in the schema.
+  The path of the connections whose messages to match, relative to the base URL of the interceptor. It can be a path declared in the schema, such as `/rooms/:roomId`, or a concrete form of one, such as `/rooms/1`. With a path, the handler matches only messages of connections to that path and is typed with the client messages of that path. Without a path, the handler matches messages of every connection to the interceptor and is typed with the client messages of all paths in the schema.
 
 **Returns**: `LocalWebSocketMessageHandler<Schema, Path>`
 
@@ -226,7 +226,7 @@ interceptor.message(path);
 
 - **path** (optional): `string`
 
-  The path of the connections whose messages to match, relative to the base URL of the interceptor. It can be a path declared in the schema, such as `/rooms/:roomId`, or a concrete form of one, such as `/rooms/1`. With a path, the handler matches only messages of connections to that path and is typed with the messages of that path. Without a path, the handler matches messages of every connection to the interceptor and is typed with the messages of all paths in the schema.
+  The path of the connections whose messages to match, relative to the base URL of the interceptor. It can be a path declared in the schema, such as `/rooms/:roomId`, or a concrete form of one, such as `/rooms/1`. With a path, the handler matches only messages of connections to that path and is typed with the client messages of that path. Without a path, the handler matches messages of every connection to the interceptor and is typed with the client messages of all paths in the schema.
 
 **Returns**: `RemoteWebSocketMessageHandler<Schema, Path>`
 
@@ -304,9 +304,9 @@ interceptor.server.send({ type: 'presence', data: { online: true } }, { to: inte
 
 **Arguments**:
 
-1. **message**: `WebSocketSchemaMessage<Schema> | WebSocketMessageData<WebSocketSchemaMessage<Schema>>`
+1. **message**: `WebSocketSchemaMessage.Server<Schema> | WebSocketMessageData<WebSocketSchemaMessage.Server<Schema>>`
 
-   The message to send, as a message of the schema or as serialized data, sent as in [`client.send()`](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx#clientsend).
+   The message to send, as a [server message](/docs/zimic-ws/api/1-websocket-schema.md#websocketschemamessageserver) of the schema or as serialized data, sent as in [`client.send()`](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx#clientsend).
 
 2. **options.to** (optional): `WebSocketInterceptorClient<Schema> | readonly WebSocketInterceptorClient<Schema>[]`
 

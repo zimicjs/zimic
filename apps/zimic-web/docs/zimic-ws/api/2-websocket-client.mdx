@@ -27,9 +27,9 @@ await client.close();
 Creates a new `WebSocketClient` instance, from a URL or from an existing native `WebSocket`.
 
 ```ts
-new WebSocketClient<Schema, Path>(url);
-new WebSocketClient<Schema, Path>(url, protocols);
-new WebSocketClient<Schema, Path>(socket);
+new WebSocketClient<Schema, Path, Side>(url);
+new WebSocketClient<Schema, Path, Side>(url, protocols);
+new WebSocketClient<Schema, Path, Side>(socket);
 ```
 
 **Arguments**:
@@ -59,6 +59,10 @@ new WebSocketClient<Schema, Path>(socket);
    ```
    This schema has multiple paths. Declare the path of the client: new WebSocketClient<Schema, '/path'>(url).
    ```
+
+3. **Side**: `WebSocketClient.Side` (default `'client'`)
+
+   The side of the connection the client is on, `'client'` or `'server'`. A client on the `'client'` side sends the [client messages](/docs/zimic-ws/api/1-websocket-schema.md#websocketschemamessageclient) of the path and receives its [server messages](/docs/zimic-ws/api/1-websocket-schema.md#websocketschemamessageserver). A client on the `'server'` side sends server messages and receives client messages, as the clients of a [`WebSocketServer`](/docs/zimic-ws/api/3-websocket-server.mdx) do.
 
 ```ts
 import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
@@ -151,7 +155,7 @@ await client.close(1000, 'Done');
 
 ## `client.send()`
 
-Sends a message through the socket. The data is typed with [`WebSocketMessageData`](/docs/zimic-ws/api/1-websocket-schema.md#websocketmessagedata) for the messages of the client path.
+Sends a message through the socket. The data is typed with [`WebSocketMessageData`](/docs/zimic-ws/api/1-websocket-schema.md#websocketmessagedata) for the messages that the [side](#constructor) of the client sends to its path.
 
 Like the native `WebSocket.send()`, the method throws a `DOMException` named `InvalidStateError` if the client is [connecting](#clientconnecting), including before [`client.open()`](#clientopen) is called. If the client is closing or closed, the message is discarded without an error.
 
@@ -161,9 +165,9 @@ client.send(data);
 
 **Arguments**:
 
-1. **data**: `WebSocketMessageData<WebSocketSchemaMessage<Schema, Path>>`
+1. **data**: `WebSocketMessageData<WebSocketSchemaMessage.Client<Schema, Path>>`
 
-   The message to send.
+   The message to send. On the `'server'` side, it is typed with `WebSocketSchemaMessage.Server<Schema, Path>` instead.
 
 ```ts
 client.send(JSON.stringify({ type: 'ping', data: { id: '1' } }));
@@ -188,9 +192,9 @@ client.addEventListener(type, listener, options);
 
    The type of the event.
 
-2. **listener**: `WebSocketClient.EventListener<Schema, Type, Path>`
+2. **listener**: `WebSocketClient.EventListener<Schema, Type, Path, Side>`
 
-   The function to call with the event. Message events have `data` typed with the messages of the client path.
+   The function to call with the event. Message events have `data` typed with the messages that the client receives from its path, which are the server messages on the `'client'` side and the client messages on the `'server'` side.
 
 3. **options**: `boolean | AddEventListenerOptions | undefined`
 
@@ -222,7 +226,7 @@ client.removeEventListener(type, listener, options);
 
    The type of the event.
 
-2. **listener**: `WebSocketClient.EventListener<Schema, Type, Path>`
+2. **listener**: `WebSocketClient.EventListener<Schema, Type, Path, Side>`
 
    The listener to remove.
 
@@ -244,7 +248,7 @@ client.dispatchEvent(event);
 
 **Arguments**:
 
-1. **event**: `WebSocketClient.Event<Schema, Type, Path>`
+1. **event**: `WebSocketClient.Event<Schema, Type, Path, Side>`
 
    The event to dispatch.
 
@@ -260,7 +264,7 @@ The result of dispatching the event on the socket, or `false` if the client has 
 
 The listener called when the socket opens, or `null`. Like listeners added with [`client.addEventListener()`](#clientaddeventlistener), it is kept across calls to [`client.open()`](#clientopen).
 
-**Type**: `WebSocketClient.EventListener<Schema, 'open', Path> | null`
+**Type**: `WebSocketClient.EventListener<Schema, 'open', Path, Side> | null`
 
 **Related**:
 
@@ -268,9 +272,9 @@ The listener called when the socket opens, or `null`. Like listeners added with 
 
 ## `client.onmessage`
 
-The listener called when the socket receives a message, or `null`. Like listeners added with [`client.addEventListener()`](#clientaddeventlistener), it is kept across calls to [`client.open()`](#clientopen).
+The listener called when the socket receives a message, or `null`. Message events have `data` typed as in [`client.addEventListener()`](#clientaddeventlistener). Like listeners added with [`client.addEventListener()`](#clientaddeventlistener), it is kept across calls to [`client.open()`](#clientopen).
 
-**Type**: `WebSocketClient.EventListener<Schema, 'message', Path> | null`
+**Type**: `WebSocketClient.EventListener<Schema, 'message', Path, Side> | null`
 
 ```ts
 client.onmessage = (event) => {
@@ -286,7 +290,7 @@ client.onmessage = (event) => {
 
 The listener called when the socket closes, or `null`. Like listeners added with [`client.addEventListener()`](#clientaddeventlistener), it is kept across calls to [`client.open()`](#clientopen).
 
-**Type**: `WebSocketClient.EventListener<Schema, 'close', Path> | null`
+**Type**: `WebSocketClient.EventListener<Schema, 'close', Path, Side> | null`
 
 ```ts
 client.onclose = (event) => {
@@ -302,7 +306,7 @@ client.onclose = (event) => {
 
 The listener called when the socket has an error, or `null`. Like listeners added with [`client.addEventListener()`](#clientaddeventlistener), it is kept across calls to [`client.open()`](#clientopen).
 
-**Type**: `WebSocketClient.EventListener<Schema, 'error', Path> | null`
+**Type**: `WebSocketClient.EventListener<Schema, 'error', Path, Side> | null`
 
 **Related**:
 

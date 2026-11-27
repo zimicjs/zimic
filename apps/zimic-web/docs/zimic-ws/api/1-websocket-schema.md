@@ -267,7 +267,7 @@ type PathParams = InferPathParams<Schema, '/rooms/:roomId'>;
 
 ## `WebSocketSchemaMessage`
 
-Extracts the message schema of a path in a WebSocket service schema. If the path is a union or is omitted, the result is the union of the messages of each path.
+Extracts the message schema of a path in a WebSocket service schema, including the messages sent by the server and by the clients. If the path is a union or is omitted, the result is the union of the messages of each path.
 
 ```ts
 type WebSocketSchemaMessage<Schema>
@@ -293,14 +293,64 @@ type Message = WebSocketSchemaMessage<Schema>;
 // { type: 'notification'; data: { id: string } } | { type: 'message'; data: { text: string } }
 ```
 
+### `WebSocketSchemaMessage.Server`
+
+Extracts the messages sent by the server to a path in a WebSocket service schema, declared in `message` and `serverMessage`. If the path is a union or is omitted, the result is the union of the messages of each path.
+
+```ts
+type WebSocketSchemaMessage.Server<Schema>
+type WebSocketSchemaMessage.Server<Schema, Path>
+```
+
+```ts
+import { WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
+
+type Schema = WebSocketSchema<{
+  '/rooms/:roomId': {
+    message: { type: 'typing'; data: { username: string } };
+    serverMessage: { type: 'presence'; data: { online: boolean } };
+    clientMessage: { type: 'message'; data: { text: string } };
+  };
+}>;
+
+type ServerMessage = WebSocketSchemaMessage.Server<Schema, '/rooms/:roomId'>;
+// { type: 'typing'; data: { username: string } } | { type: 'presence'; data: { online: boolean } }
+```
+
+### `WebSocketSchemaMessage.Client`
+
+Extracts the messages sent by the clients of a path in a WebSocket service schema, declared in `message` and `clientMessage`. If the path is a union or is omitted, the result is the union of the messages of each path.
+
+```ts
+type WebSocketSchemaMessage.Client<Schema>
+type WebSocketSchemaMessage.Client<Schema, Path>
+```
+
+```ts
+import { WebSocketSchema, WebSocketSchemaMessage } from '@zimic/ws';
+
+type Schema = WebSocketSchema<{
+  '/rooms/:roomId': {
+    message: { type: 'typing'; data: { username: string } };
+    serverMessage: { type: 'presence'; data: { online: boolean } };
+    clientMessage: { type: 'message'; data: { text: string } };
+  };
+}>;
+
+type ClientMessage = WebSocketSchemaMessage.Client<Schema, '/rooms/:roomId'>;
+// { type: 'typing'; data: { username: string } } | { type: 'message'; data: { text: string } }
+```
+
 ## `WebSocketPathSchema`
 
-The base type of the path schemas in a `WebSocketSchema`. Each path declares a required `message`, with a [`WebSocketMessageSchema`](#websocketmessageschema), and an optional `connection`, with a [`WebSocketConnectionSchema`](#websocketconnectionschema).
+The base type of the path schemas in a `WebSocketSchema`. Each path declares an optional `connection`, with a [`WebSocketConnectionSchema`](#websocketconnectionschema), and optional messages, with a [`WebSocketMessageSchema`](#websocketmessageschema). The server and the clients send `message`, only the server sends `serverMessage`, and only the clients send `clientMessage`, as described in [Declaring message directions](/docs/zimic-ws/guides/1-schemas.md#declaring-message-directions). `WebSocketSchema` declares the message fields a path omits as `never`.
 
 ```ts
 interface WebSocketPathSchema {
   connection?: WebSocketConnectionSchema;
-  message: WebSocketMessageSchema;
+  message?: WebSocketMessageSchema;
+  serverMessage?: WebSocketMessageSchema;
+  clientMessage?: WebSocketMessageSchema;
 }
 ```
 

@@ -35,7 +35,7 @@ A text frame such as `'{"type":"message"}'` reaches handlers as `{ type: 'messag
 
 ## Using client messages
 
-Client messages are declared in your [schema](/docs/zimic-ws/guides/1-schemas.md#declaring-messages) using the `message` property of each path. Then, they will be available as the parsed message data, such as in [`handler.with()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerwith), [`handler.effect()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlereffect), [computed responses](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerrespond), and [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages).
+Client messages are declared in your [schema](/docs/zimic-ws/guides/1-schemas.md#declaring-messages) using the `message` and [`clientMessage`](/docs/zimic-ws/guides/1-schemas.md#declaring-message-directions) properties of each path. Then, they will be available as the parsed message data, such as in [`handler.with()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerwith), [`handler.effect()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlereffect), [computed responses](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerrespond), and [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages).
 
 ### JSON client message
 
@@ -186,7 +186,7 @@ Clients send numbers and booleans as text, such as `'42'` or `'true'`. Handlers 
 
 ## Using server messages
 
-Server messages are declared in your [schema](/docs/zimic-ws/guides/1-schemas.md#declaring-messages) in the same `message` property as client messages. They can be sent with [`handler.respond()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerrespond), [`client.send()`](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx#clientsend), and [`interceptor.server.send()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorserver), each typed with the messages of the schema.
+Server messages are declared in your [schema](/docs/zimic-ws/guides/1-schemas.md#declaring-messages) using the `message` and [`serverMessage`](/docs/zimic-ws/guides/1-schemas.md#declaring-message-directions) properties of each path. They can be sent with [`handler.respond()`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerrespond), [`client.send()`](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx#clientsend), and [`interceptor.server.send()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorserver), each typed with the server messages of the schema.
 
 Server messages are sent as follows:
 

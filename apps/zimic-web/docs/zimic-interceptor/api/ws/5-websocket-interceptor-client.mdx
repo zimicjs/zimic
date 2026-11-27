@@ -113,9 +113,9 @@ client.send(message);
 
 **Arguments**:
 
-1. **message**: `WebSocketInterceptorPathMessage<Schema, Path> | WebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>`
+1. **message**: `WebSocketInterceptorPathServerMessage<Schema, Path> | WebSocketMessageData<WebSocketInterceptorPathServerMessage<Schema, Path>>`
 
-   The message to send, as a message of the schema or as serialized data, sent as described in [Using server messages](/docs/zimic-interceptor/guides/ws/3-messages.mdx#using-server-messages).
+   The message to send, as a [server message](/docs/zimic-ws/api/1-websocket-schema.md#websocketschemamessageserver) of the schema or as serialized data, sent as described in [Using server messages](/docs/zimic-interceptor/guides/ws/3-messages.mdx#using-server-messages).
 
 **Returns**: `void`
 

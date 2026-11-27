@@ -8,7 +8,7 @@ slug: /ws/api/websocket-server
 
 A typed WebSocket server attached to an existing Node.js HTTP or HTTPS server, based on the `WebSocketServer` of the [`ws`](https://github.com/websockets/ws) package. Available in Node.js from `@zimic/ws/server`.
 
-A server accepts connections to every path of its schema, so the clients it receives are typed with the messages of all paths.
+A server accepts connections to every path of its schema, so the clients it receives are typed with the messages of all paths. These clients are on the `'server'` [side](/docs/zimic-ws/api/2-websocket-client.mdx#constructor), so they send server messages and receive client messages.
 
 ```ts
 import { createServer } from 'node:http';
@@ -116,7 +116,7 @@ server.addEventListener(type, listener);
    | Type | Parameters |
    | --- | --- |
    | `listening` | None |
-   | `connection` | `client`: a [`WebSocketClient`](/docs/zimic-ws/api/2-websocket-client.mdx) typed with the messages of all paths; `request`: `http.IncomingMessage` |
+   | `connection` | `client`: a [`WebSocketClient`](/docs/zimic-ws/api/2-websocket-client.mdx) on the `'server'` side, typed with the messages of all paths; `request`: `http.IncomingMessage` |
    | `error` | `error`: `Error` |
    | `close` | None |
 

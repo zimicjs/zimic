@@ -34,7 +34,7 @@ type Schema = WebSocketSchema<{
 }>;
 ```
 
-Handlers receive client messages parsed as described in [Default message parsing](/docs/zimic-interceptor/guides/ws/3-messages.mdx#default-message-parsing).
+Handlers match the [client messages](/docs/zimic-ws/api/1-websocket-schema.md#websocketschemamessageclient) of the schema and respond with its [server messages](/docs/zimic-ws/api/1-websocket-schema.md#websocketschemamessageserver). Client messages are parsed as described in [Default message parsing](/docs/zimic-interceptor/guides/ws/3-messages.mdx#default-message-parsing).
 
 :::tip TIP: <span>Awaiting remote `WebSocketMessageHandler` operations</span>
 
@@ -318,7 +318,7 @@ await handler.respond((message, context) => declaration);
 
    The server message or a factory to create it.
 
-   If declared as a static value, the declaration is a message of the handler path in the schema, sent as described in [Using server messages](/docs/zimic-interceptor/guides/ws/3-messages.mdx#using-server-messages).
+   If declared as a static value, the declaration is a [server message](/docs/zimic-ws/api/1-websocket-schema.md#websocketschemamessageserver) of the handler path in the schema, sent as described in [Using server messages](/docs/zimic-interceptor/guides/ws/3-messages.mdx#using-server-messages).
 
    A declaration can also be a function to dynamically decide how to respond to the message:
 
@@ -513,7 +513,7 @@ await handler.clear();
 
 **Returns**: `WebSocketMessageHandler<Schema, Path>`
 
-The same handler, now cleared of any declaration and saved messages. Its message type is reset to the messages of the handler path, so continue declaring it from the returned handler if a previous [`handler.with()`](#handlerwith) narrowed it.
+The same handler, now cleared of any declaration and saved messages. Its message type is reset to the client messages of the handler path, so continue declaring it from the returned handler if a previous [`handler.with()`](#handlerwith) narrowed it.
 
 ## `handler.messages`
 
