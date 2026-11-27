@@ -7,7 +7,7 @@ import testMatrix from './shared/matrix';
 import { declareMessageSavingWebSocketInterceptorTests } from './shared/messageSaving';
 
 describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Message saving', ({ type }) => {
-  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false, logUnhandledConnections: false });
 
   let baseURL: string;
 

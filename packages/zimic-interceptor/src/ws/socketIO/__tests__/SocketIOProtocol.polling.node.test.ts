@@ -14,11 +14,12 @@ import testMatrix from '../../interceptor/__tests__/shared/matrix';
 import { declarePollingSocketIOProtocolTests } from './shared/polling';
 
 describe.each(testMatrix)('SocketIOProtocol (node, $type) > Polling', ({ type }) => {
-  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false, logUnhandledConnections: false });
 
   const authenticatedServer = createInternalInterceptorServer({
     tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     logUnhandledRequests: false,
+    logUnhandledConnections: false,
   });
 
   let token: InterceptorToken;

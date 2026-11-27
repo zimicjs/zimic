@@ -38,6 +38,12 @@ Whether to log warnings about unhandled requests to the console. It can be reass
 
 **Type**: `boolean` (default: `true`)
 
+## `server.logUnhandledConnections`
+
+Whether to log errors about [unhandled WebSocket connections](/docs/zimic-interceptor/guides/ws/7-unhandled-messages.md#unhandled-connections) to the console. It can be reassigned to a new value.
+
+**Type**: `boolean` (default: `true`)
+
 ## `server.tokensDirectory`
 
 The directory where the authorized interceptor authentication tokens are saved.

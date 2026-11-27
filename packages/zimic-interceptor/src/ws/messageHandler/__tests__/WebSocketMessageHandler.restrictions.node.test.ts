@@ -7,7 +7,7 @@ import testMatrix from './shared/matrix';
 import { declareRestrictionWebSocketMessageHandlerTests } from './shared/restrictions';
 
 describe.each(testMatrix)('WebSocketMessageHandler (node, $type) > Restrictions', ({ type }) => {
-  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false, logUnhandledConnections: false });
 
   declareRestrictionWebSocketMessageHandlerTests({
     platform: 'node',

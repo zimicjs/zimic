@@ -7,7 +7,7 @@ import testMatrix from './shared/matrix';
 import { declareSendsWebSocketInterceptorTests } from './shared/sends';
 
 describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Sends', ({ type }) => {
-  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false, logUnhandledConnections: false });
 
   beforeAll(async () => {
     if (type === 'remote') {

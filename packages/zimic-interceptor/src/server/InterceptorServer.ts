@@ -24,6 +24,7 @@ import WebSocketServer, {
 
 import {
   DEFAULT_ACCESS_CONTROL_HEADERS,
+  DEFAULT_LOG_UNHANDLED_CONNECTIONS,
   DEFAULT_LOG_UNHANDLED_REQUESTS,
   DEFAULT_HOSTNAME,
   DEFAULT_PREFLIGHT_STATUS_CODE,
@@ -72,6 +73,7 @@ class InterceptorServer implements PublicInterceptorServer {
   #hostname: string;
   #port: number | undefined;
   logUnhandledRequests: boolean;
+  logUnhandledConnections: boolean;
   tokensDirectory?: string;
 
   private workerProtocols = new Map<Socket, InterceptorServerRPCProtocol>();
@@ -80,6 +82,7 @@ class InterceptorServer implements PublicInterceptorServer {
     this.#hostname = options.hostname ?? DEFAULT_HOSTNAME;
     this.#port = options.port;
     this.logUnhandledRequests = options.logUnhandledRequests ?? DEFAULT_LOG_UNHANDLED_REQUESTS;
+    this.logUnhandledConnections = options.logUnhandledConnections ?? DEFAULT_LOG_UNHANDLED_CONNECTIONS;
     this.tokensDirectory = options.tokensDirectory;
   }
 
@@ -296,6 +299,7 @@ class InterceptorServer implements PublicInterceptorServer {
     this.webSocketRuntime = new WebSocketInterceptorServerRuntime({
       webSocketServer: this.webSocketServerOrThrow,
       isWebSocketWorkerSocket: (socket) => this.workerProtocols.get(socket) === 'ws',
+      shouldLogUnhandledConnections: () => this.logUnhandledConnections,
     });
 
     this.webSocketServerOrThrow.start();

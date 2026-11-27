@@ -22,6 +22,7 @@ async function startInterceptorServer({
   hostname,
   port,
   logUnhandledRequests,
+  logUnhandledConnections,
   tokensDirectory,
   ephemeral,
   onReady,
@@ -30,6 +31,7 @@ async function startInterceptorServer({
     hostname,
     port,
     logUnhandledRequests,
+    logUnhandledConnections,
     tokensDirectory,
   });
 

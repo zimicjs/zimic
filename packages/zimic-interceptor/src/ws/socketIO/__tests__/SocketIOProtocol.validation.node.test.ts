@@ -8,7 +8,7 @@ import testMatrix from '../../interceptor/__tests__/shared/matrix';
 import { declareValidationSocketIOProtocolTests } from './shared/validation';
 
 describe.each(testMatrix)('SocketIOProtocol (node, $type) > Validation', ({ type }) => {
-  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false, logUnhandledConnections: false });
 
   beforeAll(async () => {
     if (type === 'remote') {

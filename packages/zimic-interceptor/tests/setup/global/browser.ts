@@ -34,6 +34,7 @@ export async function setup(project: TestProject) {
   interceptorServer = createInterceptorServer({
     hostname: INTERCEPTOR_SERVER_HOSTNAME,
     logUnhandledRequests: false,
+    logUnhandledConnections: false,
   });
 
   await interceptorServer.start();
@@ -45,6 +46,7 @@ export async function setup(project: TestProject) {
   authenticatedInterceptorServer = createInterceptorServer({
     hostname: INTERCEPTOR_SERVER_HOSTNAME,
     logUnhandledRequests: false,
+    logUnhandledConnections: false,
     tokensDirectory: path.join(project.tmpDir, 'interceptor', 'server', 'tokens'),
   });
 

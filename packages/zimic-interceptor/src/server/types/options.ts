@@ -10,5 +10,8 @@ export interface InterceptorServerOptions {
   logUnhandledRequests?: boolean;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/create-interceptor-server `createInterceptorServer` API reference} */
+  logUnhandledConnections?: boolean;
+
+  /** @see {@link https://zimic.dev/docs/interceptor/api/create-interceptor-server `createInterceptorServer` API reference} */
   tokensDirectory?: string;
 }

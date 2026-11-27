@@ -7,7 +7,7 @@ import { declareDefaultWebSocketConnectionHandlerTests } from './shared/default'
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('WebSocketConnectionHandler (node, $type)', ({ type }) => {
-  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false, logUnhandledConnections: false });
 
   declareDefaultWebSocketConnectionHandlerTests({
     platform: 'node',

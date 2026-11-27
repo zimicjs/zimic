@@ -9,6 +9,7 @@ export function createInterceptorServer(options: InterceptorServerOptions = {}):
   assertTypeOf('options.hostname', options.hostname, 'string', { optional: true });
   assertTypeOf('options.port', options.port, 'number', { optional: true });
   assertTypeOf('options.logUnhandledRequests', options.logUnhandledRequests, 'boolean', { optional: true });
+  assertTypeOf('options.logUnhandledConnections', options.logUnhandledConnections, 'boolean', { optional: true });
   assertTypeOf('options.tokensDirectory', options.tokensDirectory, 'string', { optional: true });
 
   return new InterceptorServer(options);

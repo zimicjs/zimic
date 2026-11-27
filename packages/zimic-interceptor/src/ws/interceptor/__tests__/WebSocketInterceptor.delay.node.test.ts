@@ -7,7 +7,7 @@ import { declareDelayWebSocketInterceptorTests } from './shared/delay';
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('WebSocketInterceptor (node, $type) > Delay', ({ type }) => {
-  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false, logUnhandledConnections: false });
 
   beforeAll(async () => {
     if (type === 'remote') {

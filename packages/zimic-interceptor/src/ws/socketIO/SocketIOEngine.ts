@@ -9,7 +9,7 @@ import * as defaultParser from 'socket.io-parser';
 import type { Packet } from 'socket.io-parser';
 
 import { isServerSide } from '@/utils/environment';
-import { logger } from '@/utils/logging';
+import { logger, logUnhandledSocketIONamespaceConnectionError } from '@/utils/logging';
 import { createPathMatchingURL, removeTrailingSlash } from '@/utils/urls';
 import { isWebSocketBinaryMessageData, normalizeBufferSource } from '@/ws/utils/messageData';
 
@@ -291,6 +291,10 @@ class SocketIOEngine {
 
     if (!protocol) {
       if (packet.type === PacketType.CONNECT) {
+        // No interceptor owns an unregistered namespace, so no unhandled message strategy applies and the error is
+        // always logged.
+        logUnhandledSocketIONamespaceConnectionError(session.url, packet.nsp);
+
         this.sendSocketPacket(session, {
           type: PacketType.CONNECT_ERROR,
           nsp: packet.nsp,

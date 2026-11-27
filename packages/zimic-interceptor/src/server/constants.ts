@@ -29,3 +29,4 @@ export const DEFAULT_PREFLIGHT_STATUS_CODE = 204;
 
 export const DEFAULT_HOSTNAME = 'localhost';
 export const DEFAULT_LOG_UNHANDLED_REQUESTS = true;
+export const DEFAULT_LOG_UNHANDLED_CONNECTIONS = true;
