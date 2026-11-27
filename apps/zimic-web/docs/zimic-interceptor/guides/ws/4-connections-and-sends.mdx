@@ -43,7 +43,7 @@ type Schema = WebSocketSchema<{
 
 Connection attempts are handled by [connection handlers](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx), created with [`interceptor.connection()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorconnection). Connection handlers can restrict which connections they match, delay the handshake, accept or reject the connection, and run an effect when it opens.
 
-As with [message handlers](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#declaring-message-handlers), the handlers are tried from the **last** one created to the first, and the first handler that matches decides the connection. A handler without a response accepts the connection, and a connection that matches no handler is also accepted. Learn more about [declaring connection handlers](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#declaring-connection-handlers).
+As with [message handlers](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#declaring-message-handlers), the handlers are tried from the **last** one created to the first, and the first handler that matches decides the connection. A declared handler without a response accepts the connection. A connection that matches no handler is also accepted. Learn more about [declaring connection handlers](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#declaring-connection-handlers).
 
 ### Running effects on connection
 

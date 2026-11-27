@@ -15,7 +15,7 @@ WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. 
 
 :::
 
-A WebSocket message handler to observe client-to-server messages, run effects, and declare server responses. When multiple handlers match the same message, the _last_ handler created with [`interceptor.message(path)`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#declaring-message-handlers) will be used, even if the handlers belong to different interceptors holding the connection or were declared with different paths.
+A WebSocket message handler to observe client-to-server messages, run effects, and declare server responses. When multiple handlers match the same message, the _last_ handler created with [`interceptor.message(path)`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#declaring-message-handlers) will be used, even if the handlers belong to different interceptors holding the connection or were declared with different paths. A handler matches no messages until it has at least one declaration, as described in [`interceptor.message()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptormessage).
 
 The examples on this page use the following [schema](/docs/zimic-ws/guides/1-schemas.md):
 
@@ -397,7 +397,7 @@ await handler.effect((message, context) => {
 
 The same handler, now including the declared effect.
 
-Handlers without a response are valid, with or without an effect. They observe matching messages, save them when message saving is enabled, and count toward [`handler.times()`](#handlertimes).
+Handlers without a response are valid if they have another declaration, such as an effect, a restriction, or [`handler.times()`](#handlertimes). They observe matching messages, save them when message saving is enabled, and count toward [`handler.times()`](#handlertimes).
 
 **Related**:
 

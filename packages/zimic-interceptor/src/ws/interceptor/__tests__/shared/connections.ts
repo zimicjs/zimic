@@ -98,7 +98,7 @@ export function declareConnectionsWebSocketInterceptorTests(
       await usingWebSocketInterceptor<ChatSchema>(
         { type, baseURL, messageSaving: { enabled: true } },
         async (interceptor) => {
-          const handler = await promiseIfRemote(interceptor.message(), interceptor);
+          const handler = await promiseIfRemote(interceptor.message().times(1), interceptor);
 
           const client = new WebSocketClient<ChatSchema, '/'>(baseURL, requestedProtocols);
 

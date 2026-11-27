@@ -51,7 +51,7 @@ const DEFAULT_NUMBER_OF_MESSAGE_LIMITS: Range<number> = Object.freeze({
 
 export type WebSocketMessageHandlerMessageMatch =
   | { success: true }
-  | { success: false; cause: 'clearedHandler' | 'exceededNumberOfMessages' }
+  | { success: false; cause: 'undeclaredHandler' | 'exceededNumberOfMessages' }
   | {
       success: false;
       cause: 'unmatchedRestrictions';
@@ -105,9 +105,9 @@ class WebSocketMessageHandlerImplementation<
 
   #clearGeneration = {};
 
-  // Handlers match messages without a declared response, so a cleared handler would keep shadowing older handlers. As
-  // with a cleared HTTP handler, it stops matching until it is declared again.
-  private isCleared = false;
+  // New and cleared handlers match no messages, so they do not shadow older handlers. Unlike HTTP handlers, which need a
+  // response, any declaration enables matching, because a message does not need a reply.
+  private hasDeclarations = false;
 
   constructor(
     private interceptor: AnyWebSocketInterceptorImplementation,
@@ -119,7 +119,7 @@ class WebSocketMessageHandlerImplementation<
 
   from(sender: WebSocketMessageHandlerSenderRestriction<Schema, Path>) {
     this.senderRestriction = sender;
-    this.isCleared = false;
+    this.hasDeclarations = true;
     return this;
   }
 
@@ -128,7 +128,7 @@ class WebSocketMessageHandlerImplementation<
     options: WebSocketMessageHandlerStaticRestrictionOptions = {},
   ) {
     this.restrictions.push({ restriction, options });
-    this.isCleared = false;
+    this.hasDeclarations = true;
     return this;
   }
 
@@ -136,7 +136,7 @@ class WebSocketMessageHandlerImplementation<
     minMilliseconds: number | WebSocketMessageHandlerDelayFactory<RestrictedMessage>,
     maxMilliseconds?: number,
   ): this {
-    this.isCleared = false;
+    this.hasDeclarations = true;
 
     if (minMilliseconds === maxMilliseconds) {
       return this.delay(minMilliseconds);
@@ -158,7 +158,7 @@ class WebSocketMessageHandlerImplementation<
 
   effect(callback: WebSocketMessageHandlerMessageCallback<Schema, Path, RestrictedMessage>) {
     this.applyEffect = callback;
-    this.isCleared = false;
+    this.hasDeclarations = true;
     this.resetMatchedMessages();
     this.interceptor.registerMessageHandler(this.handler);
     return this;
@@ -166,7 +166,7 @@ class WebSocketMessageHandlerImplementation<
 
   respond(declaration: WebSocketMessageHandlerMessageDeclaration<Schema, Path, RestrictedMessage>) {
     this.createResponseDeclaration = this.isResponseDeclarationFactory(declaration) ? declaration : () => declaration;
-    this.isCleared = false;
+    this.hasDeclarations = true;
     this.resetMatchedMessages();
     this.interceptor.registerMessageHandler(this.handler);
     return this;
@@ -185,7 +185,7 @@ class WebSocketMessageHandlerImplementation<
     };
 
     this.timesPointer = new WebSocketTimesDeclarationPointer(minNumberOfMessages, maxNumberOfMessages);
-    this.isCleared = false;
+    this.hasDeclarations = true;
 
     return this;
   }
@@ -214,7 +214,7 @@ class WebSocketMessageHandlerImplementation<
 
   clear() {
     this.#clearGeneration = {};
-    this.isCleared = true;
+    this.hasDeclarations = false;
 
     this.restrictions.length = 0;
     this.senderRestriction = undefined;
@@ -250,8 +250,8 @@ class WebSocketMessageHandlerImplementation<
 
     // Checked after the restrictions because the handler may be cleared while they are matched asynchronously, even if
     // it is redeclared afterward.
-    if (this.isCleared || clearGeneration !== this.#clearGeneration) {
-      return { success: false, cause: 'clearedHandler' };
+    if (!this.hasDeclarations || clearGeneration !== this.#clearGeneration) {
+      return { success: false, cause: 'undeclaredHandler' };
     }
 
     if (!restrictionsMatch.success) {

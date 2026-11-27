@@ -47,7 +47,26 @@ export function declareDefaultWebSocketMessageHandlerTests(
     });
   });
 
-  // Unlike HTTP requests, a message needs no reply, so a handler without a declared response still matches.
+  it('should not match any message if contains no declarations', async () => {
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, messageSaving: { enabled: true } },
+      async (interceptor) => {
+        await interceptor.message().respond({ type: 'delete', id: 'older' });
+        const handler = await interceptor.message();
+
+        await usingWebSocketClient<Schema>(baseURL, async (client) => {
+          const response = waitForWebSocketClientMessage(client);
+          client.send(JSON.stringify({ type: 'create', body: { text: 'hello' } }));
+          await expect(response).resolves.toBe(JSON.stringify({ type: 'delete', id: 'older' }));
+
+          expect(handler.messages).toHaveLength(0);
+        });
+      },
+    );
+  });
+
+  // Diverges from "should not match any request if contains no declared response": unlike HTTP requests, a message needs
+  // no reply, so any declaration enables matching.
   it('should match any message if contains no declared response', async () => {
     await usingWebSocketInterceptor<Schema>(
       { type, baseURL, messageSaving: { enabled: true } },

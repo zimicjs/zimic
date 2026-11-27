@@ -55,7 +55,23 @@ export function declareDefaultWebSocketConnectionHandlerTests(
     });
   });
 
-  // Unlike HTTP requests, a connection needs no declared response, so a handler without one still matches and accepts.
+  it('should not match any connection if contains no declarations', async () => {
+    await usingWebSocketInterceptor<Schema>(
+      { type, baseURL, connectionSaving: { enabled: true } },
+      async (interceptor) => {
+        await interceptor.connection().respond({ action: 'reject' });
+        const handler = await interceptor.connection();
+
+        const attempt = await openWebSocketUntilSettled(baseURL);
+        expectWebSocketAttemptToBeRefused(attempt);
+
+        expect(handler.connections).toHaveLength(0);
+      },
+    );
+  });
+
+  // Diverges from "should not match any request if contains no declared response": unlike HTTP requests, a connection
+  // needs no declared response, so any declaration enables matching, and the connection is accepted.
   it('should match any connection if contains no declared response', async () => {
     await usingWebSocketInterceptor<Schema>(
       { type, baseURL, connectionSaving: { enabled: true } },

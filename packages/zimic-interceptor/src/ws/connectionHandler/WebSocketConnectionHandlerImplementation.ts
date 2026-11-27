@@ -35,7 +35,7 @@ const DEFAULT_NUMBER_OF_CONNECTION_LIMITS: Range<number> = Object.freeze({
 
 export type WebSocketConnectionHandlerConnectionMatch =
   | { success: true }
-  | { success: false; cause: 'clearedHandler' | 'exceededNumberOfConnections' }
+  | { success: false; cause: 'undeclaredHandler' | 'exceededNumberOfConnections' }
   | { success: false; cause: 'unmatchedRestrictions'; diff: WebSocketConnectionHandlerRestrictionDiffs };
 
 // The error of a rejection comes from user code that may bypass the schema types, so protocols validate it.
@@ -62,9 +62,9 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 
   #clearGeneration = {};
 
-  // Handlers match connections without a declared response, so a cleared handler would keep shadowing older handlers.
-  // As with a cleared HTTP handler, it stops matching until it is declared again.
-  private isCleared = false;
+  // New and cleared handlers match no connections, so they do not shadow older handlers. Unlike HTTP handlers, which
+  // need a response, any declaration enables matching, because unhandled connections are accepted.
+  private hasDeclarations = false;
 
   constructor(
     private interceptor: AnyWebSocketInterceptorImplementation,
@@ -74,7 +74,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 
   with(restriction: WebSocketConnectionHandlerRestriction<Schema, Path>) {
     this.restrictions.push(restriction);
-    this.isCleared = false;
+    this.hasDeclarations = true;
     return this;
   }
 
@@ -82,7 +82,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
     minMilliseconds: number | WebSocketConnectionHandlerDelayFactory<Schema, Path>,
     maxMilliseconds?: number,
   ): this {
-    this.isCleared = false;
+    this.hasDeclarations = true;
 
     if (minMilliseconds === maxMilliseconds) {
       return this.delay(minMilliseconds);
@@ -104,7 +104,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 
   effect(callback: WebSocketConnectionHandlerConnectionCallback<Schema, Path>) {
     this.applyEffect = callback;
-    this.isCleared = false;
+    this.hasDeclarations = true;
     this.resetMatchedConnections();
     this.interceptor.registerConnectionHandler(this.handler);
     return this;
@@ -112,7 +112,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 
   respond(declaration: WebSocketConnectionHandlerResponseDeclaration<Schema, Path>) {
     this.createResponseDeclaration = this.isResponseDeclarationFactory(declaration) ? declaration : () => declaration;
-    this.isCleared = false;
+    this.hasDeclarations = true;
     this.resetMatchedConnections();
     this.interceptor.registerConnectionHandler(this.handler);
     return this;
@@ -129,7 +129,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
     };
 
     this.timesPointer = new WebSocketTimesDeclarationPointer(minNumberOfConnections, maxNumberOfConnections);
-    this.isCleared = false;
+    this.hasDeclarations = true;
 
     return this;
   }
@@ -158,7 +158,7 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 
   clear() {
     this.#clearGeneration = {};
-    this.isCleared = true;
+    this.hasDeclarations = false;
 
     this.restrictions.length = 0;
 
@@ -192,8 +192,8 @@ class WebSocketConnectionHandlerImplementation<Schema extends WebSocketSchema, P
 
     // Checked after the restrictions because the handler may be cleared while they are matched asynchronously, even if
     // it is redeclared afterward.
-    if (this.isCleared || clearGeneration !== this.#clearGeneration) {
-      return { success: false, cause: 'clearedHandler' };
+    if (!this.hasDeclarations || clearGeneration !== this.#clearGeneration) {
+      return { success: false, cause: 'undeclaredHandler' };
     }
 
     if (!restrictionsMatch.success) {

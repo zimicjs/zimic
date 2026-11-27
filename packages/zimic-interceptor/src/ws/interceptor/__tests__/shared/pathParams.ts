@@ -56,7 +56,10 @@ export function declarePathParamsWebSocketInterceptorTests(options: RuntimeShare
     await usingWebSocketInterceptor<WebSocketSchema<{ '/users/:userId': PathSchema }>>(
       interceptorOptions,
       async (interceptor) => {
-        const genericHandler = await promiseIfRemote(interceptor.connection('/users/:userId'), interceptor);
+        const genericHandler = await promiseIfRemote(
+          interceptor.connection('/users/:userId').respond({ action: 'accept' }),
+          interceptor,
+        );
         expect(genericHandler).toBeInstanceOf(Handler);
 
         expect(genericHandler.connections).toHaveLength(0);
@@ -105,9 +108,15 @@ export function declarePathParamsWebSocketInterceptorTests(options: RuntimeShare
     await usingWebSocketInterceptor<WebSocketSchema<{ '/users/:userId': PathSchema; '/users/me': PathSchema }>>(
       interceptorOptions,
       async (interceptor) => {
-        const genericHandler = await promiseIfRemote(interceptor.connection('/users/:userId'), interceptor);
+        const genericHandler = await promiseIfRemote(
+          interceptor.connection('/users/:userId').respond({ action: 'accept' }),
+          interceptor,
+        );
 
-        const specificHandler = await promiseIfRemote(interceptor.connection('/users/me'), interceptor);
+        const specificHandler = await promiseIfRemote(
+          interceptor.connection('/users/me').respond({ action: 'accept' }),
+          interceptor,
+        );
 
         const newerGenericHandler = await promiseIfRemote(
           interceptor.connection('/users/:userId').respond({ action: 'reject' }),
@@ -129,7 +138,10 @@ export function declarePathParamsWebSocketInterceptorTests(options: RuntimeShare
     await usingWebSocketInterceptor<WebSocketSchema<{ '/users/:userId': PathSchema; '/users/me': PathSchema }>>(
       interceptorOptions,
       async (interceptor) => {
-        const genericHandler = await promiseIfRemote(interceptor.connection('/users/:userId'), interceptor);
+        const genericHandler = await promiseIfRemote(
+          interceptor.connection('/users/:userId').respond({ action: 'accept' }),
+          interceptor,
+        );
 
         const specificHandler = await promiseIfRemote(
           interceptor.connection('/users/me').with(specificRestriction).respond({ action: 'reject' }),
@@ -636,7 +648,7 @@ export function declarePathParamsWebSocketInterceptorTests(options: RuntimeShare
         await promiseIfRemote(encodedSpecificHandler.clear(), interceptor);
 
         const decodedSpecificHandler = await promiseIfRemote(
-          interceptor.connection(`/files/${decodedFilePath}`),
+          interceptor.connection(`/files/${decodedFilePath}`).respond({ action: 'accept' }),
           interceptor,
         );
 
@@ -706,7 +718,7 @@ export function declarePathParamsWebSocketInterceptorTests(options: RuntimeShare
         await promiseIfRemote(encodedSpecificHandler.clear(), interceptor);
 
         const decodedSpecificHandler = await promiseIfRemote(
-          interceptor.connection(`/files/${decodedFilePath}`),
+          interceptor.connection(`/files/${decodedFilePath}`).respond({ action: 'accept' }),
           interceptor,
         );
 
@@ -724,7 +736,7 @@ export function declarePathParamsWebSocketInterceptorTests(options: RuntimeShare
 
   it('should provide empty path params to connection handlers without a declared path', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-      const handler = await promiseIfRemote(interceptor.connection(), interceptor);
+      const handler = await promiseIfRemote(interceptor.connection().respond({ action: 'accept' }), interceptor);
 
       await expectWebSocketConnectionToOpen(joinURL(baseURL, '/users/1'));
 
@@ -738,7 +750,10 @@ export function declarePathParamsWebSocketInterceptorTests(options: RuntimeShare
 
   it('should not include search params in the path params of connections', async () => {
     await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
-      const handler = await promiseIfRemote(interceptor.connection('/users/:userId'), interceptor);
+      const handler = await promiseIfRemote(
+        interceptor.connection('/users/:userId').respond({ action: 'accept' }),
+        interceptor,
+      );
 
       await expectWebSocketConnectionToOpen(`${joinURL(baseURL, '/users/1')}?token=value`);
 
@@ -765,7 +780,7 @@ export function declarePathParamsWebSocketInterceptorTests(options: RuntimeShare
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, messageSaving: { enabled: true }, onUnhandledMessage: { log: false } },
       async (interceptor) => {
-        const handler = await promiseIfRemote(interceptor.message('/rooms/:roomId'), interceptor);
+        const handler = await promiseIfRemote(interceptor.message('/rooms/:roomId').times(1), interceptor);
 
         const roomURL = `${baseURL}/rooms/1`;
 
@@ -789,7 +804,7 @@ export function declarePathParamsWebSocketInterceptorTests(options: RuntimeShare
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, messageSaving: { enabled: true } },
       async (interceptor) => {
-        const handler = await promiseIfRemote(interceptor.message('/rooms/:roomId'), interceptor);
+        const handler = await promiseIfRemote(interceptor.message('/rooms/:roomId').times(1), interceptor);
 
         await usingWebSocketClient<MessageSchema>(`${baseURL}/rooms/1?token=value`, async (client) => {
           client.send(JSON.stringify({ type: 'message' }));
@@ -806,8 +821,8 @@ export function declarePathParamsWebSocketInterceptorTests(options: RuntimeShare
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, messageSaving: { enabled: true } },
       async (interceptor) => {
-        const genericHandler = await promiseIfRemote(interceptor.message('/rooms/:roomId'), interceptor);
-        const specificHandler = await promiseIfRemote(interceptor.message('/rooms/1'), interceptor);
+        const genericHandler = await promiseIfRemote(interceptor.message('/rooms/:roomId').times(1), interceptor);
+        const specificHandler = await promiseIfRemote(interceptor.message('/rooms/1').times(1), interceptor);
 
         await usingWebSocketClient<MessageSchema>(`${baseURL}/rooms/1`, async (specificClient) => {
           specificClient.send(JSON.stringify({ type: 'message' }));
@@ -836,7 +851,7 @@ export function declarePathParamsWebSocketInterceptorTests(options: RuntimeShare
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, messageSaving: { enabled: true } },
       async (interceptor) => {
-        const handler = await promiseIfRemote(interceptor.message(), interceptor);
+        const handler = await promiseIfRemote(interceptor.message().times(2), interceptor);
 
         await usingWebSocketClient<MessageSchema>(`${baseURL}/users/1`, async (userClient) => {
           await usingWebSocketClient<MessageSchema>(`${baseURL}/rooms/1`, async (roomClient) => {
