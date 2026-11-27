@@ -2,8 +2,7 @@ import { HttpSchema } from '@zimic/http';
 import { createPromiseWithResolvers } from '@zimic/utils/data';
 import { waitFor } from '@zimic/utils/time';
 import { PossiblePromise } from '@zimic/utils/types';
-import { WEB_SOCKET_CLOSE_CODES } from '@zimic/utils/ws';
-import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
+import { WebSocketSchema } from '@zimic/ws';
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 
 import LocalMSWWorkerStore from '@/interceptor/LocalMSWWorkerStore';
@@ -23,8 +22,8 @@ import {
   usingWebSocketInterceptorWorker,
 } from '@tests/utils/interceptors';
 import {
+  expectWebSocketConnectionToBeRefused,
   usingWebSocketClient,
-  waitForWebSocketClientClose,
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
 
@@ -572,18 +571,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
         await worker.clearHandlers({ interceptor: interceptor.implementation });
         resetRequestSpy.mockRestore();
 
-        const client = new WebSocketClient<ChatSchema>(baseURL);
-        const closeEventPromise = waitForWebSocketClientClose(client);
-
-        try {
-          await client.open();
-
-          const closeEvent = await closeEventPromise;
-          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-          expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
-        } finally {
-          await client.close();
-        }
+        await expectWebSocketConnectionToBeRefused(baseURL);
       });
     });
 
@@ -760,18 +748,7 @@ export function declareDefaultWebSocketInterceptorWorkerTests(options: SharedWeb
 
         await worker.clearHandlers();
 
-        const client = new WebSocketClient<ChatSchema>(baseURL);
-        const closeEventPromise = waitForWebSocketClientClose(client);
-
-        try {
-          await client.open();
-
-          const closeEvent = await closeEventPromise;
-          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-          expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
-        } finally {
-          await client.close();
-        }
+        await expectWebSocketConnectionToBeRefused(baseURL);
       });
     });
 

@@ -34,7 +34,10 @@ import {
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 import {
   collectWebSocketClientMessages,
+  expectWebSocketAttemptToBeRefused,
+  expectWebSocketConnectionToBeRefused,
   isCloseDispatchedOnRefusedWebSocket,
+  openWebSocketUntilSettled,
   waitForWebSocketClientClose,
   waitForWebSocketClientMessage,
 } from '@tests/utils/webSocket';
@@ -918,14 +921,7 @@ describe('Interceptor server', () => {
             );
           });
 
-          const client = new WebSocketClient<ChatSchema>(baseURL);
-          const closeEventPromise = waitForWebSocketClientClose(client);
-
-          await client.open();
-
-          const closeEvent = await closeEventPromise;
-          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-          expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
+          await expectWebSocketConnectionToBeRefused(baseURL);
         } finally {
           await httpWorkerClient.stop();
           await Promise.allSettled(rejectedRequests);
@@ -1307,8 +1303,6 @@ describe('Interceptor server', () => {
         );
         worker.onChannel('event', 'interceptors/ws/clients/connect', connectionListener);
 
-        const client = new WebSocketClient<ChatSchema>(`ws://${server.hostname}:${server.port}/`);
-
         try {
           await worker.start({
             parameters: {
@@ -1322,16 +1316,9 @@ describe('Interceptor server', () => {
             interceptors: [{ id: crypto.randomUUID(), baseURL: otherPortBaseURL }],
           });
 
-          const closeEventPromise = waitForWebSocketClientClose(client);
-
-          await client.open();
-
-          const closeEvent = await closeEventPromise;
-          expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-          expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
+          await expectWebSocketConnectionToBeRefused(`ws://${server.hostname}:${server.port}/`);
           expect(connectionListener).not.toHaveBeenCalled();
         } finally {
-          await client.close();
           await worker.stop();
         }
       });
@@ -1356,7 +1343,6 @@ describe('Interceptor server', () => {
 
         const rejectedRequests: Promise<unknown>[] = [];
         const client = new WebSocketClient<ChatSchema>(baseURL);
-        const otherClient = new WebSocketClient<ChatSchema>(otherBaseURL);
 
         await usingIgnoredConsole(['error'], async (console) => {
           try {
@@ -1401,15 +1387,9 @@ describe('Interceptor server', () => {
               expect(receivedMessages).toEqual([message]);
             });
 
-            const otherCloseEventPromise = waitForWebSocketClientClose(otherClient);
-
-            await otherClient.open();
-
-            const otherCloseEvent = await otherCloseEventPromise;
-            expect(otherCloseEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-            expect(otherCloseEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
+            await expectWebSocketConnectionToBeRefused(otherBaseURL);
           } finally {
-            await Promise.all([client.close(), otherClient.close()]);
+            await client.close();
             await worker.stop();
             await Promise.allSettled(rejectedRequests);
           }
@@ -1427,7 +1407,6 @@ describe('Interceptor server', () => {
         });
 
         const rejectedRequests: Promise<unknown>[] = [];
-        const client = new WebSocketClient<ChatSchema>(baseURL);
 
         await usingIgnoredConsole(['error'], async (console) => {
           try {
@@ -1448,15 +1427,8 @@ describe('Interceptor server', () => {
             });
             expect(console.error).toHaveBeenCalledTimes(1);
 
-            const closeEventPromise = waitForWebSocketClientClose(client);
-
-            await client.open();
-
-            const closeEvent = await closeEventPromise;
-            expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-            expect(closeEvent.reason).toBe('No WebSocket interceptor is registered for this URL.');
+            await expectWebSocketConnectionToBeRefused(baseURL);
           } finally {
-            await client.close();
             await worker.stop();
             await Promise.allSettled(rejectedRequests);
           }
@@ -1708,7 +1680,7 @@ describe('Interceptor server', () => {
         }
       });
 
-      it('should close client connections when the connection reply is malformed and accept later connections', async () => {
+      it('should refuse client connections when the connection reply is malformed and accept later connections', async () => {
         server = createInternalInterceptorServer();
         await server.start();
 
@@ -1730,7 +1702,12 @@ describe('Interceptor server', () => {
             : { action: 'accept', acceptedInterceptorIds: data.interceptorIds };
         });
 
-        const client = new WebSocketClient<ChatSchema>(baseURL);
+        const closedClientIds: string[] = [];
+
+        worker.onChannel('event', 'interceptors/ws/clients/close', ({ data }) => {
+          closedClientIds.push(data.clientId);
+        });
+
         const otherClient = new WebSocketClient<ChatSchema>(baseURL);
 
         await usingIgnoredConsole(['error'], async (console) => {
@@ -1747,16 +1724,18 @@ describe('Interceptor server', () => {
               interceptors: [{ id: crypto.randomUUID(), baseURL }],
             });
 
-            const closeEventPromise = waitForWebSocketClientClose(client);
-
-            await client.open();
-
-            const closeEvent = await closeEventPromise;
-            expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-            expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
+            await expectWebSocketConnectionToBeRefused(baseURL);
 
             expect(console.error).toHaveBeenCalledTimes(1);
             expect(console.error).toHaveBeenCalledWith(expect.any(InvalidWebSocketMessageError));
+
+            await worker.request('interceptors/ws/workers/reset', {
+              interceptors: [{ id: crypto.randomUUID(), baseURL }],
+            });
+
+            // The server notifies the worker in the same task that refuses the client, so this later reply on the
+            // worker socket arrives after every notification for the client.
+            expect(closedClientIds).toEqual([requestedClientIds[0]]);
 
             const receivedMessages = collectWebSocketClientMessages(otherClient);
 
@@ -1772,7 +1751,7 @@ describe('Interceptor server', () => {
               expect(receivedMessages).toEqual([message]);
             });
           } finally {
-            await Promise.all([client.close(), otherClient.close()]);
+            await otherClient.close();
             await worker.stop();
           }
         });
@@ -2037,7 +2016,7 @@ describe('Interceptor server', () => {
         }
       });
 
-      it('should close pending client connections when the worker disconnects before confirming them', async () => {
+      it('should refuse pending client connections when the worker disconnects before confirming them', async () => {
         server = createInternalInterceptorServer();
         await server.start();
 
@@ -2056,8 +2035,6 @@ describe('Interceptor server', () => {
           });
         });
 
-        const client = new WebSocketClient<ChatSchema>(baseURL);
-
         await usingIgnoredConsole(['error'], async (console) => {
           try {
             await worker.start({
@@ -2072,22 +2049,15 @@ describe('Interceptor server', () => {
               interceptors: [{ id: crypto.randomUUID(), baseURL }],
             });
 
-            const closeEventPromise = waitForWebSocketClientClose(client);
-
             // The server answers the handshake only after the worker decides the connection.
-            const openPromise = client.open();
+            const attemptPromise = openWebSocketUntilSettled(baseURL);
             await connectionReceivedPromise;
 
             await worker.stop();
-            await openPromise;
 
-            const closeEvent = await closeEventPromise;
-            expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-            expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
-
+            expectWebSocketAttemptToBeRefused(await attemptPromise);
             expect(console.error).not.toHaveBeenCalled();
           } finally {
-            await client.close();
             await worker.stop();
           }
         });
@@ -2132,7 +2102,7 @@ describe('Interceptor server', () => {
         }
       });
 
-      it('should log and close pending client connections when the worker does not confirm them in time', async () => {
+      it('should log and refuse pending client connections when the worker does not confirm them in time', async () => {
         server = createInternalInterceptorServer();
         await server.start();
 
@@ -2151,8 +2121,6 @@ describe('Interceptor server', () => {
           });
         });
 
-        let client: WebSocket | undefined;
-
         await usingIgnoredConsole(['error'], async (console) => {
           try {
             await worker.start({
@@ -2170,11 +2138,7 @@ describe('Interceptor server', () => {
             // The server answers the handshake only after the worker decides the connection, so the client stays
             // opening until the request times out. A native socket is used because it sets no open timeout, which the
             // faked clock would fire first.
-            client = new WebSocket(baseURL);
-
-            const closeEventPromise = new Promise<CloseEvent>((resolve) => {
-              client?.addEventListener('close', resolve, { once: true });
-            });
+            const attemptPromise = openWebSocketUntilSettled(baseURL);
 
             // The server message timeout is not configurable, so the clock is faked before the server sends the
             // connection request.
@@ -2188,14 +2152,11 @@ describe('Interceptor server', () => {
               vi.useRealTimers();
             }
 
-            const closeEvent = await closeEventPromise;
-            expect(closeEvent.code).toBe(WEB_SOCKET_CLOSE_CODES.PROTOCOL_ERROR);
-            expect(closeEvent.reason).toBe('Could not connect to the WebSocket interceptor.');
+            expectWebSocketAttemptToBeRefused(await attemptPromise);
 
             expect(console.error).toHaveBeenCalledTimes(1);
             expect(console.error).toHaveBeenCalledWith(expect.any(WebSocketMessageTimeoutError));
           } finally {
-            client?.close();
             await worker.stop();
           }
         });

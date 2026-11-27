@@ -110,6 +110,20 @@ export function declareLifeCycleWebSocketInterceptorTests(options: RuntimeShared
     );
   });
 
+  // Local interceptors let connections pass through to the network after stopped, but the interceptor server is the
+  // endpoint of remote connections, so it refuses them as HTTP requests to it fail.
+  if (type === 'remote') {
+    it('should refuse connections after stopped until restarted', async () => {
+      await usingWebSocketInterceptor<MessageSchema>(interceptorOptions, async (interceptor) => {
+        await interceptor.stop();
+        await expectWebSocketConnectionToBeRefused(baseURL);
+
+        await interceptor.start();
+        await expectWebSocketConnectionToOpen(baseURL);
+      });
+    });
+  }
+
   it('should ignore all handlers after restarted when intercepting messages, even if another interceptor is still running', async () => {
     await usingWebSocketInterceptor<MessageSchema>(
       { ...interceptorOptions, messageSaving: { enabled: true } },
