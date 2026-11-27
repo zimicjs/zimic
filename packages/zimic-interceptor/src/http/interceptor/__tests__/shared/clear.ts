@@ -275,7 +275,7 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
   if (type === 'remote') {
     // An older interceptor handles the request, because browsers resend requests rejected on a reused connection, and
     // the resent request reaches the server after the clear.
-    it('should not handle requests sent before cleared with handlers declared after cleared', async () => {
+    it('should not intercept requests sent before cleared with handlers declared after cleared', async () => {
       await usingHeldInterceptorWorkerMessages(async (messages) => {
         await usingHttpInterceptor<{
           '/users': { GET: MethodSchema };
@@ -311,7 +311,7 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
       });
     });
 
-    it('should handle requests sent before another interceptor is cleared', async () => {
+    it('should intercept requests sent before another interceptor is cleared', async () => {
       await usingHeldInterceptorWorkerMessages(async (messages) => {
         await usingHttpInterceptor<{
           '/users': { GET: MethodSchema };
