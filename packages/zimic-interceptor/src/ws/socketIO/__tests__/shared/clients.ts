@@ -91,6 +91,34 @@ export function declareClientsSocketIOProtocolTests(options: SharedSocketIOProto
         );
       });
     });
+
+    it('should not intercept connections sent before cleared with handlers declared after cleared', async () => {
+      await usingHeldInterceptorWorkerMessages(async (messages) => {
+        await usingWebSocketInterceptor<AnySchema>(
+          getSocketIOInterceptorOptions({}, { connectionSaving: { enabled: true } }),
+          async (interceptor) => {
+            // Clients send their namespace connection in the first message after the WebSocket handshake.
+            const heldMessagePromise = messages.hold((message) => {
+              return message.channel === 'interceptors/ws/messages/handle';
+            });
+
+            await usingSocket(baseURL, { transports: [WebSocketTransport] }, async (socket) => {
+              const connectionPromise = waitForSocketConnection(socket);
+              await heldMessagePromise;
+
+              await interceptor.clear();
+              const handler = await interceptor.connection().respond({ action: 'reject' });
+
+              messages.release();
+
+              await connectionPromise;
+
+              expect(handler.connections).toHaveLength(0);
+            });
+          },
+        );
+      });
+    });
   }
 
   describe.each(getSocketIOTransportCases(options))('Transport: $transportName', ({ transports }) => {

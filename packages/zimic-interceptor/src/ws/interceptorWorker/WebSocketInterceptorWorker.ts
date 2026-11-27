@@ -89,8 +89,8 @@ const UNHANDLED_CONNECTION_HANDLING: WebSocketConnectionHandling = Object.freeze
 
 // Handlers cleared after the server sent a message or connection are skipped as if they were not declared.
 export interface WebSocketHandlerClearChecks {
-  wasClearedAfterMessage?: (handler: AnyWebSocketMessageHandlerImplementation) => boolean;
-  wasClearedAfterConnection?: (handler: AnyWebSocketConnectionHandlerImplementation) => boolean;
+  wasClearedAfterMessage?: (handler: WebSocketMessageHandler) => boolean;
+  wasClearedAfterConnection?: (handler: WebSocketConnectionHandler) => boolean;
 }
 
 // Only protocols such as Socket.IO authenticate clients, so plain WebSocket handshakes have no `auth`.
@@ -240,7 +240,7 @@ abstract class WebSocketInterceptorWorker {
 
       if (
         !isHolding(holder) ||
-        options.wasClearedAfterConnection?.(handler.implementation) ||
+        options.wasClearedAfterConnection?.(handler) ||
         !this.matchesHandlerPath(connectionURL, handler)
       ) {
         continue;
@@ -501,7 +501,7 @@ abstract class WebSocketInterceptorWorker {
 
     // Handlers can be added or cleared while a message is handled, so the message is matched against a copy.
     for (const handler of this.messageHandlers.toReversed()) {
-      if (options.wasClearedAfterMessage?.(handler.implementation)) {
+      if (options.wasClearedAfterMessage?.(handler)) {
         continue;
       }
 
