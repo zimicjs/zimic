@@ -82,7 +82,10 @@ type SocketIONamespaceConnection =
 
 export type SocketIOTransport = Omit<WebSocketInterceptorProtocolConnection, 'url'>;
 
-export type SocketIOEngineInterceptor = WebSocketInterceptorProtocolContext<SocketIOMessage>['interceptor'];
+export type SocketIOEngineInterceptor = WebSocketInterceptorProtocolContext<
+  SocketIOMessage,
+  SocketIOMessage
+>['interceptor'];
 
 interface SocketIOEngineSession {
   id: string;
@@ -100,7 +103,7 @@ export interface SocketIOEngineOptions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- The engine serves namespaces of any schema, decoding events without checking them against it, as decoders of other protocols do.
-type AnySocketIOProtocol = SocketIOProtocol<any>;
+type AnySocketIOProtocol = SocketIOProtocol<any, any>;
 
 // Parsers come from user code, and some declare other return types, such as `socket.io-msgpack-parser`.
 function encodeSocketIOPacket(

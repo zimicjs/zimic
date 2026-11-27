@@ -129,7 +129,7 @@ export interface InternalWebSocketInterceptorServer<
 }
 
 type SendWebSocketInterceptorServerMessage<Schema extends WebSocketSchema> = (
-  data: WebSocketSchemaMessage<Schema> | WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+  data: WebSocketSchemaMessage.Server<Schema> | WebSocketMessageData<WebSocketSchemaMessage.Server<Schema>>,
   options?: WebSocketInterceptorServerSendOptions<Schema>,
 ) => void;
 
@@ -151,7 +151,7 @@ class WebSocketInterceptorServerImplementation<
   }
 
   send(
-    data: WebSocketSchemaMessage<Schema> | WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+    data: WebSocketSchemaMessage.Server<Schema> | WebSocketMessageData<WebSocketSchemaMessage.Server<Schema>>,
     options?: WebSocketInterceptorServerSendOptions<Schema>,
   ) {
     this.#sendMessage(data, options);

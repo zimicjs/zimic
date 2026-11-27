@@ -117,7 +117,7 @@ export function declareDefaultWebSocketInterceptorTests(options: RuntimeSharedWe
       const handler = vi.fn();
 
       // @ts-expect-error Forcing an invalid protocol type.
-      const invalidProtocol: WebSocketInterceptorProtocol<WebSocketMessageSchema> = value;
+      const invalidProtocol: WebSocketInterceptorProtocol<WebSocketMessageSchema, WebSocketMessageSchema> = value;
 
       await expect(async () => {
         await usingWebSocketInterceptor({ ...interceptorOptions, protocol: invalidProtocol }, handler);

@@ -8,7 +8,10 @@ import {
   WebSocketInterceptorClient,
   WebSocketInterceptorServer,
 } from '@/ws/interceptor/types/messages';
-import { WebSocketInterceptorPathMessage } from '@/ws/interceptor/types/schema';
+import {
+  WebSocketInterceptorPathClientMessage,
+  WebSocketInterceptorPathServerMessage,
+} from '@/ws/interceptor/types/schema';
 
 import WebSocketMessageHandlerImplementation from '../WebSocketMessageHandlerImplementation';
 import { WebSocketMessageHandlerDelayFactory } from './messages';
@@ -23,7 +26,7 @@ import {
 export interface InternalWebSocketMessageHandler<
   Schema extends WebSocketSchema,
   Path extends string = string,
-  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path> = WebSocketInterceptorPathMessage<
+  RestrictedMessage extends WebSocketInterceptorPathClientMessage<Schema, Path> = WebSocketInterceptorPathClientMessage<
     Schema,
     Path
   >,
@@ -53,7 +56,7 @@ export interface WebSocketMessageHandlerMessageContext<Schema extends WebSocketS
 export type WebSocketMessageHandlerMessageCallback<
   Schema extends WebSocketSchema,
   Path extends string = string,
-  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path> = WebSocketInterceptorPathMessage<
+  RestrictedMessage extends WebSocketInterceptorPathClientMessage<Schema, Path> = WebSocketInterceptorPathClientMessage<
     Schema,
     Path
   >,
@@ -70,7 +73,7 @@ export type WebSocketMessageHandlerMessageCallback<
 export type WebSocketMessageHandlerMessageStaticDeclaration<
   Schema extends WebSocketSchema,
   Path extends string = string,
-> = WebSocketInterceptorPathMessage<Schema, Path>;
+> = WebSocketInterceptorPathServerMessage<Schema, Path>;
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -80,7 +83,7 @@ export type WebSocketMessageHandlerMessageStaticDeclaration<
 export type WebSocketMessageHandlerMessageComputedDeclaration<
   Schema extends WebSocketSchema,
   Path extends string = string,
-  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path> = WebSocketInterceptorPathMessage<
+  RestrictedMessage extends WebSocketInterceptorPathClientMessage<Schema, Path> = WebSocketInterceptorPathClientMessage<
     Schema,
     Path
   >,
@@ -97,7 +100,7 @@ export type WebSocketMessageHandlerMessageComputedDeclaration<
 export type WebSocketMessageHandlerMessageDeclaration<
   Schema extends WebSocketSchema,
   Path extends string = string,
-  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path> = WebSocketInterceptorPathMessage<
+  RestrictedMessage extends WebSocketInterceptorPathClientMessage<Schema, Path> = WebSocketInterceptorPathClientMessage<
     Schema,
     Path
   >,
@@ -168,7 +171,7 @@ export type WebSocketMessageHandlerMessageWithRestriction<
 export interface LocalWebSocketMessageHandler<
   Schema extends WebSocketSchema,
   Path extends string = string,
-  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path> = WebSocketInterceptorPathMessage<
+  RestrictedMessage extends WebSocketInterceptorPathClientMessage<Schema, Path> = WebSocketInterceptorPathClientMessage<
     Schema,
     Path
   >,
@@ -232,7 +235,7 @@ export interface LocalWebSocketMessageHandler<
 export interface SyncedRemoteWebSocketMessageHandler<
   Schema extends WebSocketSchema,
   Path extends string = string,
-  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path> = WebSocketInterceptorPathMessage<
+  RestrictedMessage extends WebSocketInterceptorPathClientMessage<Schema, Path> = WebSocketInterceptorPathClientMessage<
     Schema,
     Path
   >,
@@ -311,7 +314,7 @@ export interface SyncedRemoteWebSocketMessageHandler<
 export interface PendingRemoteWebSocketMessageHandler<
   Schema extends WebSocketSchema,
   Path extends string = string,
-  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path> = WebSocketInterceptorPathMessage<
+  RestrictedMessage extends WebSocketInterceptorPathClientMessage<Schema, Path> = WebSocketInterceptorPathClientMessage<
     Schema,
     Path
   >,
@@ -348,7 +351,7 @@ export interface PendingRemoteWebSocketMessageHandler<
 export type RemoteWebSocketMessageHandler<
   Schema extends WebSocketSchema,
   Path extends string = string,
-  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path> = WebSocketInterceptorPathMessage<
+  RestrictedMessage extends WebSocketInterceptorPathClientMessage<Schema, Path> = WebSocketInterceptorPathClientMessage<
     Schema,
     Path
   >,
@@ -362,7 +365,7 @@ export type RemoteWebSocketMessageHandler<
 export type WebSocketMessageHandler<
   Schema extends WebSocketSchema,
   Path extends string = string,
-  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path> = WebSocketInterceptorPathMessage<
+  RestrictedMessage extends WebSocketInterceptorPathClientMessage<Schema, Path> = WebSocketInterceptorPathClientMessage<
     Schema,
     Path
   >,

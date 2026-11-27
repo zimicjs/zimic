@@ -64,10 +64,13 @@ interface ClientTestInterceptorProtocolMessage {
 export interface ClientTestInterceptorProtocol {
   // The path clients of the protocol connect to, such as `/socket.io`, appended to each interceptor base URL.
   path: string;
-  create: <Message extends ClientTestInterceptorProtocolMessage>(options: {
+  create: <
+    ServerMessage extends ClientTestInterceptorProtocolMessage,
+    ClientMessage extends ClientTestInterceptorProtocolMessage,
+  >(options: {
     type: WebSocketInterceptorType;
     baseURL: string;
-  }) => WebSocketInterceptorProtocol<Message>;
+  }) => WebSocketInterceptorProtocol<ServerMessage, ClientMessage>;
 }
 
 export interface ClientTestOptions {

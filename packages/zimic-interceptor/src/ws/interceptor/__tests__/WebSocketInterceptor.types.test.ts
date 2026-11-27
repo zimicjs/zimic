@@ -30,6 +30,14 @@ type PathKeyedSchema = WebSocketSchema<{
   };
 }>;
 
+type DirectionalSchema = WebSocketSchema<{
+  '/rooms/:roomId': {
+    message: { type: 'ping' };
+    serverMessage: { type: 'chat:received'; text: string };
+    clientMessage: { type: 'chat:send'; text: string };
+  };
+}>;
+
 // The interceptors below are only type-checked. The functions declaring them are never called.
 describe('WebSocketInterceptor > Types', () => {
   it('should type message handlers with the messages of the declared path', () => {
@@ -59,6 +67,35 @@ describe('WebSocketInterceptor > Types', () => {
       interceptor.connection('/rooms/:roomId').effect((client) => {
         interceptor.server.send({ type: 'chat', text: 'hello' }, { to: client });
       });
+    });
+  });
+
+  it('should send the messages sent by the server through the interceptor server', () => {
+    declareWebSocketInterceptorTypes<DirectionalSchema>((interceptor) => {
+      interceptor.server.send({ type: 'chat:received', text: 'hello' });
+      interceptor.server.send({ type: 'ping' });
+
+      // @ts-expect-error Only clients send this message.
+      interceptor.server.send({ type: 'chat:send', text: 'hello' });
+    });
+  });
+
+  it('should send the messages sent by the server to connected clients', () => {
+    declareWebSocketInterceptorTypes<DirectionalSchema>((interceptor) => {
+      interceptor.connection('/rooms/:roomId').effect((client) => {
+        client.send({ type: 'chat:received', text: 'hello' });
+
+        // @ts-expect-error Only clients send this message.
+        client.send({ type: 'chat:send', text: 'hello' });
+      });
+    });
+  });
+
+  it('should type the messages received by the interceptor server as the messages sent by clients', () => {
+    declareWebSocketInterceptorTypes<DirectionalSchema>((interceptor) => {
+      expectTypeOf(interceptor.server.messages[0].data).toEqualTypeOf<
+        { type: 'ping' } | { type: 'chat:send'; text: string }
+      >();
     });
   });
 
@@ -128,6 +165,20 @@ describe('WebSocketInterceptor > Types', () => {
           onUnhandledMessage(message) {
             expectTypeOf(message).toEqualTypeOf<UnhandledWebSocketInterceptorMessage<Schema>>();
             expectTypeOf(message).toEqualTypeOf<Message | ArrayBuffer | `${number}`>();
+            return { log: true };
+          },
+        });
+      }
+
+      expectTypeOf(declareInterceptor).toBeFunction();
+    });
+
+    it('should type unhandled messages as the messages sent by clients', () => {
+      function declareInterceptor(baseURL: string) {
+        createWebSocketInterceptor<DirectionalSchema>({
+          baseURL,
+          onUnhandledMessage(message) {
+            expectTypeOf(message).toEqualTypeOf<{ type: 'ping' } | { type: 'chat:send'; text: string }>();
             return { log: true };
           },
         });

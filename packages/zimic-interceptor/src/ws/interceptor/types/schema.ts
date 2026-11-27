@@ -62,8 +62,14 @@ export type DeclaredWebSocketInterceptorPath<Schema extends WebSocketSchema, Pat
   WebSocketSchemaPath.Literal<Schema>
 >;
 
-/** The messages of the schema paths described by a handler path. */
-export type WebSocketInterceptorPathMessage<
+/** The messages clients send to the schema paths described by a handler path. */
+export type WebSocketInterceptorPathClientMessage<
   Schema extends WebSocketSchema,
   Path extends string,
-> = WebSocketSchemaMessage<Schema, DeclaredWebSocketInterceptorPath<Schema, Path>>;
+> = WebSocketSchemaMessage.Client<Schema, DeclaredWebSocketInterceptorPath<Schema, Path>>;
+
+/** The messages the interceptor sends to clients of the schema paths described by a handler path. */
+export type WebSocketInterceptorPathServerMessage<
+  Schema extends WebSocketSchema,
+  Path extends string,
+> = WebSocketSchemaMessage.Server<Schema, DeclaredWebSocketInterceptorPath<Schema, Path>>;

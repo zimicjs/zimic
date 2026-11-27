@@ -1,7 +1,7 @@
 import { PossiblePromise } from '@zimic/utils/types';
 import { WebSocketSchema } from '@zimic/ws';
 
-import { WebSocketInterceptorPathMessage } from '../interceptor/types/schema';
+import { WebSocketInterceptorPathClientMessage } from '../interceptor/types/schema';
 import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
 import { WebSocketMessageHandlerDelayFactory } from './types/messages';
 import {
@@ -23,7 +23,7 @@ const PENDING_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Pr
 class RemoteWebSocketMessageHandler<
   Schema extends WebSocketSchema,
   Path extends string = string,
-  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path> = WebSocketInterceptorPathMessage<
+  RestrictedMessage extends WebSocketInterceptorPathClientMessage<Schema, Path> = WebSocketInterceptorPathClientMessage<
     Schema,
     Path
   >,

@@ -296,8 +296,14 @@ describe('SocketIOProtocol > Types', () => {
   });
 
   it('should create WebSocket interceptor protocols', () => {
-    expectTypeOf(createSocketIOProtocol()).toExtend<WebSocketInterceptorProtocol<SocketIOMessage>>();
-    expectTypeOf(createSocketIOProtocol<ChatMessage>()).toExtend<WebSocketInterceptorProtocol<ChatMessage>>();
+    type ChatSchema = SocketIOSchema<ServerToClientEvents, ClientToServerEvents>;
+    type ServerMessage = WebSocketSchemaMessage.Server<ChatSchema>;
+    type ClientMessage = WebSocketSchemaMessage.Client<ChatSchema>;
+
+    expectTypeOf(createSocketIOProtocol()).toEqualTypeOf<WebSocketInterceptorProtocol<SocketIOMessage, never>>();
+    expectTypeOf(createSocketIOProtocol<ServerMessage, ClientMessage>()).toEqualTypeOf<
+      WebSocketInterceptorProtocol<ServerMessage, ClientMessage>
+    >();
   });
 
   it('should accept Socket.IO protocols in interceptors of Socket.IO schemas', () => {
@@ -305,6 +311,19 @@ describe('SocketIOProtocol > Types', () => {
       createWebSocketInterceptor<SocketIOSchema<ServerToClientEvents, ClientToServerEvents>>({
         baseURL: 'ws://localhost:3000/socket.io',
         protocol: createSocketIOProtocol(),
+      });
+    }
+
+    expectTypeOf(createInterceptor).toBeFunction();
+  });
+
+  it('should accept Socket.IO protocols created before their interceptors', () => {
+    function createInterceptor() {
+      const protocol = createSocketIOProtocol();
+
+      createWebSocketInterceptor<SocketIOSchema<ServerToClientEvents, ClientToServerEvents>>({
+        baseURL: 'ws://localhost:3000/socket.io',
+        protocol,
       });
     }
 

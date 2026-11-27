@@ -1,6 +1,6 @@
 import { WebSocketSchema } from '@zimic/ws';
 
-import { WebSocketInterceptorPathMessage } from '../interceptor/types/schema';
+import { WebSocketInterceptorPathClientMessage } from '../interceptor/types/schema';
 import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
 import { WebSocketMessageHandlerDelayFactory } from './types/messages';
 import {
@@ -19,7 +19,7 @@ import WebSocketMessageHandlerImplementation from './WebSocketMessageHandlerImpl
 class LocalWebSocketMessageHandler<
   Schema extends WebSocketSchema,
   Path extends string = string,
-  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path> = WebSocketInterceptorPathMessage<
+  RestrictedMessage extends WebSocketInterceptorPathClientMessage<Schema, Path> = WebSocketInterceptorPathClientMessage<
     Schema,
     Path
   >,

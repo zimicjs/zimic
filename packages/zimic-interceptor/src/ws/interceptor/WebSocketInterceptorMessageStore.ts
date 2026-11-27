@@ -2,7 +2,7 @@ import { WebSocketSchema } from '@zimic/ws';
 
 import MessageSavingSafeLimitExceededError from './errors/MessageSavingSafeLimitExceededError';
 import type { InterceptedWebSocketInterceptorMessage, ReceivedWebSocketMessageData } from './types/messages';
-import type { WebSocketInterceptorPathMessage } from './types/schema';
+import type { WebSocketInterceptorPathClientMessage } from './types/schema';
 import type {
   InternalWebSocketInterceptorClient,
   InternalWebSocketInterceptorServer,
@@ -17,7 +17,7 @@ interface WebSocketInterceptorMessageRecord<Schema extends WebSocketSchema> {
 export interface WebSocketInterceptorMessageHandlerIndex<
   Schema extends WebSocketSchema,
   Path extends string = string,
-  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path> = WebSocketInterceptorPathMessage<
+  RestrictedMessage extends WebSocketInterceptorPathClientMessage<Schema, Path> = WebSocketInterceptorPathClientMessage<
     Schema,
     Path
   >,
@@ -29,7 +29,7 @@ export interface WebSocketInterceptorMessageHandlerIndex<
 export function createWebSocketInterceptorMessageHandlerIndex<
   Schema extends WebSocketSchema,
   Path extends string,
-  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path>,
+  RestrictedMessage extends WebSocketInterceptorPathClientMessage<Schema, Path>,
 >(): WebSocketInterceptorMessageHandlerIndex<Schema, Path, RestrictedMessage> {
   return { messages: [], records: new Set() };
 }
@@ -42,7 +42,7 @@ class WebSocketInterceptorMessageStore<Schema extends WebSocketSchema> {
 
   constructor(private getSafeLimit: () => number) {}
 
-  save<Path extends string, RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path>>(
+  save<Path extends string, RestrictedMessage extends WebSocketInterceptorPathClientMessage<Schema, Path>>(
     handlerIndex: WebSocketInterceptorMessageHandlerIndex<Schema, Path, RestrictedMessage>,
     data: ReceivedWebSocketMessageData<RestrictedMessage>,
     context: {
@@ -74,7 +74,7 @@ class WebSocketInterceptorMessageStore<Schema extends WebSocketSchema> {
     }
   }
 
-  clearHandler<Path extends string, RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path>>(
+  clearHandler<Path extends string, RestrictedMessage extends WebSocketInterceptorPathClientMessage<Schema, Path>>(
     handlerIndex: WebSocketInterceptorMessageHandlerIndex<Schema, Path, RestrictedMessage>,
   ) {
     for (const record of handlerIndex.records) {

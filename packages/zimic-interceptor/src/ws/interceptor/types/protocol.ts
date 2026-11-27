@@ -27,13 +27,13 @@ export interface WebSocketInterceptorProtocolConnectionClaim {
 }
 
 /** A client opened by a protocol and accepted by the interceptor. */
-export interface WebSocketInterceptorProtocolOpenedClient<Message> {
+export interface WebSocketInterceptorProtocolOpenedClient<ClientMessage> {
   /** Delivers a message decoded by the protocol to the message handlers of the interceptor, as sent by this client. */
-  receive: (message: Message) => void;
+  receive: (message: ClientMessage) => void;
 }
 
 /** The options of a client opened by a protocol. */
-export interface WebSocketInterceptorProtocolClientOptions<Message> {
+export interface WebSocketInterceptorProtocolClientOptions<ServerMessage, ClientMessage> {
   /** Matched by connection handlers and exposed as `client.url`. */
   url: string;
 
@@ -49,7 +49,7 @@ export interface WebSocketInterceptorProtocolClientOptions<Message> {
   // Handlers, `client.send`, and `server.send` also accept the JSON text of a message, and user code may bypass their
   // types, so the protocol validates each message before sending it.
   /** Called with each message sent to the client by a handler, `client.send`, or `server.send`, as given. */
-  send: (message: Message) => void;
+  send: (message: ServerMessage) => void;
 
   // `close` does not remove the client from `interceptor.clients`. Aborting the signal does.
   /** Called by `client.close()`. */
@@ -58,7 +58,7 @@ export interface WebSocketInterceptorProtocolClientOptions<Message> {
   // Handshake replies are sent here, because the promise returned by `openClient` settles only after connection
   // effects run.
   /** Called once the interceptor accepts and lists the client, before connection effects run. */
-  onOpen: (client: WebSocketInterceptorProtocolOpenedClient<Message>) => void;
+  onOpen: (client: WebSocketInterceptorProtocolOpenedClient<ClientMessage>) => void;
 }
 
 // `accepted` if the connection handlers accepted the client, `rejected` if they rejected it, or `aborted` if its signal
@@ -69,7 +69,7 @@ export type WebSocketInterceptorProtocolOpenClientResult =
   { result: 'accepted' } | { result: 'rejected'; error?: unknown } | { result: 'aborted' };
 
 /** The context given to a protocol when its interceptor starts. */
-export interface WebSocketInterceptorProtocolContext<Message> {
+export interface WebSocketInterceptorProtocolContext<ServerMessage, ClientMessage> {
   /** The interceptor serving the protocol. */
   interceptor: {
     type: WebSocketInterceptorType;
@@ -79,7 +79,7 @@ export interface WebSocketInterceptorProtocolContext<Message> {
   // The promise settles after the connection effects of an accepted client run.
   /** Opens a client on a transport served by the protocol, running the connection handlers to decide it. */
   openClient: (
-    options: WebSocketInterceptorProtocolClientOptions<Message>,
+    options: WebSocketInterceptorProtocolClientOptions<ServerMessage, ClientMessage>,
   ) => Promise<WebSocketInterceptorProtocolOpenClientResult>;
 }
 
@@ -88,11 +88,11 @@ export interface WebSocketInterceptorProtocolContext<Message> {
  *
  * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#creating-a-socketio-interceptor Creating a Socket.IO interceptor}
  */
-export interface WebSocketInterceptorProtocol<Message> {
+export interface WebSocketInterceptorProtocol<ServerMessage, ClientMessage> {
   // On an error, the protocol undoes the work it started, because the interceptor does not call `stop` after it, and
   // `interceptor.start()` rejects with the error.
   /** Called when the interceptor starts, before connections reach it. */
-  start: (context: WebSocketInterceptorProtocolContext<Message>) => PossiblePromise<void>;
+  start: (context: WebSocketInterceptorProtocolContext<ServerMessage, ClientMessage>) => PossiblePromise<void>;
 
   // Also called when a later step of `interceptor.start()` fails after `start` resolved. The interceptor does not close
   // the connections the protocol claimed, so the protocol closes them here and aborts the signals of the clients it
