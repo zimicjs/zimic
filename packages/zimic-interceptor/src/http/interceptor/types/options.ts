@@ -53,8 +53,10 @@ export namespace UnhandledRequestStrategy {
   export type Remote = RemoteDeclaration | RemoteDeclarationFactory;
 }
 
+/** @see {@link https://zimic.dev/docs/interceptor/guides/http/unhandled-requests Unhandled requests} */
 export type UnhandledRequestStrategy = UnhandledRequestStrategy.Local | UnhandledRequestStrategy.Remote;
 
+/** @see {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `createHttpInterceptor()` API reference} */
 export interface SharedHttpInterceptorOptions {
   /** @see {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `createHttpInterceptor()` API reference} */
   type?: HttpInterceptorType;
@@ -71,12 +73,14 @@ export interface SharedHttpInterceptorOptions {
  * @see {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `createHttpInterceptor()` API reference}
  */
 export interface LocalHttpInterceptorOptions extends SharedHttpInterceptorOptions {
+  /** @see {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `createHttpInterceptor()` API reference} */
   type?: 'local';
 
   /** @see {@link https://zimic.dev/docs/interceptor/guides/http/unhandled-requests Unhandled requests} */
   onUnhandledRequest?: UnhandledRequestStrategy.Local;
 }
 
+/** @see {@link https://zimic.dev/docs/interceptor/guides/http/remote-interceptors#interceptor-server-authentication Interceptor server authentication} */
 export interface HttpInterceptorAuthOptions {
   /** @see {@link https://zimic.dev/docs/interceptor/guides/http/remote-interceptors#interceptor-server-authentication Interceptor server authentication} */
   token: string;
@@ -87,6 +91,7 @@ export interface HttpInterceptorAuthOptions {
  * @see {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `createHttpInterceptor()` API reference}
  */
 export interface RemoteHttpInterceptorOptions extends SharedHttpInterceptorOptions {
+  /** @see {@link https://zimic.dev/docs/interceptor/api/create-http-interceptor `createHttpInterceptor()` API reference} */
   type: 'remote';
 
   /** @see {@link https://zimic.dev/docs/interceptor/guides/http/remote-interceptors#interceptor-server-authentication Interceptor server authentication} */

@@ -27,8 +27,9 @@
 These rules apply to packages intended for direct external use.
 
 - Write JSDoc for every public export and its public members, including re-exported declarations, overloads, option fields, and types reachable through public signatures even when not exported by name. Audit all of them when adding or changing a public API.
-- When an existing page or section of the website docs covers the resource, write one sentence and a `@see {@link https://zimic.dev/docs/<route>#<anchor> <label>}` to the closest one, leaving examples, option behavior, and caveats to that page. Describe the resource inline when no suitable page or section exists.
+- When an existing page or section of the website docs covers the resource, write only a `@see {@link https://zimic.dev/docs/<route>#<anchor> <label>}` to the closest one, leaving descriptions, examples, option behavior, defaults, and caveats to that page. Link members to their heading anchor, not the page root. When the resource is the page's own H1 title, link the page root without an anchor, because Docusaurus gives the H1 no `id`. Never link an anchor the rendered page lacks. Do not add `@example`, `@param`, `@returns`, or `@throws` when the page covers them. Describe the resource in one sentence when no suitable page or section exists.
 - Take routes from the `slug` frontmatter of pages under `apps/zimic-web/docs` and anchors from their headings. Update the JSDoc links in the same change when a route or heading moves.
+- Write each `zimic.dev` URL as a literal string, without template interpolation, so `apps/zimic-web/scripts/check-links.sh` can check it. Run that script after adding or changing doc links.
 
 ## Runtime and behavior coverage
 
@@ -58,6 +59,7 @@ These rules apply to packages intended for direct external use.
 - Run every applicable case in every mode and runtime of the test matrix, in the shared suite. Prefer cases that run in all modes without distinction. When a case genuinely applies to one mode or runtime only, wrap it in an `if` on the `type`/`platform` condition with a comment stating why, instead of a separate file or an optional option. When a case needs APIs that exist only in one runtime, such as Node built-in modules, put it in a `*.node.test.ts` or `*.browser.test.ts` file instead of importing them dynamically behind an `if`. Do not use `it.runIf`, `describe.runIf`, or `skipIf`, which report inapplicable cases as skipped.
 - When adding tests for a module with a close analogue, mirror the analogue's test file split, shared test modules, describe blocks, and test-case naming. Keep equivalent behaviors easy to compare across modules.
 - Cover each scenario once, at one level, in the file where the closest analogue keeps it. Keep one behavior per test and one top-level `describe` per file. Use `it.each` instead of branching inside a test.
+- Add a type test only when a type can break without a compile error elsewhere: schema inference, narrowing, conditional or mapped types, overload resolution, `@ts-expect-error` restrictions, or assignability users rely on. Before adding one, search the typed runtime tests and other `*.types.test.ts` files for the same expression, and skip the test if they already fail to compile when the type breaks.
 - Search existing shared test utilities before writing a helper. Add a helper only when it matches an existing test pattern or removes meaningful repeated setup without hiding the behavior under test. Place helpers used by several modules in a shared location, not inside one module's tests.
 
 ## Published artifacts

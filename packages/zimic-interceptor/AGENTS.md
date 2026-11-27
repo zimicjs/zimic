@@ -37,10 +37,10 @@ Diverge between protocols only for a protocol reason, such as WebSocket connecti
 - Keep the same concept under the same topic name in both protocols. Map renamed topics explicitly: `requestSaving`/`messageSaving`, `unhandledRequests`/`unhandledMessages`, `bodies`/`messageData`. Give a protocol-only concept its own topic, such as `connections`, `sends`, or `effects`, instead of reusing a counterpart topic name.
 - Manage interceptors, workers, and clients with the `using*` utilities in `tests/utils`. Add the protocol counterpart of a utility when it is missing.
 - Chain handler declarations and await the chain once instead of awaiting a bare handler.
-- Keep type tests compile-only, without executing their callbacks, and place them inline in one `<Class>.types.test.ts`.
+- Keep type tests compile-only, without executing their callbacks, and place them inline in the `<Class>.types.test.ts` of the class whose API they type. A counterpart type test justifies a new one only when the new type does more than repeat its declaration.
 - Build invalid-type cases for validated options with `createInvalidTypeOfCases` from `@zimic/utils/validation`, passing the same `nullable` and `optional` options as the assertion. Add by hand only cases specific to the option, such as a `URL` passed as a base URL.
 
 ## API reference
 
 - Mirror the structure, headings, and examples of HTTP reference pages and guides in their WebSocket counterparts.
-- Match the JSDoc of WebSocket declarations to their HTTP counterparts. Keep the experimental notice on WebSocket public entry points while the API is experimental.
+- Match the JSDoc of WebSocket declarations to their HTTP counterparts. Where an HTTP declaration links to a page or section, link the WebSocket one to the matching WebSocket page or section. Keep the experimental notice on WebSocket public entry points while the API is experimental.

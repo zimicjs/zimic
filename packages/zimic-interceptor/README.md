@@ -7,7 +7,7 @@
 </h1>
 
 <p align="center">
-  Next-gen TypeScript-first HTTP intercepting and mocking
+  Next-gen TypeScript-first HTTP and WebSocket intercepting and mocking
 </p>
 
 <p align="center">
@@ -32,21 +32,21 @@
 
 ---
 
-`@zimic/interceptor` is a type-safe interceptor library for handling and mocking HTTP requests in development and testing.
+`@zimic/interceptor` is a type-safe interceptor library for handling and mocking HTTP requests and WebSocket messages in development and testing.
 
 ## Highlights
 
-- :globe_with_meridians: **HTTP interceptors**
+- :globe_with_meridians: **Typed interceptors**
 
-  Use your [`@zimic/http` schema](https://zimic.dev/docs/http/guides/schemas) to declare [local](https://zimic.dev/docs/interceptor/guides/http/local-interceptors) and [remote](https://zimic.dev/docs/interceptor/guides/http/remote-interceptors) HTTP interceptors. Mock external services and simulate success, loading, and error states with ease and type safety.
+  Use your [`@zimic/http`](https://zimic.dev/docs/http/guides/schemas) and [`@zimic/ws`](https://zimic.dev/docs/ws/guides/schemas) schemas to declare [HTTP](https://zimic.dev/docs/interceptor/guides/http/local-interceptors) and [WebSocket](https://zimic.dev/docs/interceptor/guides/ws/local-interceptors) interceptors that run locally or through an [interceptor server](https://zimic.dev/docs/interceptor/cli/server). Mock external services and simulate success, loading, and error states with type safety. WebSocket support is experimental.
 
 - :link: **Network-level interception**
 
-  `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and [interceptor servers](https://zimic.dev/docs/interceptor/cli/server) to handle real HTTP requests. From you application's point of view, the mocked responses are indistinguishable from the real ones.
+  `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and [interceptor servers](https://zimic.dev/docs/interceptor/cli/server) to handle real HTTP requests and WebSocket connections. From your application's point of view, the mocked responses and messages are indistinguishable from the real ones.
 
 - :bulb: **Readability**
 
-  `@zimic/interceptor` was designed to encourage clarity and readability. Declare intuitive mocks, test with confidence, and verify that your application is making the expected requests with [declarative assertions](https://zimic.dev/docs/interceptor/guides/http/declarative-assertions).
+  `@zimic/interceptor` was designed to encourage clarity and readability. Verify that your application makes the expected requests and sends the expected messages with declarative assertions for [HTTP](https://zimic.dev/docs/interceptor/guides/http/declarative-assertions) and [WebSocket](https://zimic.dev/docs/interceptor/guides/ws/declarative-assertions).
 
 **Learn more**:
 

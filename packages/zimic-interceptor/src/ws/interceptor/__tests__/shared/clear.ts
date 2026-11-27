@@ -688,6 +688,7 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
               });
 
               await expectWebSocketTimesCheckError(() => promiseIfRemote(interceptor.checkTimes(), interceptor), {
+                handler: 'message',
                 message: 'Expected exactly 1 message, but got 0.',
                 expectedNumberOfMatches: 1,
               });
@@ -758,11 +759,13 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
             });
 
             await expectWebSocketTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+              handler: 'message',
               message: 'Expected exactly 1 matching message, but got 0.',
               expectedNumberOfMatches: 1,
             });
 
             await expectWebSocketTimesCheckError(() => promiseIfRemote(olderHandler.checkTimes(), olderHandler), {
+              handler: 'message',
               message: [
                 'Expected exactly 1 matching message, but got 0.',
                 '',
@@ -1203,11 +1206,13 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
               expect(olderRestriction).toHaveBeenCalledTimes(1);
 
               await expectWebSocketTimesCheckError(() => promiseIfRemote(handler.checkTimes(), handler), {
+                handler: 'connection',
                 message: 'Expected exactly 1 matching connection, but got 0.',
                 expectedNumberOfMatches: 1,
               });
 
               await expectWebSocketTimesCheckError(() => promiseIfRemote(olderHandler.checkTimes(), olderHandler), {
+                handler: 'connection',
                 message: [
                   'Expected exactly 1 matching connection, but got 0.',
                   '',

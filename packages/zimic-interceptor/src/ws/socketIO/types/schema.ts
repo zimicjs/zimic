@@ -3,7 +3,7 @@ import type { WebSocketSchema } from '@zimic/ws';
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The events of one direction, declared as in `socket.io-client`.
+ * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#creating-a-socketio-interceptor Creating a Socket.IO interceptor}
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Parameters are contravariant, so only `any` accepts events with typed parameters.
 export type SocketIOEventsMap = Record<string, (...args: any[]) => void>;
@@ -61,7 +61,7 @@ type SocketIOAckMessages<Events extends object> = {
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
- * The WebSocket schema of a Socket.IO server, with events declared as in `socket.io-client`.
+ * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#creating-a-socketio-interceptor Creating a Socket.IO interceptor}
  */
 export type SocketIOSchema<
   ServerToClientEvents extends object = SocketIOEventsMap,
