@@ -35,28 +35,36 @@ Positionals:
                                                                         [string]
 
 Options:
-  -h, --hostname                The hostname to start the server on.
+  -h, --hostname                   The hostname to start the server on.
                                                  [string] [default: "localhost"]
-  -p, --port                    The port to start the server on.        [number]
-  -e, --ephemeral               Whether the server should stop automatically
-                                after the on-ready command finishes. If no
-                                on-ready command is provided and ephemeral is
-                                true, the server will stop immediately after
-                                starting.             [boolean] [default: false]
-  -l, --log-unhandled-requests  Whether to log a warning when no interceptors
-                                were found for the base URL of a request. If an
-                                interceptor was matched, the logging behavior
-                                for that base URL is configured in the
-                                interceptor itself, unless the interceptor
-                                disconnects or fails before responding.[boolean]
-  -t, --tokens-dir              The directory where the authorized interceptor
-                                authentication tokens are saved. If provided,
-                                only remote interceptors bearing a valid token
-                                will be accepted. While authentication is
-                                optional for private development servers, it is
-                                strongly recommended when the server is not
-                                bound to localhost, 127.0.0.1, or ::1, or when
-                                it is shared over a network.            [string]
+  -p, --port                       The port to start the server on.     [number]
+  -e, --ephemeral                  Whether the server should stop automatically
+                                   after the on-ready command finishes. If no
+                                   on-ready command is provided and ephemeral is
+                                   true, the server will stop immediately after
+                                   starting.          [boolean] [default: false]
+  -l, --log-unhandled-requests     Whether to log a warning when no interceptors
+                                   were found for the base URL of a request. If
+                                   an interceptor was matched, the logging
+                                   behavior for that base URL is configured in
+                                   the interceptor itself, unless the
+                                   interceptor disconnects or fails before
+                                   responding.                         [boolean]
+      --log-unhandled-connections  Whether to log an error when no interceptors
+                                   were found for the URL of a WebSocket
+                                   connection. If an interceptor was matched,
+                                   the connection is handled by the interceptor
+                                   itself, unless the interceptor disconnects or
+                                   fails before accepting it.          [boolean]
+  -t, --tokens-dir                 The directory where the authorized
+                                   interceptor authentication tokens are saved.
+                                   If provided, only remote interceptors bearing
+                                   a valid token will be accepted. While
+                                   authentication is optional for private
+                                   development servers, it is strongly
+                                   recommended when the server is not bound to
+                                   localhost, 127.0.0.1, or ::1, or when it is
+                                   shared over a network.               [string]
 ```
 
 :::info NOTE: <span>Interceptor servers in development and testing</span>

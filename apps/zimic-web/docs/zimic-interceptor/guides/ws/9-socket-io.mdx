@@ -269,7 +269,7 @@ The interceptors of a base URL share each Engine.IO connection. [`interceptor.st
 - A `DuplicateSocketIONamespaceError` if another interceptor of the base URL handles the same namespace.
 - A `SharedSocketIOProtocolError` if another interceptor uses the same protocol.
 
-A socket connecting to a namespace without an interceptor fails with a `connect_error` of message `'Invalid namespace'`.
+A socket connecting to a namespace without an interceptor fails with a `connect_error` of message `'Invalid namespace'`, and the interceptor logs an [unhandled connection](/docs/zimic-interceptor/guides/ws/7-unhandled-messages.md#unhandled-connections) error with the namespace.
 
 ## Connections and clients
 
