@@ -107,9 +107,10 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     await this.resetServerWorker();
   }
 
-  // The server replies to resets in the order it reads them and before the frames it sends afterward, so the replies
-  // received when a request arrives count the resets the server read before forwarding it. Replies are counted as their
-  // frames are read, because a request frame read in the same chunk is handled before a reply promise settles.
+  // The server replies to resets in the order it reads them, right after reading each one, so the replies received when
+  // a request arrives count at most the resets the server read before forwarding it. A request forwarded between a reset
+  // and its reply counts as forwarded before that reset. Replies are counted as their frames are read, because a request
+  // frame read in the same chunk is handled before a reply promise settles.
   private acknowledgeReset = () => {
     this.numberOfAcknowledgedResets++;
   };
