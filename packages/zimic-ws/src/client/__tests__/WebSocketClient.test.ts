@@ -1555,10 +1555,13 @@ describe('WebSocketClient', () => {
         client.send(JSON.stringify({ type: 'ping' }));
         client.send(JSON.stringify({ type: 'chat:send', text: 'hello' }));
 
+        const serverOnlyMessage = JSON.stringify({ type: 'chat:received', text: 'hello' }) as JSONStringified<{
+          type: 'chat:received';
+          text: string;
+        }>;
+
         // @ts-expect-error Only the server sends this message.
-        client.send(
-          JSON.stringify({ type: 'chat:received', text: 'hello' }) as JSONStringified<DirectionalServerMessage>,
-        );
+        client.send(serverOnlyMessage);
       }
 
       expectTypeOf(declareClient).toBeFunction();
@@ -1587,8 +1590,13 @@ describe('WebSocketClient', () => {
         client.send(JSON.stringify({ type: 'ping' }));
         client.send(JSON.stringify({ type: 'chat:received', text: 'hello' }));
 
+        const clientOnlyMessage = JSON.stringify({ type: 'chat:send', text: 'hello' }) as JSONStringified<{
+          type: 'chat:send';
+          text: string;
+        }>;
+
         // @ts-expect-error Only the client sends this message.
-        client.send(JSON.stringify({ type: 'chat:send', text: 'hello' }) as JSONStringified<DirectionalClientMessage>);
+        client.send(clientOnlyMessage);
       }
 
       expectTypeOf(declareClient).toBeFunction();
