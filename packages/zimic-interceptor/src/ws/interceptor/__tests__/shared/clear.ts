@@ -6,9 +6,10 @@ import { WebSocketClient, WebSocketSchema } from '@zimic/ws';
 import color from 'picocolors';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import { usingHeldInterceptorWorkerMessages, usingWebSocketInterceptor } from '@tests/utils/interceptors';
 import { promiseIfRemote } from '@tests/utils/promises';
 import {
+  expectWebSocketAttemptToBeRefused,
   expectWebSocketConnectionToBeRefused,
   expectWebSocketConnectionToOpen,
   expectWebSocketTimesCheckError,
@@ -272,6 +273,97 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
       },
     );
   });
+
+  // Local interceptors receive messages in the same process, so a message sent before a clear cannot arrive after it.
+  if (type === 'remote') {
+    it('should not intercept messages sent before cleared with handlers declared after cleared', async () => {
+      await usingHeldInterceptorWorkerMessages(async (messages) => {
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, messageSaving: { enabled: true } },
+          async (olderInterceptor) => {
+            const olderHandler = await promiseIfRemote(
+              olderInterceptor.message().respond({ type: 'server', index: 1 }),
+              olderInterceptor,
+            );
+
+            await usingWebSocketInterceptor<MessageSchema>(
+              { ...interceptorOptions, messageSaving: { enabled: true } },
+              async (interceptor) => {
+                await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
+                  await waitFor(() => {
+                    expect(olderInterceptor.clients).toHaveLength(1);
+                    expect(interceptor.clients).toHaveLength(1);
+                  });
+
+                  const heldMessagePromise = messages.hold((message) => {
+                    return message.channel === 'interceptors/ws/messages/handle';
+                  });
+
+                  const responsePromise = waitForWebSocketClientMessage(client);
+                  client.send(JSON.stringify({ type: 'client', index: 1 }));
+                  await heldMessagePromise;
+
+                  await promiseIfRemote(interceptor.clear(), interceptor);
+                  const handler = await promiseIfRemote(
+                    interceptor.message().respond({ type: 'server', index: 2 }),
+                    interceptor,
+                  );
+
+                  messages.release();
+
+                  await expect(responsePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+
+                  expect(handler.messages).toHaveLength(0);
+                  expect(olderHandler.messages).toHaveLength(1);
+                });
+              },
+            );
+          },
+        );
+      });
+    });
+
+    it('should intercept messages sent before another interceptor is cleared', async () => {
+      await usingHeldInterceptorWorkerMessages(async (messages) => {
+        await usingWebSocketInterceptor<MessageSchema>(
+          { ...interceptorOptions, baseURL: `${baseURL}/other` },
+          async (otherInterceptor) => {
+            await usingWebSocketInterceptor<MessageSchema>(
+              { ...interceptorOptions, messageSaving: { enabled: true } },
+              async (interceptor) => {
+                const handler = await promiseIfRemote(
+                  interceptor.message().respond({ type: 'server', index: 1 }),
+                  interceptor,
+                );
+
+                await usingWebSocketClient<MessageSchema, '/'>(baseURL, async (client) => {
+                  await waitFor(() => {
+                    expect(interceptor.clients).toHaveLength(1);
+                  });
+
+                  const heldMessagePromise = messages.hold((message) => {
+                    return message.channel === 'interceptors/ws/messages/handle';
+                  });
+
+                  const responsePromise = waitForWebSocketClientMessage(client);
+                  client.send(JSON.stringify({ type: 'client', index: 1 }));
+                  await heldMessagePromise;
+
+                  await promiseIfRemote(otherInterceptor.clear(), otherInterceptor);
+
+                  messages.release();
+
+                  await expect(responsePromise).resolves.toBe(JSON.stringify({ type: 'server', index: 1 }));
+
+                  expect(handler.messages).toHaveLength(1);
+                });
+              },
+            );
+          },
+        );
+      });
+    });
+  }
 
   it('should apply the unhandled message strategy of an older interceptor if the last started one is cleared while messages are being handled', async () => {
     const restrictionStartedPromise = createPromiseWithResolvers<void>();
@@ -944,6 +1036,83 @@ export function declareClearWebSocketInterceptorTests(options: RuntimeSharedWebS
         },
       );
     });
+
+    // Local interceptors receive connections in the same process, so a connection sent before a clear cannot arrive
+    // after it.
+    if (type === 'remote') {
+      it('should not intercept connections sent before cleared with handlers declared after cleared', async () => {
+        await usingHeldInterceptorWorkerMessages(async (messages) => {
+          await usingWebSocketInterceptor<MessageSchema>(
+            { ...interceptorOptions, connectionSaving: { enabled: true } },
+            async (olderInterceptor) => {
+              const olderHandler = await promiseIfRemote(
+                olderInterceptor.connection().respond({ action: 'reject' }),
+                olderInterceptor,
+              );
+
+              await usingWebSocketInterceptor<MessageSchema>(
+                { ...interceptorOptions, connectionSaving: { enabled: true } },
+                async (interceptor) => {
+                  const heldMessagePromise = messages.hold((message) => {
+                    return message.channel === 'interceptors/ws/clients/connect';
+                  });
+
+                  const attemptPromise = openWebSocketUntilSettled(baseURL);
+                  await heldMessagePromise;
+
+                  await promiseIfRemote(interceptor.clear(), interceptor);
+                  const handler = await promiseIfRemote(
+                    interceptor.connection().respond({ action: 'reject' }),
+                    interceptor,
+                  );
+
+                  messages.release();
+
+                  expectWebSocketAttemptToBeRefused(await attemptPromise);
+
+                  expect(handler.connections).toHaveLength(0);
+                  expect(olderHandler.connections).toHaveLength(1);
+                },
+              );
+            },
+          );
+        });
+      });
+
+      it('should intercept connections sent before another interceptor is cleared', async () => {
+        await usingHeldInterceptorWorkerMessages(async (messages) => {
+          await usingWebSocketInterceptor<MessageSchema>(
+            { ...interceptorOptions, baseURL: `${baseURL}/other` },
+            async (otherInterceptor) => {
+              await usingWebSocketInterceptor<MessageSchema>(
+                { ...interceptorOptions, connectionSaving: { enabled: true } },
+                async (interceptor) => {
+                  const handler = await promiseIfRemote(
+                    interceptor.connection().respond({ action: 'reject' }),
+                    interceptor,
+                  );
+
+                  const heldMessagePromise = messages.hold((message) => {
+                    return message.channel === 'interceptors/ws/clients/connect';
+                  });
+
+                  const attemptPromise = openWebSocketUntilSettled(baseURL);
+                  await heldMessagePromise;
+
+                  await promiseIfRemote(otherInterceptor.clear(), otherInterceptor);
+
+                  messages.release();
+
+                  expectWebSocketAttemptToBeRefused(await attemptPromise);
+
+                  expect(handler.connections).toHaveLength(1);
+                },
+              );
+            },
+          );
+        });
+      });
+    }
 
     it('should keep connections open for the remaining interceptors if another one is cleared while a connection handler decides them', async () => {
       const restrictionStartedPromise = createPromiseWithResolvers<void>();

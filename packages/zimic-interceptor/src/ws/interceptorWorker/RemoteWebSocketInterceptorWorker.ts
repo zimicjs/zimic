@@ -17,6 +17,7 @@ import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocketEventMessage } from '@/utils/webSocket/types';
 import WebSocketClient from '@/utils/webSocket/WebSocketClient';
 
+import type { AnyWebSocketConnectionHandlerImplementation } from '../connectionHandler/WebSocketConnectionHandlerImplementation';
 import NotRunningWebSocketInterceptorError from '../interceptor/errors/NotRunningWebSocketInterceptorError';
 import UnknownWebSocketInterceptorPlatformError from '../interceptor/errors/UnknownWebSocketInterceptorPlatformError';
 import { WebSocketInterceptorPlatform } from '../interceptor/types/options';
@@ -26,6 +27,7 @@ import {
   InternalWebSocketInterceptorClient,
 } from '../interceptor/WebSocketInterceptorHandle';
 import { AnyWebSocketInterceptorImplementation } from '../interceptor/WebSocketInterceptorImplementation';
+import type { AnyWebSocketMessageHandlerImplementation } from '../messageHandler/WebSocketMessageHandlerImplementation';
 import {
   deserializeWebSocketMessageDataFromTransport,
   serializeWebSocketMessageDataForSocket,
@@ -48,6 +50,12 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
   private decidingClientIds = new Set<string>();
   private claimedConnections = new Map<string, WebSocketInterceptorProtocolConnectionClaim>();
   private numberOfResets = 0;
+  private numberOfAcknowledgedResets = 0;
+  // The number of resets sent when each handler was last cleared on its own.
+  private numberOfResetsWhenHandlerCleared = new WeakMap<
+    AnyWebSocketMessageHandlerImplementation | AnyWebSocketConnectionHandlerImplementation,
+    number
+  >();
   private sendQueue = Promise.resolve();
   private auth?: RemoteWebSocketInterceptorWorkerOptions['auth'];
 
@@ -71,6 +79,8 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     await super.sharedStart(async () => {
       // The server counts resets per worker socket, so a new socket starts the count again.
       this.numberOfResets = 0;
+      this.numberOfAcknowledgedResets = 0;
+      this.numberOfResetsWhenHandlerCleared = new WeakMap();
 
       await this.webSocketClient.start({
         parameters: {
@@ -84,6 +94,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       this.webSocketClient.onChannel('event', 'interceptors/ws/clients/connect', this.connectClient);
       this.webSocketClient.onChannel('event', 'interceptors/ws/clients/close', this.removeClosedClient);
       this.webSocketClient.onChannel('event', 'interceptors/ws/messages/handle', this.handleMessage);
+      this.webSocketClient.onChannel('reply', 'interceptors/ws/workers/reset', this.acknowledgeReset);
 
       this.platform = this.readPlatform();
       this.isRunning = true;
@@ -108,6 +119,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       this.webSocketClient.offChannel('event', 'interceptors/ws/clients/connect', this.connectClient);
       this.webSocketClient.offChannel('event', 'interceptors/ws/clients/close', this.removeClosedClient);
       this.webSocketClient.offChannel('event', 'interceptors/ws/messages/handle', this.handleMessage);
+      this.webSocketClient.offChannel('reply', 'interceptors/ws/workers/reset', this.acknowledgeReset);
 
       // Queued sends and closes need the worker socket, so they finish before it stops.
       await this.sendQueue;
@@ -279,6 +291,11 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
           return registeredInterceptor.interceptor === interceptor && isHolding(registeredInterceptor);
         });
       },
+      {
+        wasClearedAfterConnection: (handler) => {
+          return (this.numberOfResetsWhenHandlerCleared.get(handler) ?? 0) > connection.numberOfResets;
+        },
+      },
     );
 
     // The client closed while the connection was decided, or the server stopped waiting for the decision and closed it.
@@ -344,9 +361,20 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     }
   };
 
+  // The server replies to resets in the order it reads them and before the frames it sends afterward, so the replies
+  // received when a message arrives count the resets the server read before sending it. Replies are counted as their
+  // frames are read, because a message frame read in the same chunk is handled before a reply promise settles.
+  private acknowledgeReset = () => {
+    this.numberOfAcknowledgedResets++;
+  };
+
   private handleMessage = async ({
     data: message,
   }: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/ws/messages/handle'>) => {
+    // Clears do not wait for the server, so a message sent right after a clear can reach the server before the reset
+    // does and be handled as sent before the clear. No synchronous clear can tell these messages apart.
+    const numberOfResetsBeforeMessage = this.numberOfAcknowledgedResets;
+
     const claim = this.claimedConnections.get(message.clientId);
 
     if (claim) {
@@ -362,7 +390,12 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
     });
 
     const deserializedMessageData = deserializeWebSocketMessageDataFromTransport(message.data);
-    await this.handleRawMessageWithHandlers(deserializedMessageData, holders);
+
+    await this.handleRawMessageWithHandlers(deserializedMessageData, holders, {
+      wasClearedAfterMessage: (handler) => {
+        return (this.numberOfResetsWhenHandlerCleared.get(handler) ?? 0) > numberOfResetsBeforeMessage;
+      },
+    });
   };
 
   private findClientId<Schema extends WebSocketSchema>(client: InternalWebSocketInterceptorClient<Schema>) {
@@ -408,7 +441,30 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
       }
     }
 
-    await this.resetServerWorker(clearedInterceptors);
+    // Clears do not wait for the server. Stops do, so the server no longer routes connections to stopped interceptors.
+    if (options.preserveInterceptorRegistration) {
+      this.resetServerWorkerInBackground(clearedInterceptors);
+    } else {
+      await this.resetServerWorker(clearedInterceptors);
+    }
+  }
+
+  markHandlerAsCleared(
+    handler: AnyWebSocketMessageHandlerImplementation | AnyWebSocketConnectionHandlerImplementation,
+  ) {
+    this.resetServerWorkerInBackground([]);
+    this.numberOfResetsWhenHandlerCleared.set(handler, this.numberOfResets);
+  }
+
+  private resetServerWorkerInBackground(clearedInterceptors: RegisteredWebSocketInterceptor[]) {
+    this.resetServerWorker(clearedInterceptors).catch(
+      /* istanbul ignore next -- @preserve
+       * Clears return nothing to reject, so failures other than aborts are logged. They happen only if the server stops
+       * replying, which tests do not simulate. */
+      (error: unknown) => {
+        console.error(error);
+      },
+    );
   }
 
   private async resetServerWorker(clearedInterceptors: RegisteredWebSocketInterceptor[]) {

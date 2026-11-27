@@ -87,6 +87,10 @@ export type WebSocketConnectionHandling =
 
 const UNHANDLED_CONNECTION_HANDLING: WebSocketConnectionHandling = Object.freeze({ action: 'accept' });
 
+interface WebSocketMessageHandlingOptions {
+  wasClearedAfterMessage?: (handler: AnyWebSocketMessageHandlerImplementation) => boolean;
+}
+
 // Only protocols such as Socket.IO authenticate clients, so plain WebSocket handshakes have no `auth`.
 type WebSocketConnectionHandshake = Pick<WebSocketInterceptorConnectionRequest, 'url' | 'protocols'> &
   Partial<Pick<WebSocketInterceptorProtocolClientOptions<unknown>, 'auth'>>;
@@ -222,16 +226,22 @@ abstract class WebSocketInterceptorWorker {
   protected async handleConnectionWithHandlers(
     connection: WebSocketConnectionHandshake,
     isHolding: (interceptor: AnyWebSocketInterceptorImplementation) => boolean,
+    options: { wasClearedAfterConnection?: (handler: AnyWebSocketConnectionHandlerImplementation) => boolean } = {},
   ): Promise<WebSocketConnectionHandling> {
     const connectionURL = createPathMatchingURL(connection.url);
 
     const failedConnectionMatches: FailedWebSocketConnectionMatch[] = [];
 
     // Handlers can be added or cleared while a connection is decided, so the connection is matched against a copy.
+    // Handlers cleared after the connection was sent are skipped as if they were not declared.
     for (const handler of this.connectionHandlers.toReversed()) {
       const holder = handler.interceptor;
 
-      if (!isHolding(holder) || !this.matchesHandlerPath(connectionURL, handler)) {
+      if (
+        !isHolding(holder) ||
+        options.wasClearedAfterConnection?.(handler.implementation) ||
+        !this.matchesHandlerPath(connectionURL, handler)
+      ) {
         continue;
       }
 
@@ -390,9 +400,10 @@ abstract class WebSocketInterceptorWorker {
   protected async handleRawMessageWithHandlers(
     rawMessage: WebSocketMessageData<WebSocketMessageSchema>,
     holders: WebSocketConnectionHolder[],
+    options: WebSocketMessageHandlingOptions = {},
   ) {
     const message = await normalizeWebSocketMessageData<WebSocketMessageSchema>(rawMessage);
-    await this.handleMessageWithHandlers(message, holders);
+    await this.handleMessageWithHandlers(message, holders, options);
   }
 
   // Protocols decode messages, so they skip frame normalization.
@@ -471,11 +482,17 @@ abstract class WebSocketInterceptorWorker {
   protected async handleMessageWithHandlers(
     message: ReceivedWebSocketMessageData<WebSocketMessageSchema>,
     holders: WebSocketConnectionHolder[],
+    options: WebSocketMessageHandlingOptions = {},
   ) {
     const failedMessageMatches: FailedWebSocketMessageMatch[] = [];
 
-    // Handlers can be added or cleared while a message is handled, so the message is matched against a copy.
+    // Handlers can be added or cleared while a message is handled, so the message is matched against a copy. Handlers
+    // cleared after the message was sent are skipped as if they were not declared.
     for (const handler of this.messageHandlers.toReversed()) {
+      if (options.wasClearedAfterMessage?.(handler.implementation)) {
+        continue;
+      }
+
       // A holder that let the connection go while a newer handler was handling the message no longer handles it.
       const holder = holders.find((holder) => {
         return holder.interceptor === handler.interceptor && this.isHoldingConnection(holder);
@@ -588,6 +605,10 @@ abstract class WebSocketInterceptorWorker {
     interceptor?: AnyWebSocketInterceptorImplementation<Schema>;
     preserveInterceptorRegistration?: boolean;
   }): PossiblePromise<void>;
+
+  abstract markHandlerAsCleared(
+    handler: AnyWebSocketMessageHandlerImplementation | AnyWebSocketConnectionHandlerImplementation,
+  ): void;
 }
 
 export default WebSocketInterceptorWorker;

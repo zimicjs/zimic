@@ -18,7 +18,10 @@ class LocalWebSocketConnectionHandler<
 
   implementation: WebSocketConnectionHandlerImplementation<Schema, Path>;
 
-  constructor(interceptorImplementation: AnyWebSocketInterceptorImplementation, path: Path | undefined) {
+  constructor(
+    private interceptorImplementation: AnyWebSocketInterceptorImplementation,
+    path: Path | undefined,
+  ) {
     this.implementation = new WebSocketConnectionHandlerImplementation<Schema, Path>(
       interceptorImplementation,
       path,
@@ -61,6 +64,7 @@ class LocalWebSocketConnectionHandler<
 
   clear() {
     this.implementation.clear();
+    this.interceptorImplementation.markHandlerAsCleared(this.implementation);
     return this;
   }
 

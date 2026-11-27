@@ -5,7 +5,11 @@ import { WebSocketClient } from '@zimic/ws';
 import color from 'picocolors';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createInternalWebSocketInterceptor, usingWebSocketInterceptor } from '@tests/utils/interceptors';
+import {
+  createInternalWebSocketInterceptor,
+  usingHeldInterceptorWorkerMessages,
+  usingWebSocketInterceptor,
+} from '@tests/utils/interceptors';
 import {
   expectWebSocketAttemptToBeRefused,
   expectWebSocketTimesCheckError,
@@ -162,6 +166,38 @@ export function declareDefaultWebSocketConnectionHandlerTests(
       },
     );
   });
+
+  // Local interceptors receive connections in the same process, so a connection sent before a clear cannot arrive after
+  // it.
+  if (type === 'remote') {
+    it('should not match connections sent before cleared and redeclared', async () => {
+      await usingHeldInterceptorWorkerMessages(async (messages) => {
+        await usingWebSocketInterceptor<Schema>(
+          { type, baseURL, connectionSaving: { enabled: true } },
+          async (interceptor) => {
+            const olderHandler = await interceptor.connection().respond({ action: 'reject' });
+            const handler = await interceptor.connection().respond({ action: 'reject' });
+
+            const heldMessagePromise = messages.hold((message) => {
+              return message.channel === 'interceptors/ws/clients/connect';
+            });
+
+            const attemptPromise = openWebSocketUntilSettled(baseURL);
+            await heldMessagePromise;
+
+            await handler.clear().respond({ action: 'reject' });
+
+            messages.release();
+
+            expectWebSocketAttemptToBeRefused(await attemptPromise);
+
+            expect(handler.connections).toHaveLength(0);
+            expect(olderHandler.connections).toHaveLength(1);
+          },
+        );
+      });
+    });
+  }
 
   it.each<{
     declaration: string;
