@@ -38,11 +38,19 @@
 >
 > Status: 🚧 Alpha
 
+A [WebSocket schema](https://zimic.dev/docs/ws/guides/schemas) declares the messages a connection can exchange. The client and the server use it to type every message sent and received, while following APIs you already know: [`WebSocketClient`](https://zimic.dev/docs/ws/api/websocket-client) mirrors the native [`WebSocket`](https://developer.mozilla.org/docs/Web/API/WebSocket), and [`WebSocketServer`](https://zimic.dev/docs/ws/api/websocket-server) mirrors the server of the [`ws`](https://github.com/websockets/ws) package.
+
+## When to use
+
+- Your application exchanges WebSocket messages and you want TypeScript to check them on both ends.
+- You want a typed client that works in browsers and Node.js through the native WebSocket API.
+- You want to mock WebSocket messages in development and tests with [`@zimic/interceptor`](https://zimic.dev/docs/interceptor/guides/ws/local-interceptors).
+
 ## Highlights
 
 - :star: **WebSocket schemas**
 
-  Declare the messages of your WebSocket paths in a [WebSocket schema](https://zimic.dev/docs/ws/guides/schemas) and use it to type your clients, servers, and messages.
+  Declare the messages of your WebSocket paths in a [WebSocket schema](https://zimic.dev/docs/ws/guides/schemas) and use it to type your clients, servers, and messages. Share the schema between client and server to keep them in sync.
 
 - :zap: **Typed clients**
 
