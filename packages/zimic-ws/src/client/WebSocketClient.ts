@@ -121,6 +121,8 @@ export class WebSocketClient<
   constructor(_url: WebSocketClientConstructorArgument<Path, string>, protocols?: string | string[]);
   constructor(urlOrSocket: WebSocket | string, protocols?: string | string[]) {
     if (typeof urlOrSocket === 'string') {
+      // Unlike a native socket, a client created from a URL connects only on `open()`, so it can be configured and
+      // reopened.
       this.#url = urlOrSocket;
     } else {
       this.#url = urlOrSocket.url;
@@ -199,6 +201,7 @@ export class WebSocketClient<
     return this.socket?.bufferedAmount ?? 0;
   }
 
+  // Unlike a native socket, opening is async and accepts a timeout, so callers can await the connection.
   async open(options?: WebSocketClientOpenOptions) {
     if (this.readyState === WebSocketClient.OPEN) {
       return;
@@ -246,6 +249,7 @@ export class WebSocketClient<
     }
   }
 
+  // Unlike a native socket, closing is async and accepts a timeout, so callers can await the disconnection.
   async close(code?: number, reason?: string, options?: WebSocketClientCloseOptions) {
     if (!this.socket) {
       return;
@@ -267,6 +271,7 @@ export class WebSocketClient<
     listener: WebSocketClient.EventListener<Schema, Type, Path>,
     options?: boolean | AddEventListenerOptions,
   ) {
+    // Unlike a native socket, listeners receive the client as `this`, so they use its schema types.
     const rawListener = listener.bind(this) as WebSocketClientRawEventListener;
 
     this.socket?.addEventListener(type, rawListener, options);
@@ -335,6 +340,7 @@ export class WebSocketClient<
     }
 
     if (listener) {
+      // Unlike a native socket, listeners receive the client as `this`, so they use its schema types.
       const rawListener = listener.bind(this) as WebSocketClientRawEventListener;
       this.listenerToRawListener[type].set(listener, rawListener);
 
