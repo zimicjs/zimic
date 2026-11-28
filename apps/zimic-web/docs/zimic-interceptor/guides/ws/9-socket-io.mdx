@@ -15,7 +15,7 @@ WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`, 
 
 :::
 
-WebSocket interceptors can mock [Socket.IO](https://socket.io) servers with `createSocketIOProtocol()`. The protocol implements the Engine.IO and Socket.IO handshakes, pings, namespaces, and acknowledgements, so your handlers receive and send Socket.IO events. It supports clients using Engine.IO protocol 4, such as [`socket.io-client`](https://socket.io/docs/v4/client-api) v3 and v4.
+WebSocket interceptors support [Socket.IO](https://socket.io) through a protocol. There is no separate Socket.IO interceptor. Passing `createSocketIOProtocol()` to a WebSocket interceptor enables Socket.IO in it. The protocol implements the Engine.IO and Socket.IO handshakes, pings, namespaces, and acknowledgements, so your handlers receive and send Socket.IO events. It supports clients using Engine.IO protocol 4, such as [`socket.io-client`](https://socket.io/docs/v4/client-api) v3 and v4.
 
 ## Installation
 
@@ -77,7 +77,7 @@ If your package manager does not hoist dependencies, such as pnpm, also install 
 pnpm add socket.io-parser engine.io-parser --dev
 ```
 
-## Creating a Socket.IO interceptor
+## Enabling Socket.IO in a WebSocket interceptor
 
 Declare the events of your server with `SocketIOSchema`, using the same event maps as `socket.io-client`. A trailing callback declares the acknowledgement of an event.
 
@@ -306,7 +306,7 @@ As with the `connection` event of a Socket.IO server, an interceptor lists a [cl
 - [`client.close()`](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx#clientclose) disconnects the socket from the namespace, as `socket.disconnect()` in a Socket.IO server. Socket.IO has no close codes, so the code and reason are ignored. The socket receives the disconnect reason `'io server disconnect'` and does not reconnect automatically.
 - [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear) and [`interceptor.stop()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorstop) disconnect the sockets of the namespace and close the connections that no other namespace uses.
 
-A Socket.IO interceptor receives every connection to its base URL. Interceptors without a protocol on the same base URL do not.
+A WebSocket interceptor with the Socket.IO protocol receives every connection to its base URL. Interceptors without a protocol on the same base URL do not.
 
 ## Custom parsers
 
