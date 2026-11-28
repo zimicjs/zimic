@@ -42,7 +42,7 @@ type UnparsedWebSocketJSONPrimitiveText<Message extends UnparsedWebSocketJSONPri
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * A client-to-server message saved by a message handler, along with its sender and receiver handles. The sender is
- * typed from the handler path and the receiver with the messages of all paths, because the interceptor server holds and
+ * typed from the handler path and the receiver with the messages of all paths, because the server handle holds and
  * broadcasts them all.
  */
 export interface InterceptedWebSocketInterceptorMessage<
@@ -56,7 +56,7 @@ export interface InterceptedWebSocketInterceptorMessage<
   /** The client that sent the message. */
   sender: WebSocketInterceptorClient<Schema, Path>;
 
-  /** The interceptor server that received the message. */
+  /** The server handle of the interceptor that received the message. */
   receiver: WebSocketInterceptorServer<Schema>;
 
   /** The message data, as matched by the handler. Binary messages arrive as `ArrayBuffer`. */

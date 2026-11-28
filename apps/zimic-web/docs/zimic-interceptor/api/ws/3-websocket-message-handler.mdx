@@ -300,7 +300,7 @@ await handler.respond((message, context) => declaration);
 
       - **receiver**: `WebSocketInterceptorServer<Schema>`
 
-        The [interceptor server](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorserver) that received the matched message.
+        The [server handle](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorserver) of the interceptor that received the matched message.
 
    **Returns**: `Promise<WebSocketMessageHandlerMessageStaticDeclaration<Schema, Path>> | WebSocketMessageHandlerMessageStaticDeclaration<Schema, Path>`
 
@@ -493,7 +493,7 @@ Each message has the following properties:
 
 - **receiver**: `WebSocketInterceptorServer<Schema>`
 
-  The [interceptor server](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorserver) that received the message.
+  The [server handle](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorserver) of the interceptor that received the message.
 
 - **data**: `ReceivedWebSocketMessageData<RestrictedMessage>`
 
