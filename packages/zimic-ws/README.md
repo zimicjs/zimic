@@ -36,13 +36,13 @@
 
 > [!NOTE]
 >
-> Status: 🚧 Alpha
+> Status: 🚧 Experimental
 
 ## Highlights
 
 - :star: **WebSocket schemas**
 
-  Declare the messages of your WebSocket paths in a [WebSocket schema](https://zimic.dev/docs/ws/guides/schemas) and use it to type your clients, servers, and messages.
+  Declare the messages of your WebSocket connections in a [WebSocket schema](https://zimic.dev/docs/ws/guides/schemas) and use it to type your clients, servers, and messages.
 
 - :zap: **Typed clients**
 
@@ -50,7 +50,7 @@
 
 - :satellite: **Typed servers**
 
-  Attach a typed [`WebSocketServer`](https://zimic.dev/docs/ws/api/websocket-server) to a Node.js HTTP server, compatible with the `ws` package.
+  Attach a typed [`WebSocketServer`](https://zimic.dev/docs/ws/api/websocket-server) to a Node.js HTTP server.
 
 **Learn more**:
 

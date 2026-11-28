@@ -126,7 +126,7 @@ A minimal and type-safe WebSocket client and server.
 
 - :star: **WebSocket schemas**
 
-  Declare the messages of your WebSocket paths in a [WebSocket schema](/docs/zimic-ws/guides/1-schemas.md) and use it to type your clients, servers, and messages.
+  Declare the messages of your WebSocket connections in a [WebSocket schema](/docs/zimic-ws/guides/1-schemas.md) and use it to type your clients, servers, and messages.
 
 - :zap: **Typed clients**
 
@@ -134,7 +134,7 @@ A minimal and type-safe WebSocket client and server.
 
 - :satellite: **Typed servers**
 
-  Attach a typed [`WebSocketServer`](/docs/zimic-ws/api/3-websocket-server.mdx) to a Node.js HTTP server, compatible with the `ws` package.
+  Attach a typed [`WebSocketServer`](/docs/zimic-ws/api/3-websocket-server.mdx) to a Node.js HTTP server.
 
 **Learn more**:
 
