@@ -38,7 +38,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-Then, the path params of the requests will be available in the `pathParams` property, such as in [`handler.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith), [computed responses](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrespond), and [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrequests).
+Then, the path params of the requests will be available in the `pathParams` property, such as in [`handler.with()`](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx#handlerwith), [computed responses](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx#handlerrespond), and [saved requests](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#inspecting-intercepted-requests).
 
 You can use path params directly in the path string using template literals. `@zimic/interceptor` automatically infers the endpoint and types all resources as usual.
 
@@ -78,7 +78,7 @@ By default, path params match a single segment, not including slashes (`/`). See
   <TabItem value="local" label="Local interceptor">
 
 ```ts
-const handler = interceptor
+interceptor
   // Match any user id
   // highlight-next-line
   .patch('/users/:userId')
@@ -89,12 +89,6 @@ const handler = interceptor
     return { status: 204 };
   })
   .times(1);
-
-// Run the application and make requests...
-
-console.log(handler.requests); // 1
-// highlight-next-line
-console.log(handler.requests[0].pathParams.userId);
 ```
 
   </TabItem>
@@ -102,7 +96,7 @@ console.log(handler.requests[0].pathParams.userId);
   <TabItem value="remote" label="Remote interceptor">
 
 ```ts
-const handler = await interceptor
+await interceptor
   // Match any user id
   // highlight-next-line
   .patch('/users/:userId')
@@ -113,18 +107,12 @@ const handler = await interceptor
     return { status: 204 };
   })
   .times(1);
-
-// Run the application and make requests...
-
-console.log(handler.requests); // 1
-// highlight-next-line
-console.log(handler.requests[0].pathParams.userId);
 ```
 
   </TabItem>
 </Tabs>
 
-Use [`interceptor.with()`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerwith) in case you need validation or to limit a parameter to specific values.
+Use [`handler.with()`](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx#handlerwith) in case you need validation or to limit a parameter to specific values.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">

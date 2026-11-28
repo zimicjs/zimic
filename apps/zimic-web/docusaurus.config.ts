@@ -39,7 +39,7 @@ const announcementBars = {
 
 const config: Docusaurus.Config = {
   title: 'Zimic',
-  tagline: 'Next-gen TypeScript-first HTTP integrations',
+  tagline: 'Next-gen TypeScript-first HTTP and WebSocket integrations',
   favicon: 'images/favicon.ico',
 
   organizationName: 'zimicjs',
@@ -88,7 +88,7 @@ const config: Docusaurus.Config = {
 
   customFields: {
     description:
-      'Zimic is a set of modern, lightweight, TypeScript-first, and thoroughly tested HTTP integration libraries.',
+      'Zimic is a set of modern, lightweight, TypeScript-first, and thoroughly tested HTTP and WebSocket integration libraries.',
   },
 
   staticDirectories: ['public'],
@@ -222,6 +222,11 @@ const config: Docusaurus.Config = {
               sidebarId: 'fetch',
             },
             {
+              label: '@zimic/ws',
+              type: 'docSidebar',
+              sidebarId: 'ws',
+            },
+            {
               label: '@zimic/interceptor',
               type: 'docSidebar',
               sidebarId: 'interceptor',
@@ -288,6 +293,10 @@ const config: Docusaurus.Config = {
               to: 'docs/examples',
             },
             {
+              label: 'Coding agents',
+              to: 'docs/agents',
+            },
+            {
               label: 'API',
               to: 'docs/api',
             },
@@ -307,6 +316,10 @@ const config: Docusaurus.Config = {
             {
               label: '@zimic/fetch',
               to: 'docs/fetch',
+            },
+            {
+              label: '@zimic/ws',
+              to: 'docs/ws',
             },
             {
               label: '@zimic/interceptor',

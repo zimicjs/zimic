@@ -11,6 +11,12 @@ import TabItem from '@theme/TabItem';
 
 This guide will help you get started with `@zimic/http`.
 
+:::tip TIP: <span>Coding agents</span>
+
+If you use a coding agent, [connect it to the Zimic documentation](/docs/zimic/3-agents/index.md) with Context7.
+
+:::
+
 ## Requirements
 
 ### Supported environments
@@ -18,7 +24,7 @@ This guide will help you get started with `@zimic/http`.
 <Tabs groupId="runtime-environments">
   <TabItem value="client" label="Client side">
 
-`@zimic/http` is designed to work in any environment that supports the [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). This includes any relatively modern browser. [Can I Use](https://caniuse.com/?search=fetch) is a great resource to check the compatibility of specific features with different browsers.
+`@zimic/http` is designed to work in any environment that supports the [Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API).
 
 ### Supported languages
 
@@ -27,14 +33,14 @@ This guide will help you get started with `@zimic/http`.
 `@zimic/http` requires [TypeScript](https://www.typescriptlang.org) >= 5.0, with the following configuration:
 
 <Tabs groupId="typescript-version">
-  <TabItem value="typescript-5" label="TypeScript 5">
+  <TabItem value="typescript-7" label="TypeScript 7">
 
 ```json title='tsconfig.json'
 {
   "compilerOptions": {
     // highlight-start
     "strict": true,
-    "lib": ["esnext", "dom", "dom.iterable"]
+    "lib": ["esnext", "dom"]
     // highlight-end
   }
 }
@@ -55,14 +61,14 @@ This guide will help you get started with `@zimic/http`.
 ```
 
   </TabItem>
-  <TabItem value="typescript-7" label="TypeScript 7">
+  <TabItem value="typescript-5" label="TypeScript 5">
 
 ```json title='tsconfig.json'
 {
   "compilerOptions": {
     // highlight-start
     "strict": true,
-    "lib": ["esnext", "dom"]
+    "lib": ["esnext", "dom", "dom.iterable"]
     // highlight-end
   }
 }
@@ -85,14 +91,14 @@ This guide will help you get started with `@zimic/http`.
 `@zimic/http` requires [TypeScript](https://www.typescriptlang.org) >= 5.0, with the following configuration:
 
 <Tabs groupId="typescript-version">
-  <TabItem value="typescript-5" label="TypeScript 5">
+  <TabItem value="typescript-7" label="TypeScript 7">
 
 ```json title='tsconfig.json'
 {
   "compilerOptions": {
     // highlight-start
     "strict": true,
-    "lib": ["esnext", "webworker", "webworker.iterable"]
+    "lib": ["esnext", "webworker"]
     // highlight-end
   }
 }
@@ -113,14 +119,14 @@ This guide will help you get started with `@zimic/http`.
 ```
 
   </TabItem>
-  <TabItem value="typescript-7" label="TypeScript 7">
+  <TabItem value="typescript-5" label="TypeScript 5">
 
 ```json title='tsconfig.json'
 {
   "compilerOptions": {
     // highlight-start
     "strict": true,
-    "lib": ["esnext", "webworker"]
+    "lib": ["esnext", "webworker", "webworker.iterable"]
     // highlight-end
   }
 }

@@ -6,7 +6,7 @@ slug: /
 
 # Introduction
 
-Zimic is a collection of TypeScript-first HTTP integration libraries. It provides type-safe utilities to make, receive, and mock HTTP requests and responses. Zimic is designed to be lightweight and easy to use, with built-in type inference and validation.
+Zimic is a collection of TypeScript-first HTTP and WebSocket integration libraries. It provides type-safe utilities to make, receive, and mock HTTP requests and responses, and WebSocket connections and messages. Zimic is designed to be lightweight and easy to use, with built-in type inference and validation.
 
 ## Motivation
 
@@ -120,21 +120,43 @@ A minimal (~2 kB minified gzipped) and type-safe `fetch`-like API client.
 - [`@zimic/fetch` - Getting started](/docs/zimic-fetch/2-getting-started.mdx)
 - [`@zimic/fetch` - Guides](/docs/fetch/guides)
 
+### `@zimic/ws`
+
+A minimal and type-safe WebSocket client and server.
+
+- :star: **WebSocket schemas**
+
+  Declare the messages of your WebSocket connections in a [WebSocket schema](/docs/zimic-ws/guides/1-schemas.md) and use it to type your clients, servers, and messages.
+
+- :zap: **Typed clients**
+
+  Open typed [`WebSocketClient`](/docs/zimic-ws/api/2-websocket-client.mdx) connections, compatible with the native `WebSocket`.
+
+- :satellite: **Typed servers**
+
+  Attach a typed [`WebSocketServer`](/docs/zimic-ws/api/3-websocket-server.mdx) to a Node.js HTTP server.
+
+**Learn more**:
+
+- [`@zimic/ws` - Introduction](/docs/zimic-ws/1-index.md)
+- [`@zimic/ws` - Getting started](/docs/zimic-ws/2-getting-started.mdx)
+- [`@zimic/ws` - Guides](/docs/ws/guides)
+
 ### `@zimic/interceptor`
 
-A type-safe interceptor library for handling and mocking HTTP requests in development and testing.
+A type-safe interceptor library for handling and mocking HTTP requests and WebSocket messages in development and testing.
 
-- :globe_with_meridians: **HTTP interceptors**
+- :globe_with_meridians: **Typed interceptors**
 
-  Use your [`@zimic/http` schema](/docs/zimic-http/guides/1-schemas.md) to declare [local](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) and [remote](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md) HTTP interceptors. Mock external services and simulate success, loading, and error states with ease and type safety.
+  Use your [`@zimic/http`](/docs/zimic-http/guides/1-schemas.md) and [`@zimic/ws`](/docs/zimic-ws/guides/1-schemas.md) schemas to declare [HTTP](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) and [WebSocket](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md) interceptors that run locally or through an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). Mock external services and simulate success, loading, and error states with type safety. WebSocket support is experimental.
 
 - :link: **Network-level interception**
 
-  `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and [interceptor servers](/docs/zimic-interceptor/cli/1-server.md) to handle real HTTP requests. From your application's point of view, the mocked responses are indistinguishable from the real ones.
+  `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and [interceptor servers](/docs/zimic-interceptor/cli/1-server.md) to handle real HTTP requests and WebSocket connections. From your application's point of view, the mocked responses and messages are indistinguishable from the real ones.
 
 - :bulb: **Readability**
 
-  `@zimic/interceptor` was designed to encourage clarity and readability in your mocks. Use [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) to verify that your application is making the expected requests and test with confidence.
+  `@zimic/interceptor` was designed to encourage clarity and readability. Verify that your application makes the expected requests and sends the expected messages with declarative assertions for [HTTP](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) and [WebSocket](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx).
 
 **Learn more**:
 

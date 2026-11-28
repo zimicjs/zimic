@@ -1,10 +1,10 @@
 ---
-title: Using local interceptors | @zimic/interceptor
+title: Using local HTTP interceptors | @zimic/interceptor
 sidebar_label: Using local interceptors
 slug: /interceptor/guides/http/local-interceptors
 ---
 
-# Using local interceptors
+# Using local HTTP interceptors
 
 HTTP interceptors allow you to handle requests and return custom responses. Their primary use is to mock HTTP requests in development or testing environments, especially when the backend is unavailable or when you want to have more control over the responses.
 
@@ -49,7 +49,7 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-With the schema defined, you can now create your interceptor with [`createHttpInterceptor`](/docs/zimic-interceptor/api/1-create-http-interceptor.mdx). It takes the schema as a type parameter and returns an interceptor instance. The `baseURL` option represents the scope of the interceptor and points to the URL that your application will use to make requests.
+With the schema defined, you can now create your interceptor with [`createHttpInterceptor`](/docs/zimic-interceptor/api/http/1-create-http-interceptor.mdx). It takes the schema as a type parameter and returns an interceptor instance. The `baseURL` option represents the scope of the interceptor and points to the URL that your application will use to make requests.
 
 ```ts
 import { createHttpInterceptor } from '@zimic/interceptor/http';
@@ -61,13 +61,13 @@ const interceptor = createHttpInterceptor<Schema>({
 });
 ```
 
-You can also set other options, such as the interceptor type and how unhandled requests should be treated. Refer to the [`createHttpInterceptor` API reference](/docs/zimic-interceptor/api/1-create-http-interceptor.mdx) for more details.
+You can also set other options, such as the interceptor type and how unhandled requests should be treated. Refer to the [`createHttpInterceptor` API reference](/docs/zimic-interceptor/api/http/1-create-http-interceptor.mdx) for more details.
 
 ## HTTP interceptor lifecycle
 
 ### Starting an interceptor
 
-To intercept requests, an interceptor must be started with [`interceptor.start()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorstart). This is usually done in a `beforeAll` hook in your test suite.
+To intercept requests, an interceptor must be started with [`interceptor.start()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorstart). This is usually done in a `beforeAll` hook in your test suite.
 
 ```ts
 beforeAll(async () => {
@@ -76,15 +76,9 @@ beforeAll(async () => {
 });
 ```
 
-:::info INFO: <span>Local interceptors in browsers</span>
-
-If you are using a [local interceptor](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) in a **browser** environment, you must first [initialize a mock service worker](/docs/zimic-interceptor/cli/2-browser.md#zimic-interceptor-browser-init) in your public directory before starting the interceptor.
-
-:::
-
 ### Clearing an interceptor
 
-When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another. This is done with [`interceptor.clear()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorclear), which resets the interceptor and handlers to their initial states.
+When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another. This is done with [`interceptor.clear()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorclear), which resets the interceptor and handlers to their initial states.
 
 ```ts
 beforeEach(() => {
@@ -95,7 +89,7 @@ beforeEach(() => {
 
 ### Checking expectations
 
-After each test, you can check if your application has made all of the expected requests with [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes). Learn more about how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) to keep your tests clean and readable.
+After each test, you can check if your application has made all of the expected requests with [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorchecktimes). Learn more about how interceptors support [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) to keep your tests clean and readable.
 
 ```ts
 afterEach(() => {
@@ -106,7 +100,7 @@ afterEach(() => {
 
 ### Stopping an interceptor
 
-After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with [`interceptor.stop()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorstop).
+After the interceptor is no longer needed, such as at the end of your test suite, you can stop it with [`interceptor.stop()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorstop).
 
 ```ts
 afterAll(async () => {
@@ -141,36 +135,6 @@ test('example', async () => {
 });
 ```
 
-:::info INFO: <span>Local interceptors are synchronous</span>
+Handler declarations, [`interceptor.clear()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorclear), and [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorchecktimes) are synchronous in local interceptors because they do not communicate with an external server. In [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#mocking-requests), they are asynchronous instead.
 
-Many operations in local interceptors are **synchronous** because they do not involve communication with an external server. This is different from [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md), which communicate with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle requests and return responses.
-
-:::
-
-If you need to access the requests processed by the interceptor, use [`handler.requests`](/docs/zimic-interceptor/api/3-http-request-handler.mdx#handlerrequests).
-
-```ts
-// highlight-next-line
-const handler = interceptor
-  .get('/users')
-  .with({
-    headers: { authorization: 'Bearer my-token' },
-    searchParams: { query: 'u' },
-  })
-  .respond({
-    status: 200,
-    body: users,
-  })
-  .times(1);
-
-// Run the application and make requests...
-
-console.log(handler.requests.length); // 1
-
-console.log(handler.requests[0].headers.get('authorization')); // 'Bearer my-token'
-
-console.log(handler.requests[0].searchParams.size); // 1
-console.log(handler.requests[0].searchParams.get('username')); // 'my'
-
-console.log(handler.requests[0].body); // null
-```
+For checks that a restriction cannot express, see [inspecting intercepted requests](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#inspecting-intercepted-requests).

@@ -34,13 +34,13 @@ export interface InternalWebSocketMessageHandler<
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
  *
  * The context of a matched message, passed to effects and computed responses. The sender is typed from the handler path
- * and the receiver with the messages of all paths, because the interceptor server holds and broadcasts them all.
+ * and the receiver with the messages of all paths, because the server handle holds and broadcasts them all.
  */
 export interface WebSocketMessageHandlerMessageContext<Schema extends WebSocketSchema, Path extends string = string> {
   /** The client that sent the matched message. */
   sender: WebSocketInterceptorClient<Schema, Path>;
 
-  /** The interceptor server that received the matched message. */
+  /** The server handle of the interceptor that received the matched message. */
   receiver: WebSocketInterceptorServer<Schema>;
 }
 

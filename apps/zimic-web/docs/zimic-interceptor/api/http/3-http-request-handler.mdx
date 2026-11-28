@@ -9,13 +9,11 @@ import TabItem from '@theme/TabItem';
 
 # `HttpRequestHandler`
 
-An HTTP request handler to declare responses for intercepted requests. When multiple handlers match the same request, the _last_ handler created with [`interceptor.<method>(path)`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#declaring-request-handlers) will be used, even if the handlers belong to different interceptors or were declared with different paths.
+An HTTP request handler to declare responses for intercepted requests. When multiple handlers match the same request, the _last_ handler created with [`interceptor.<method>(path)`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#declaring-request-handlers) will be used, even if the handlers belong to different interceptors or were declared with different paths.
 
 :::tip TIP: <span>Awaiting remote `HttpRequestHandler` operations</span>
 
-If you are using a remote interceptor, make sure to `await` the handler before making requests. This is because many remote handler operations are asynchronous and require communication with the [interceptor server](/docs/zimic-interceptor/cli/1-server.md).
-
-If you don't await the handler, your declarations may not be committed to the server before the requests are made, leading to non-deterministic behavior. A single `await` is enough, even if you are making multiple declarations, as `HttpRequestHandler` automatically batches all changes.
+If you are using a remote interceptor, `await` the handler before making requests, because [remote interceptor operations are asynchronous](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#mocking-requests). A single `await` is enough, even if you are making multiple declarations, as `HttpRequestHandler` automatically batches all changes.
 
 ```ts
 // Instead of awaiting each operation separately:
@@ -33,8 +31,6 @@ const handler = await interceptor
   .respond({ status: 204 })
   .times(1);
 ```
-
-When using a local interceptor, you can safely skip awaiting the handler, as all operations are synchronous and immediate.
 
 :::
 
@@ -275,7 +271,7 @@ The same handler, now considering the specified number of requests.
 
 :::info IMPORTANT: <span>Checking the number of requests</span>
 
-To make sure that all expected requests were made, use [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes) or [`handler.checkTimes()`](#handlerchecktimes). [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes) is generally preferred, as it checks all handlers created by the interceptor with a single call.
+To make sure that all expected requests were made, use [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorchecktimes) or [`handler.checkTimes()`](#handlerchecktimes). [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorchecktimes) is generally preferred, as it checks all handlers created by the interceptor with a single call.
 
 :::
 
@@ -289,9 +285,9 @@ Checks if the handler has matched the expected number of requests declared with 
 
 If the handler has matched fewer or more requests than expected, this method will throw a `TimesCheckError` error pointing to the [`handler.times()` API reference](#handlertimes) that was not satisfied.
 
-This is useful at the end of a test to ensure that all expected requests were made. If you are calling [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorchecktimes) after each test, you can skip this call, as it will be called automatically for all handlers created by the interceptor.
+This is useful at the end of a test to ensure that all expected requests were made. If you are calling [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorchecktimes) after each test, you can skip this call, as it will be called automatically for all handlers created by the interceptor.
 
-When [`requestSaving.enabled`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorrequestsaving) is `true` in your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the expected and received data. This is useful for debugging requests that did not match a handler with [`handler.with` restrictions](#handlerwith).
+When [`requestSaving.enabled`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorrequestsaving) is `true` in your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the expected and received data. This is useful for debugging requests that did not match a handler with [`handler.with` restrictions](#handlerwith).
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -345,12 +341,8 @@ The same handler, now cleared of any response, restrictions, and intercepted req
 
 ## `handler.requests`
 
-The intercepted requests that matched this handler, along with the responses returned to each of them. This is useful to allow additional validation in tests, if you are not using [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) or you need more advanced checks.
+The intercepted requests that matched this handler, along with the responses returned to each of them. Prefer [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx), and read the saved requests only for [checks that a restriction cannot express](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#inspecting-intercepted-requests).
 
 **Type**: `InterceptedHttpInterceptorRequest<Path, MethodSchema, StatusCode>[]`
 
-:::info IMPORTANT: <span>`handler.requests` requires request saving to be enabled</span>
-
-This method can only be used if [`requestSaving.enabled`](/docs/zimic-interceptor/api/2-http-interceptor.mdx#interceptorrequestsaving) is `true` in the interceptor.
-
-:::
+Accessing `handler.requests` throws a `DisabledRequestSavingError` unless [`requestSaving.enabled`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorrequestsaving) is `true` in the interceptor.

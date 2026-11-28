@@ -7,7 +7,7 @@
 </h1>
 
 <p align="center">
-  Next-gen TypeScript-first HTTP integrations
+  Next-gen TypeScript-first HTTP and WebSocket integrations
 </p>
 
 <p align="center">
@@ -30,7 +30,7 @@
 
 ---
 
-Zimic is a collection of TypeScript-first HTTP integration libraries.
+Zimic is a collection of TypeScript-first HTTP and WebSocket integration libraries.
 
 ## Highlights
 
@@ -95,6 +95,28 @@ A minimal (~2 kB minified gzipped) and type-safe `fetch`-like API client.
 - [`@zimic/fetch` - Introduction](https://zimic.dev/docs/fetch)
 - [`@zimic/fetch` - Getting started](https://zimic.dev/docs/fetch/getting-started)
 - [`@zimic/fetch` - Guides](https://zimic.dev/docs/fetch/guides)
+
+### `@zimic/ws`
+
+A minimal and type-safe WebSocket client and server.
+
+- :star: **WebSocket schemas**
+
+  Declare the messages of your WebSocket connections in a [WebSocket schema](https://zimic.dev/docs/ws/guides/schemas) and use it to type your clients, servers, and messages.
+
+- :zap: **Typed clients**
+
+  Open typed [`WebSocketClient`](https://zimic.dev/docs/ws/api/websocket-client) connections, compatible with the native `WebSocket`.
+
+- :satellite: **Typed servers**
+
+  Attach a typed [`WebSocketServer`](https://zimic.dev/docs/ws/api/websocket-server) to a Node.js HTTP server.
+
+**Learn more**:
+
+- [`@zimic/ws` - Introduction](https://zimic.dev/docs/ws)
+- [`@zimic/ws` - Getting started](https://zimic.dev/docs/ws/getting-started)
+- [`@zimic/ws` - Guides](https://zimic.dev/docs/ws/guides)
 
 ### `@zimic/interceptor`
 

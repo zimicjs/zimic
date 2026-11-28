@@ -1,0 +1,170 @@
+---
+title: WebSocketInterceptorClient | @zimic/interceptor
+sidebar_label: WebSocketInterceptorClient
+slug: /interceptor/api/websocket-interceptor-client
+---
+
+# `WebSocketInterceptorClient`
+
+:::warning EXPERIMENTAL
+
+WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. Their API may change before becoming stable.
+
+:::
+
+A handle of a client connected to a WebSocket interceptor. It describes the connection and acts on it as the server. It sends messages to the client and closes its connection.
+
+Clients are not created directly. Each accepted connection has one client per interceptor holding it, available from:
+
+- [`interceptor.clients`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclients), which lists the clients currently connected to the interceptor.
+- The `client` argument of [connection effects](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlereffect), declared with `handler.effect()` in connection handlers.
+- The `sender` of intercepted messages, in the context of [message effects and responses](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlereffect) and in saved messages, such as [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages).
+
+A client can also restrict a message handler to the messages it sends, with [`handler.from(client)`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlerfrom).
+
+The members of a client work the same in local and remote interceptors, and none of them need to be awaited.
+
+The examples on this page use the following [schema](/docs/zimic-ws/guides/1-schemas.md):
+
+```ts
+import { WebSocketSchema } from '@zimic/ws';
+
+type ChatMessage =
+  | { type: 'message'; data: { text: string } }
+  | { type: 'typing'; data: { username: string } }
+  | { type: 'presence'; data: { online: boolean } };
+
+type Schema = WebSocketSchema<{
+  '/rooms/:roomId': {
+    connection: {
+      searchParams: { token: string };
+      protocols: 'chat' | 'json';
+    };
+    message: ChatMessage;
+  };
+}>;
+```
+
+## `client.url`
+
+The URL used to open the connection of the client.
+
+**Type**: `string`
+
+```ts
+interceptor.connection('/rooms/:roomId').effect((client) => {
+  console.log(client.url); // 'ws://localhost:3000/rooms/1?token=valid'
+});
+```
+
+## `client.protocols`
+
+The subprotocols requested by the client when opening the connection, in the order they were requested, as in [`new WebSocket(url, protocols)`](https://developer.mozilla.org/docs/Web/API/WebSocket/WebSocket#protocols). Empty if the client requested none. The interceptor selects the first requested subprotocol, which the client sees in [`socket.protocol`](https://developer.mozilla.org/docs/Web/API/WebSocket/protocol).
+
+**Type**: `readonly Protocol[]`
+
+```ts
+// Opened with new WebSocket(url, ['json', 'chat'])
+console.log(client.protocols); // ['json', 'chat']
+```
+
+## `client.searchParams`
+
+The search params of the URL used to open the connection of the client.
+
+**Type**: [`HttpSearchParams<SearchParamsSchema>`](/docs/zimic-http/api/3-http-search-params.md)
+
+```ts
+interceptor.connection('/rooms/:roomId').effect((client) => {
+  const token = client.searchParams.get('token');
+});
+```
+
+## `client.messages`
+
+The client-to-server messages sent by this client that matched a [message handler](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx), along with sender and receiver handles. Each message has the same properties as in [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages).
+
+**Type**: `readonly InterceptedWebSocketInterceptorMessage<Schema, Path>[]`
+
+Clearing or redeclaring a message handler [removes the messages it saved](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages) from `client.messages`. Messages sent with [`client.send()`](#clientsend) are [server messages](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorserver), which are not saved.
+
+Messages are saved only if [`messageSaving.enabled`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptormessagesaving) is `true` in the interceptor. Otherwise, `client.messages` stays empty.
+
+## `client.send()`
+
+Sends a server message to this client. The message type is statically validated against the schema of the client path.
+
+```ts
+client.send(message);
+```
+
+**Arguments**:
+
+1. **message**: `WebSocketInterceptorPathMessage<Schema, Path> | WebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>`
+
+   The message to send, as a message of the schema or as serialized data, sent as described in [Using server messages](/docs/zimic-interceptor/guides/ws/3-messages.mdx#using-server-messages).
+
+**Returns**: `void`
+
+```ts
+interceptor.connection('/rooms/:roomId').effect((client) => {
+  client.send({ type: 'presence', data: { online: true } });
+
+  // Equivalent to the message above, serialized beforehand
+  client.send(JSON.stringify({ type: 'presence', data: { online: true } }));
+});
+```
+
+Messages are delivered in the order they are sent. Sending a message to a client that is already closed, or no longer held by a running interceptor, does nothing.
+
+## `client.close()`
+
+Closes the connection of this client, as if the server closed it, and removes the client from every interceptor holding it. The arguments follow the native [`WebSocket.close()`](https://developer.mozilla.org/docs/Web/API/WebSocket/close).
+
+When the interceptor uses a [protocol](/docs/zimic-interceptor/api/ws/1-create-websocket-interceptor.mdx), the protocol decides how the client is closed. With the [Socket.IO protocol](/docs/zimic-interceptor/guides/ws/9-socket-io.mdx#connections-and-clients), `client.close()` disconnects the socket from its namespace, as `socket.disconnect()` in a Socket.IO server, and ignores the code and reason.
+
+```ts
+client.close();
+client.close(code);
+client.close(code, reason);
+```
+
+**Arguments**:
+
+1. **code** (optional): `number`
+
+   The close code, either `1000` or between `3000` and `4999`. If omitted, the client receives the close code `1005` and no reason.
+
+2. **reason** (optional): `string`
+
+   The close reason, up to 123 bytes when encoded as UTF-8. Sent only if `code` is also provided.
+
+**Returns**: `void`
+
+**Throws**:
+
+- A `DOMException` named `InvalidAccessError` if `code` is not `1000` or between `3000` and `4999`.
+- A `DOMException` named `SyntaxError` if `reason` is longer than 123 bytes when encoded as UTF-8.
+
+If an error is thrown, the connection stays open.
+
+```ts
+interceptor
+  .message('/rooms/:roomId')
+  .with({ type: 'message' })
+  .effect((message, { sender }) => {
+    sender.close(4000, 'Messages are not allowed.');
+  });
+```
+
+Messages sent with [`client.send()`](#clientsend) before `client.close()` are delivered before the connection closes. Once the connection closes, the client is removed from [`interceptor.clients`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclients) of every interceptor holding it. Closing a client that is already closed, or no longer held by a running interceptor, does nothing.
+
+**Related**:
+
+- [Using local WebSocket interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md)
+- [Using remote WebSocket interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md)
+- [Using connections and server sends](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx)
+- [`WebSocketInterceptor`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx)
+- [`WebSocketMessageHandler`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx)
+- [`WebSocketConnectionHandler`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx)
+- [`WebSocket` - MDN reference](https://developer.mozilla.org/docs/Web/API/WebSocket)
