@@ -8,9 +8,9 @@ slug: /ws
 
 `@zimic/ws` is a minimal and type-safe WebSocket client and server.
 
-:::note ALPHA
+:::warning EXPERIMENTAL
 
-`@zimic/ws` is in alpha. Its API may change before becoming stable.
+`@zimic/ws` is experimental. Its API may change before becoming stable.
 
 :::
 
@@ -18,15 +18,15 @@ slug: /ws
 
 - :star: **WebSocket schemas**
 
-  Declare the structure of the messages exchanged by your WebSocket connection in a [WebSocket schema](/docs/zimic-ws/guides/1-schemas.md) and use it to type client and server messages.
+  Declare the messages of your WebSocket connections in a [WebSocket schema](/docs/zimic-ws/guides/1-schemas.md) and use it to type your clients, servers, and messages.
 
 - :zap: **Typed clients**
 
-  Use [`WebSocketClient`](/docs/zimic-ws/api/2-websocket-client.mdx) to wrap a native `WebSocket` with typed lifecycle methods, listeners, and `send()` calls.
+  Open typed [`WebSocketClient`](/docs/zimic-ws/api/2-websocket-client.mdx) connections, compatible with the native `WebSocket`.
 
 - :satellite: **Typed servers**
 
-  Use [`WebSocketServer`](/docs/zimic-ws/api/3-websocket-server.mdx) to attach WebSocket handling to a Node HTTP or HTTPS server and receive typed connected clients.
+  Attach a typed [`WebSocketServer`](/docs/zimic-ws/api/3-websocket-server.mdx) to a Node.js HTTP server.
 
 **Learn more**:
 
