@@ -29,10 +29,6 @@ type ChatMessage =
 
 type Schema = WebSocketSchema<{
   '/rooms/:roomId': {
-    connection: {
-      searchParams: { token: string };
-      protocols: 'chat' | 'json';
-    };
     message: ChatMessage;
   };
 }>;

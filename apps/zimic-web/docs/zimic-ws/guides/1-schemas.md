@@ -28,10 +28,6 @@ interface Notification {
 // highlight-next-line
 export type ChatSchema = WebSocketSchema<{
   '/rooms/:roomId': {
-    connection: {
-      searchParams: { token: string };
-      protocols: 'chat' | 'json';
-    };
     message: ChatMessage;
   };
 
@@ -41,7 +37,7 @@ export type ChatSchema = WebSocketSchema<{
 }>;
 ```
 
-This example contains two paths, `/rooms/:roomId` and `/notifications`, each with their own messages. Connections to `/rooms/:roomId` require a `token` search param and can request the `chat` or `json` subprotocols.
+This example contains two paths, `/rooms/:roomId` and `/notifications`, each with their own messages. Paths can also [declare their connections](#declaring-connections), such as required search params and subprotocols.
 
 ## Declaring paths
 
@@ -204,7 +200,7 @@ import { WebSocketClient } from '@zimic/ws';
 
 import { ChatSchema } from './schema';
 
-const client = new WebSocketClient<ChatSchema, '/rooms/:roomId'>('ws://localhost:3000/rooms/1?token=secret', 'chat');
+const client = new WebSocketClient<ChatSchema, '/rooms/:roomId'>('ws://localhost:3000/rooms/1');
 
 await client.open();
 

@@ -603,7 +603,7 @@ yarn add @zimic/ws@canary @zimic/interceptor@canary --dev
 
 ### Declaring a schema {#websocket-declaring-a-schema}
 
-To start using a WebSocket interceptor, declare a WebSocket schema using [`@zimic/ws`](/docs/zimic-ws/guides/1-schemas.md). The schema represents the structure of your WebSocket service, including the paths, connection parameters, and the messages exchanged by clients and servers.
+To start using a WebSocket interceptor, declare a WebSocket schema using [`@zimic/ws`](/docs/zimic-ws/guides/1-schemas.md). The schema represents the structure of your WebSocket service, including the paths and the messages exchanged by clients and servers.
 
 ```ts title='schema.ts'
 import { WebSocketSchema } from '@zimic/ws';
@@ -615,9 +615,6 @@ type ChatMessage =
 
 type Schema = WebSocketSchema<{
   '/chat': {
-    connection: {
-      searchParams: { token: string };
-    };
     message: ChatMessage;
   };
 }>;
@@ -784,11 +781,7 @@ Use [`interceptor.connection()`](/docs/zimic-interceptor/api/ws/2-websocket-inte
 ```ts
 test('example', () => {
   //  highlight-start
-  interceptor
-    .connection('/chat')
-    .with({ searchParams: { token: 'my-token' } })
-    .respond({ action: 'accept' })
-    .times(1);
+  interceptor.connection('/chat').respond({ action: 'accept' }).times(1);
 
   interceptor
     .message('/chat')
@@ -811,11 +804,7 @@ test('example', () => {
 ```ts
 test('example', async () => {
   //  highlight-start
-  await interceptor
-    .connection('/chat')
-    .with({ searchParams: { token: 'my-token' } })
-    .respond({ action: 'accept' })
-    .times(1);
+  await interceptor.connection('/chat').respond({ action: 'accept' }).times(1);
 
   await interceptor
     .message('/chat')
@@ -843,11 +832,7 @@ If you need to access the connections and messages processed by the interceptor,
 
 ```ts
 // highlight-next-line
-const connectionHandler = interceptor
-  .connection('/chat')
-  .with({ searchParams: { token: 'my-token' } })
-  .respond({ action: 'accept' })
-  .times(1);
+const connectionHandler = interceptor.connection('/chat').respond({ action: 'accept' }).times(1);
 
 // highlight-next-line
 const messageHandler = interceptor
@@ -860,7 +845,7 @@ const messageHandler = interceptor
 
 //  highlight-start
 console.log(connectionHandler.connections.length); // 1
-console.log(connectionHandler.connections[0].searchParams.get('token')); // 'my-token'
+console.log(connectionHandler.connections[0].url); // 'ws://localhost:3000/chat'
 
 console.log(messageHandler.messages.length); // 1
 console.log(messageHandler.messages[0].data); // { type: 'message', data: { text: 'Hello!' } }
@@ -873,11 +858,7 @@ console.log(messageHandler.messages[0].data); // { type: 'message', data: { text
 
 ```ts
 // highlight-next-line
-const connectionHandler = await interceptor
-  .connection('/chat')
-  .with({ searchParams: { token: 'my-token' } })
-  .respond({ action: 'accept' })
-  .times(1);
+const connectionHandler = await interceptor.connection('/chat').respond({ action: 'accept' }).times(1);
 
 // highlight-next-line
 const messageHandler = await interceptor
@@ -890,7 +871,7 @@ const messageHandler = await interceptor
 
 //  highlight-start
 console.log(connectionHandler.connections.length); // 1
-console.log(connectionHandler.connections[0].searchParams.get('token')); // 'my-token'
+console.log(connectionHandler.connections[0].url); // 'ws://localhost:3000/chat'
 
 console.log(messageHandler.messages.length); // 1
 console.log(messageHandler.messages[0].data); // { type: 'message', data: { text: 'Hello!' } }
