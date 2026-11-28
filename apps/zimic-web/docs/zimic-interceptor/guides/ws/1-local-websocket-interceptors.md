@@ -80,12 +80,6 @@ beforeAll(async () => {
 });
 ```
 
-:::info INFO: <span>Local interceptors in browsers</span>
-
-If you are using a local interceptor in a **browser** environment, you must first [initialize a mock service worker](/docs/zimic-interceptor/cli/2-browser.md#zimic-interceptor-browser-init) in your public directory before starting the interceptor.
-
-:::
-
 ### Clearing an interceptor
 
 When using an interceptor in tests, it's important to clear it between tests to avoid that one test affects another. This is done with [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear), which resets the interceptor and handlers to their initial states.

@@ -103,12 +103,6 @@ await interceptor.start();
 
 **Returns**: `Promise<void>`
 
-:::info INFO: <span>Local interceptors in browsers</span>
-
-If you are using a [local interceptor](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md) in a **browser** environment, you must first [initialize a mock service worker](/docs/zimic-interceptor/cli/2-browser.md#zimic-interceptor-browser-init) in your public directory before starting the interceptor.
-
-:::
-
 :::info INFO: <span>Remote interceptors and interceptor servers</span>
 
 If you are using a [remote interceptor](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md), the `baseURL` should point to a running [interceptor server](/docs/zimic-interceptor/cli/1-server.md), which is configured by the interceptor to handle requests. Learn more about [starting remote HTTP interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#starting-an-interceptor).
