@@ -40,7 +40,7 @@ type Schema = WebSocketSchema<{
 
 :::tip TIP: <span>Awaiting remote `WebSocketConnectionHandler` operations</span>
 
-If you are using a remote interceptor, make sure to `await` the handler before opening clients. Many remote handler operations are asynchronous and require communication with the [interceptor server](/docs/zimic-interceptor/cli/1-server.md). A single `await` is enough, even if you are making multiple declarations, as `WebSocketConnectionHandler` automatically batches changes.
+If you are using a remote interceptor, `await` the handler before opening clients, because [remote interceptor operations are asynchronous](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md#mocking-messages). A single `await` is enough, even if you are making multiple declarations, as `WebSocketConnectionHandler` automatically batches changes.
 
 ```ts
 const handler = await interceptor
@@ -49,8 +49,6 @@ const handler = await interceptor
   .respond({ action: 'reject' })
   .times(1);
 ```
-
-When using a local interceptor, you can safely skip awaiting the handler, as all operations are synchronous and immediate.
 
 :::
 

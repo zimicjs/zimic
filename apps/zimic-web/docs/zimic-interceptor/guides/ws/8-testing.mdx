@@ -96,13 +96,7 @@ afterAll(async () => {
   </TabItem>
 </Tabs>
 
-:::info INFO: <span>Remote interceptors are asynchronous</span>
-
-[`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear) and [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes) are awaited in the remote interceptor example, whereas this is not necessary for local interceptors.
-
-This is because many operations in [remote interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md) are asynchronous because they may involve communication with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is different from [local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md), which have mostly synchronous operations.
-
-:::
+The remote example awaits [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear) and [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes) because [remote interceptor operations are asynchronous](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md#mocking-messages).
 
 For more information on the available interceptor methods, check the [`WebSocketInterceptor` API reference](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx).
 

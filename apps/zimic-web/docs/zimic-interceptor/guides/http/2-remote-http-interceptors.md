@@ -204,9 +204,9 @@ test('example', async () => {
 });
 ```
 
-:::info INFO: <span>Remote interceptors are asynchronous</span>
+Remote interceptor operations are asynchronous because they communicate with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). Await each handler declaration, [`interceptor.clear()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorclear), and [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorchecktimes) before making requests that depend on them. Operations of [local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md#mocking-requests) are synchronous instead.
 
-Many operations in remote interceptors are **asynchronous** because they may involve communication with an interceptor server. This is different from [local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md), which have mostly **synchronous** operations.
+:::tip TIP: <span>Finding missing awaits</span>
 
 If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy rule is [`@typescript-eslint/no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises). It checks promises appearing to be unhandled, which is helpful to indicate missing `await`'s in remote interceptor operations.
 

@@ -135,11 +135,7 @@ test('example', async () => {
 });
 ```
 
-:::info INFO: <span>Local interceptors are synchronous</span>
-
-Many operations in local interceptors are **synchronous** because they do not involve communication with an external server. This is different from [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md), which communicate with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md) to handle requests and return responses.
-
-:::
+Local interceptor operations are synchronous because they do not communicate with an external server. Operations of [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#mocking-requests) are asynchronous instead.
 
 If you need to access the requests processed by the interceptor, use [`handler.requests`](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx#handlerrequests).
 

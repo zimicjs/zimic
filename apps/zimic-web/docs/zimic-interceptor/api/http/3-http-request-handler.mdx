@@ -13,9 +13,7 @@ An HTTP request handler to declare responses for intercepted requests. When mult
 
 :::tip TIP: <span>Awaiting remote `HttpRequestHandler` operations</span>
 
-If you are using a remote interceptor, make sure to `await` the handler before making requests. This is because many remote handler operations are asynchronous and require communication with the [interceptor server](/docs/zimic-interceptor/cli/1-server.md).
-
-If you don't await the handler, your declarations may not be committed to the server before the requests are made, leading to non-deterministic behavior. A single `await` is enough, even if you are making multiple declarations, as `HttpRequestHandler` automatically batches all changes.
+If you are using a remote interceptor, `await` the handler before making requests, because [remote interceptor operations are asynchronous](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#mocking-requests). A single `await` is enough, even if you are making multiple declarations, as `HttpRequestHandler` automatically batches all changes.
 
 ```ts
 // Instead of awaiting each operation separately:
@@ -33,8 +31,6 @@ const handler = await interceptor
   .respond({ status: 204 })
   .times(1);
 ```
-
-When using a local interceptor, you can safely skip awaiting the handler, as all operations are synchronous and immediate.
 
 :::
 

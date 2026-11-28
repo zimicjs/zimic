@@ -466,11 +466,7 @@ test('example', () => {
   </TabItem>
 </Tabs>
 
-:::info INFO: <span>Remote interceptors are asynchronous</span>
-
-Many operations in [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md) are **asynchronous** because they may involve communication with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is different from [local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md), which have mostly **synchronous** operations.
-
-:::
+The remote example awaits each handler declaration because [remote interceptor operations are asynchronous](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#mocking-requests).
 
 If you need to access the requests processed by the interceptor, use [`handler.requests`](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx#handlerrequests).
 
@@ -838,11 +834,7 @@ test('example', async () => {
   </TabItem>
 </Tabs>
 
-:::info INFO: <span>Remote interceptors are asynchronous</span>
-
-Many operations in [remote interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md) are **asynchronous** because they may involve communication with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). This is different from [local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md), which have mostly **synchronous** operations.
-
-:::
+The remote example awaits each handler declaration because [remote interceptor operations are asynchronous](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md#mocking-messages).
 
 If you need to access the connections and messages processed by the interceptor, use [`handler.connections`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerconnections) and [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages).
 
