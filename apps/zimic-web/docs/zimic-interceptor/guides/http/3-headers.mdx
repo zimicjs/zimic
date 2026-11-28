@@ -42,13 +42,13 @@ type Schema = HttpSchema<{
 }>;
 ```
 
-Then, the request headers will be available in the `headers` property, such as in [`handler.with()`](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx#handlerwith), [computed responses](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx#handlerrespond), and [`handler.requests`](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx#handlerrequests). The headers are typed and validated according to your schema, providing type safety and autocompletion.
+Then, the request headers will be available in the `headers` property, such as in [`handler.with()`](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx#handlerwith), [computed responses](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx#handlerrespond), and [saved requests](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#inspecting-intercepted-requests). The headers are typed and validated according to your schema, providing type safety and autocompletion.
 
 <Tabs groupId="zimic-http-interceptor-type">
   <TabItem value="local" label="Local interceptor">
 
 ```ts
-const handler = interceptor
+interceptor
   .get('/users')
   .with({
     // highlight-start
@@ -70,14 +70,6 @@ const handler = interceptor
     };
   })
   .times(1);
-
-// Run the application and make requests...
-
-console.log(handler.requests.length); // 1
-// highlight-start
-console.log(handler.requests[0].headers.get('authorization'));
-console.log(handler.requests[0].headers.get('accept-language'));
-// highlight-end
 ```
 
   </TabItem>
@@ -85,7 +77,7 @@ console.log(handler.requests[0].headers.get('accept-language'));
   <TabItem value="remote" label="Remote interceptor">
 
 ```ts
-const handler = await interceptor
+await interceptor
   .get('/users')
   .with({
     // highlight-start
@@ -107,14 +99,6 @@ const handler = await interceptor
     };
   })
   .times(1);
-
-// Run the application and make requests...
-
-console.log(handler.requests.length); // 1
-// highlight-start
-console.log(handler.requests[0].headers.get('authorization'));
-console.log(handler.requests[0].headers.get('accept-language'));
-// highlight-end
 ```
 
   </TabItem>

@@ -212,33 +212,7 @@ If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy ru
 
 :::
 
-If you need to access the requests processed by the interceptor, use [`handler.requests`](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx#handlerrequests).
-
-```ts
-// highlight-next-line
-const handler = await interceptor
-  .get('/users')
-  .with({
-    headers: { authorization: 'Bearer my-token' },
-    searchParams: { query: 'u' },
-  })
-  .respond({
-    status: 200,
-    body: users,
-  })
-  .times(1);
-
-// Run the application and make requests...
-
-console.log(handler.requests); // 1
-
-console.log(handler.requests[0].headers.get('authorization')); // 'Bearer my-token'
-
-console.log(handler.requests[0].searchParams.size); // 1
-console.log(handler.requests[0].searchParams.get('username')); // 'my'
-
-console.log(handler.requests[0].body); // null
-```
+The handler declares the expected request with `.with()` and `.times()`, and [`interceptor.checkTimes()`](#checking-expectations) verifies it after each test, so the test does not need to read the requests. For checks that a restriction cannot express, see [inspecting intercepted requests](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#inspecting-intercepted-requests).
 
 ## Interceptor server authentication
 

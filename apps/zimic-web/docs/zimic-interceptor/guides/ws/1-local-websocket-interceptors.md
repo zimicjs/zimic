@@ -140,20 +140,4 @@ Messages arrive in the order the client sent them. Zimic handles each message in
 
 Handler declarations, [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear), and [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes) are synchronous in local interceptors because they do not communicate with an external server. In [remote interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md#mocking-messages), they are asynchronous instead.
 
-If you need to access the messages processed by the interceptor, use [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages).
-
-```ts
-// highlight-next-line
-const handler = interceptor
-  .message('/chat')
-  .with({ type: 'message' })
-  .respond({ type: 'presence', data: { online: true } })
-  .times(1);
-
-// Run the application and send messages...
-
-console.log(handler.messages.length); // 1
-
-console.log(handler.messages[0].data); // { type: 'message', data: { text: 'Hello!' } }
-console.log(handler.messages[0].sender.url); // 'ws://localhost:3000/chat'
-```
+The handler declares the expected message with `.with()` and `.times()`, and [`interceptor.checkTimes()`](#checking-expectations) verifies it after each test, so the test does not need to read the messages. For checks that a restriction cannot express, see [inspecting messages and connections](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#inspecting-messages-and-connections).

@@ -15,7 +15,7 @@ WebSocket interceptors are available from `@zimic/interceptor/experimental/ws`. 
 
 :::
 
-`@zimic/interceptor` is designed with testing in mind and provides utilities to give you confidence in your tests. Using [declarative assertions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx), you can write your expectations in a readable way that makes it clear how many messages and connections the application should send and open, what data they should have, and what responses they will receive. If you need more specific assertions, the messages and connections processed by the interceptor are available in [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages) and [`handler.connections`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerconnections).
+`@zimic/interceptor` is designed with testing in mind and provides utilities to give you confidence in your tests. Using [declarative assertions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx), you can write your expectations in a readable way that makes it clear how many messages and connections the application should send and open, what data they should have, and what responses they will receive. For checks that a restriction cannot express, see [inspecting messages and connections](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#inspecting-messages-and-connections).
 
 ## Configuration
 
