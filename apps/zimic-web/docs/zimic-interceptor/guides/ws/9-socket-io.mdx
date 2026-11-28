@@ -19,27 +19,53 @@ WebSocket interceptors can mock [Socket.IO](https://socket.io) servers with `cre
 
 ## Installation
 
-The Socket.IO protocol uses `socket.io-parser` and `engine.io-parser`, which `socket.io-client` already installs. Install `@zimic/http`, which types the HTTP interceptor serving [polling](#polling) requests:
+The Socket.IO protocol uses `socket.io-parser` and `engine.io-parser`, which `socket.io-client` already installs.
 
 <Tabs groupId="package-managers">
   <TabItem value="npm" label="npm">
 
 ```bash
-npm install @zimic/ws @zimic/http @zimic/interceptor --save-dev
+npm install @zimic/ws @zimic/interceptor --save-dev
 ```
 
   </TabItem>
   <TabItem value="pnpm" label="pnpm">
 
 ```bash
-pnpm add @zimic/ws @zimic/http @zimic/interceptor --dev
+pnpm add @zimic/ws @zimic/interceptor --dev
 ```
 
   </TabItem>
   <TabItem value="yarn" label="yarn">
 
 ```bash
-yarn add @zimic/ws @zimic/http @zimic/interceptor --dev
+yarn add @zimic/ws @zimic/interceptor --dev
+```
+
+  </TabItem>
+</Tabs>
+
+[Polling](#polling) requests are served by an HTTP interceptor, which requires `@zimic/http`. Install it unless you use remote interceptors with clients restricted to `transports: ['websocket']`.
+
+<Tabs groupId="package-managers">
+  <TabItem value="npm" label="npm">
+
+```bash
+npm install @zimic/http --save-dev
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm add @zimic/http --dev
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```bash
+yarn add @zimic/http --dev
 ```
 
   </TabItem>
