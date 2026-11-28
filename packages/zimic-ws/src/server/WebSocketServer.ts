@@ -19,7 +19,10 @@ export namespace WebSocketServer {
   export interface EventListenerParameters<Schema extends WebSocketSchema> {
     // A server accepts connections to any path of its schema, so its clients can exchange the messages of any of them.
     /** @see {@link https://zimic.dev/docs/ws/api/websocket-server#serveraddeventlistener `server.addEventListener()` API reference} */
-    connection: [client: WebSocketClient<Schema, WebSocketSchemaPath.Literal<Schema>>, request: IncomingMessage];
+    connection: [
+      client: WebSocketClient<Schema, WebSocketSchemaPath.Literal<Schema>, 'server'>,
+      request: IncomingMessage,
+    ];
     /** @see {@link https://zimic.dev/docs/ws/api/websocket-server#serveraddeventlistener `server.addEventListener()` API reference} */
     error: [error: Error];
     /** @see {@link https://zimic.dev/docs/ws/api/websocket-server#serveraddeventlistener `server.addEventListener()` API reference} */
@@ -175,7 +178,8 @@ export class WebSocketServer<Schema extends WebSocketSchema> {
               ? rawClient
               : (new WebSocketClient<WebSocketSchema>(rawClient) as unknown as WebSocketClient<
                   Schema,
-                  WebSocketSchemaPath.Literal<Schema>
+                  WebSocketSchemaPath.Literal<Schema>,
+                  'server'
                 >);
 
           typedListener.call(this, wrappedClient, ...parameters);

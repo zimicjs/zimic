@@ -58,7 +58,7 @@ const interceptor = createWebSocketInterceptor<Schema>({
 
 ## Dynamically ignoring unhandled messages
 
-You can also provide a function to `onUnhandledMessage` that receives the unhandled message and returns the strategy to use. This allows you to dynamically determine whether to log the message based on its contents. The message is typed with the messages of the interceptor schema and is parsed as in [message handlers](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx).
+You can also provide a function to `onUnhandledMessage` that receives the unhandled message and returns the strategy to use. This allows you to dynamically determine whether to log the message based on its contents. The message is typed with the client messages of the interceptor schema and is parsed as in [message handlers](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx).
 
 ```ts
 import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';

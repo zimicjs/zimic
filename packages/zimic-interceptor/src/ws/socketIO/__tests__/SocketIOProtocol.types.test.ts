@@ -11,7 +11,7 @@ import { createSocketIOProtocol } from '../factory';
 import type { SocketIOMessage } from '../types/messages';
 import type { SocketIOParser } from '../types/options';
 import type { SocketIOPollingSchema } from '../types/polling';
-import type { SocketIOSchema } from '../types/schema';
+import type { SocketIOEventsMap, SocketIOSchema } from '../types/schema';
 
 /* eslint-disable @typescript-eslint/naming-convention -- Socket.IO event names commonly use colons. */
 interface ServerToClientEvents {
@@ -120,9 +120,34 @@ describe('SocketIOProtocol > Types', () => {
   });
 
   it('should make the ack ID of client events of default event maps optional', () => {
-    type Message = Extract<WebSocketSchemaMessage<SocketIOSchema<object>>, { type: string }>;
+    type Message = Extract<WebSocketSchemaMessage.Client<SocketIOSchema<object, SocketIOEventsMap>>, { type: string }>;
 
     expectTypeOf<Message['ackId']>().toEqualTypeOf<number | undefined>();
+  });
+
+  it('should type server messages as server events and acks of client events', () => {
+    type ServerMessage = WebSocketSchemaMessage.Server<SocketIOSchema<ServerToClientEvents, ClientToServerEvents>>;
+
+    expectTypeOf<Extract<ServerMessage, { type: string }>['type']>().toEqualTypeOf<'user:created'>();
+    expectTypeOf<Exclude<ServerMessage, { type: string }>['ackId']>().toEqualTypeOf<number>();
+  });
+
+  it('should type client messages as client events', () => {
+    type ClientMessage = WebSocketSchemaMessage.Client<SocketIOSchema<ServerToClientEvents, ClientToServerEvents>>;
+
+    expectTypeOf<ClientMessage['type']>().toEqualTypeOf<'user:create' | 'user:notify'>();
+  });
+
+  it('should use the server events as the client events if only one events map is declared', () => {
+    type Schema = SocketIOSchema<ArgumentlessAckEvents>;
+
+    type ServerEvent = Extract<WebSocketSchemaMessage.Server<Schema>, { type: string }>;
+    expectTypeOf<ServerEvent['type']>().toEqualTypeOf<'user:delete'>();
+    expectTypeOf<ServerEvent['ackId']>().toEqualTypeOf<undefined>();
+
+    type ClientEvent = WebSocketSchemaMessage.Client<Schema>;
+    expectTypeOf<ClientEvent['type']>().toEqualTypeOf<'user:delete'>();
+    expectTypeOf<ClientEvent['ackId']>().toEqualTypeOf<number>();
   });
 
   it('should acknowledge events with a required ack callback without asserting their ack ID', () => {
@@ -178,6 +203,50 @@ describe('SocketIOProtocol > Types', () => {
 
       // @ts-expect-error The `user:create` ack callback receives a source as its second argument.
       interceptor.server.send({ ackId: 1, data: { id: '1' } });
+    }
+
+    expectTypeOf(sendMessage).toBeFunction();
+  });
+
+  it('should not accept client events in server sends', () => {
+    function sendMessage() {
+      const interceptor = createWebSocketInterceptor<SocketIOSchema<ServerToClientEvents, ClientToServerEvents>>({
+        baseURL: 'ws://localhost:3000/socket.io',
+        protocol: createSocketIOProtocol(),
+      });
+
+      // @ts-expect-error `user:notify` is sent only by clients.
+      interceptor.server.send({ type: 'user:notify', data: { name: 'Name' }, args: [1] });
+    }
+
+    expectTypeOf(sendMessage).toBeFunction();
+  });
+
+  it('should not accept server events in message handlers', () => {
+    function declareHandler() {
+      const interceptor = createWebSocketInterceptor<SocketIOSchema<ServerToClientEvents, ClientToServerEvents>>({
+        baseURL: 'ws://localhost:3000/socket.io',
+        protocol: createSocketIOProtocol(),
+      });
+
+      // @ts-expect-error `user:created` is sent only by the server.
+      interceptor.message().with({ type: 'user:created' });
+    }
+
+    expectTypeOf(declareHandler).toBeFunction();
+  });
+
+  it('should not accept ack IDs in server events of a single events map', () => {
+    function sendMessage() {
+      const interceptor = createWebSocketInterceptor<SocketIOSchema<SingleArgumentAckEvents>>({
+        baseURL: 'ws://localhost:3000/socket.io',
+        protocol: createSocketIOProtocol(),
+      });
+
+      interceptor.server.send({ type: 'user:find', data: '1' });
+
+      // @ts-expect-error Server events do not expect acknowledgements from clients.
+      interceptor.server.send({ type: 'user:find', data: '1', ackId: 1 });
     }
 
     expectTypeOf(sendMessage).toBeFunction();
@@ -296,8 +365,14 @@ describe('SocketIOProtocol > Types', () => {
   });
 
   it('should create WebSocket interceptor protocols', () => {
-    expectTypeOf(createSocketIOProtocol()).toExtend<WebSocketInterceptorProtocol<SocketIOMessage>>();
-    expectTypeOf(createSocketIOProtocol<ChatMessage>()).toExtend<WebSocketInterceptorProtocol<ChatMessage>>();
+    type ChatSchema = SocketIOSchema<ServerToClientEvents, ClientToServerEvents>;
+    type ServerMessage = WebSocketSchemaMessage.Server<ChatSchema>;
+    type ClientMessage = WebSocketSchemaMessage.Client<ChatSchema>;
+
+    expectTypeOf(createSocketIOProtocol()).toEqualTypeOf<WebSocketInterceptorProtocol<SocketIOMessage, never>>();
+    expectTypeOf(createSocketIOProtocol<ServerMessage, ClientMessage>()).toEqualTypeOf<
+      WebSocketInterceptorProtocol<ServerMessage, ClientMessage>
+    >();
   });
 
   it('should accept Socket.IO protocols in interceptors of Socket.IO schemas', () => {
@@ -305,6 +380,19 @@ describe('SocketIOProtocol > Types', () => {
       createWebSocketInterceptor<SocketIOSchema<ServerToClientEvents, ClientToServerEvents>>({
         baseURL: 'ws://localhost:3000/socket.io',
         protocol: createSocketIOProtocol(),
+      });
+    }
+
+    expectTypeOf(createInterceptor).toBeFunction();
+  });
+
+  it('should accept Socket.IO protocols created before their interceptors', () => {
+    function createInterceptor() {
+      const protocol = createSocketIOProtocol();
+
+      createWebSocketInterceptor<SocketIOSchema<ServerToClientEvents, ClientToServerEvents>>({
+        baseURL: 'ws://localhost:3000/socket.io',
+        protocol,
       });
     }
 

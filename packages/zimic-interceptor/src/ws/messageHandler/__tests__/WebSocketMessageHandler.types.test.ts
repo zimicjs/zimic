@@ -7,7 +7,7 @@ import {
   WebSocketInterceptorClient,
   WebSocketInterceptorServer,
 } from '../../interceptor/types/messages';
-import type { LocalWebSocketInterceptor } from '../../interceptor/types/public';
+import type { LocalWebSocketInterceptor, RemoteWebSocketInterceptor } from '../../interceptor/types/public';
 import type {
   LocalWebSocketMessageHandler,
   PendingRemoteWebSocketMessageHandler,
@@ -38,6 +38,28 @@ type PathKeyedSchema = WebSocketSchema<{
   };
   '/health': {
     message: HealthMessage;
+  };
+}>;
+
+interface PingMessage {
+  type: 'ping';
+}
+
+interface SendChatMessage {
+  type: 'chat:send';
+  text: string;
+}
+
+interface ReceivedChatMessage {
+  type: 'chat:received';
+  text: string;
+}
+
+type DirectionalSchema = WebSocketSchema<{
+  '/rooms/:roomId': {
+    message: PingMessage;
+    serverMessage: ReceivedChatMessage;
+    clientMessage: SendChatMessage;
   };
 }>;
 
@@ -157,6 +179,50 @@ describe('WebSocketMessageHandler > Types', () => {
 
       // @ts-expect-error The message belongs to another path.
       handler.respond({ type: 'ping' });
+    }
+
+    expectTypeOf(declareHandler).toBeFunction();
+  });
+
+  it('should type received messages as the messages sent by clients', () => {
+    function declareHandler(
+      interceptor: LocalWebSocketInterceptor<DirectionalSchema> | RemoteWebSocketInterceptor<DirectionalSchema>,
+    ) {
+      const handler = interceptor.message('/rooms/:roomId');
+
+      handler.effect((message) => {
+        expectTypeOf(message).toEqualTypeOf<PingMessage | SendChatMessage>();
+      });
+
+      expectTypeOf(handler.messages[0].data).toEqualTypeOf<PingMessage | SendChatMessage>();
+
+      handler.with({ type: 'chat:send' });
+
+      // @ts-expect-error Only the server sends this message.
+      handler.with({ type: 'chat:received' });
+    }
+
+    expectTypeOf(declareHandler).toBeFunction();
+  });
+
+  it('should type responses as the messages sent by the server', () => {
+    function declareHandler(
+      interceptor: LocalWebSocketInterceptor<DirectionalSchema> | RemoteWebSocketInterceptor<DirectionalSchema>,
+    ) {
+      const handler = interceptor.message('/rooms/:roomId');
+
+      handler.respond({ type: 'chat:received', text: 'hello' });
+      handler.respond(() => ({ type: 'ping' }));
+
+      // @ts-expect-error Only clients send this message.
+      handler.respond({ type: 'chat:send', text: 'hello' });
+
+      handler.effect((_message, context) => {
+        context.sender.send({ type: 'chat:received', text: 'hello' });
+
+        // @ts-expect-error Only clients send this message.
+        context.sender.send({ type: 'chat:send', text: 'hello' });
+      });
     }
 
     expectTypeOf(declareHandler).toBeFunction();

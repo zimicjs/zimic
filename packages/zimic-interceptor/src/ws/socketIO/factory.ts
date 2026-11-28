@@ -13,9 +13,12 @@ const DEFAULT_NAMESPACE = '/';
  *
  * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io#creating-a-socketio-interceptor Creating a Socket.IO interceptor}
  */
-export function createSocketIOProtocol<Message extends SocketIOMessage = SocketIOMessage>(
-  options: SocketIOProtocolOptions = {},
-): WebSocketInterceptorProtocol<Message> {
+// Without a type argument or a contextual type, the client messages are `never`, so the protocol fits interceptors of
+// any Socket.IO schema. It decodes client messages without checking them against the schema in any case.
+export function createSocketIOProtocol<
+  ServerMessage extends SocketIOMessage = SocketIOMessage,
+  ClientMessage extends SocketIOMessage = never,
+>(options: SocketIOProtocolOptions = {}): WebSocketInterceptorProtocol<ServerMessage, ClientMessage> {
   assertTypeOf('options.namespace', options.namespace, 'string', { optional: true });
   assertTypeOf('options.polling', options.polling, 'object', { optional: true });
   assertTypeOf('options.parser', options.parser, 'object', { optional: true });
@@ -25,7 +28,7 @@ export function createSocketIOProtocol<Message extends SocketIOMessage = SocketI
     assertTypeOf('options.parser.Decoder', options.parser.Decoder, 'function');
   }
 
-  return new SocketIOProtocol<Message>({
+  return new SocketIOProtocol<ServerMessage, ClientMessage>({
     namespace: options.namespace ?? DEFAULT_NAMESPACE,
     polling: options.polling,
     parser: options.parser ?? defaultParser,

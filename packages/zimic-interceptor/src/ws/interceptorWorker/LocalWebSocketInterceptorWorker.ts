@@ -255,7 +255,7 @@ class LocalWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
   private sendToClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
-    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+    data: WebSocketMessageData<WebSocketSchemaMessage.Server<Schema>>,
   ) {
     const registration = this.findRegisteredInterceptorByClient(client)?.clients.get(client);
 

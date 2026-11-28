@@ -45,7 +45,8 @@ export namespace UnhandledMessageStrategy {
  * @see {@link https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages Unhandled messages}
  */
 export type UnhandledMessageStrategy<Schema extends WebSocketSchema = WebSocketSchema> =
-  UnhandledMessageStrategy.Declaration | UnhandledMessageStrategy.DeclarationFactory<WebSocketSchemaMessage<Schema>>;
+  | UnhandledMessageStrategy.Declaration
+  | UnhandledMessageStrategy.DeclarationFactory<WebSocketSchemaMessage.Client<Schema>>;
 
 /** @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference} */
 export interface SharedWebSocketInterceptorOptions<Schema extends WebSocketSchema = WebSocketSchema> {
@@ -65,7 +66,7 @@ export interface SharedWebSocketInterceptorOptions<Schema extends WebSocketSchem
    * @see {@link https://zimic.dev/docs/interceptor/api/create-websocket-interceptor `createWebSocketInterceptor()` API reference}
    * @see {@link https://zimic.dev/docs/interceptor/guides/ws/socket-io Mocking Socket.IO servers}
    */
-  protocol?: WebSocketInterceptorProtocol<WebSocketSchemaMessage<Schema>>;
+  protocol?: WebSocketInterceptorProtocol<WebSocketSchemaMessage.Server<Schema>, WebSocketSchemaMessage.Client<Schema>>;
 
   /** @see {@link https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages Unhandled messages} */
   onUnhandledMessage?: UnhandledMessageStrategy<Schema>;

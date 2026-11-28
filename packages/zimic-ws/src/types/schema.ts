@@ -6,7 +6,7 @@ import {
   PreferMostStaticLiteralPath,
   WithoutEscapedColons,
 } from '@zimic/utils/http';
-import { Branded, Default, JSONValue } from '@zimic/utils/types';
+import { Branded, Default, JSONValue, Prettify } from '@zimic/utils/types';
 
 import { JSONStringified } from './json';
 
@@ -28,16 +28,32 @@ export interface WebSocketPathSchema {
   connection?: WebSocketConnectionSchema;
 
   /** @see {@link https://zimic.dev/docs/ws/guides/schemas#declaring-messages Declaring messages} */
-  message: WebSocketMessageSchema;
+  message?: WebSocketMessageSchema;
+
+  /** @see {@link https://zimic.dev/docs/ws/guides/schemas#declaring-message-directions Declaring message directions} */
+  serverMessage?: WebSocketMessageSchema;
+
+  /** @see {@link https://zimic.dev/docs/ws/guides/schemas#declaring-message-directions Declaring message directions} */
+  clientMessage?: WebSocketMessageSchema;
 }
 
 interface BaseWebSocketSchema {
   [path: string]: WebSocketPathSchema;
 }
 
+type WebSocketPathMessageField = 'message' | 'serverMessage' | 'clientMessage';
+
+// Declaring every message field, as `never` if omitted, lets generic code read messages with indexed access. Reading the
+// optional fields with conditional types instead makes type checks of generic handler types exhaust memory.
+type NormalizedWebSocketPathSchema<PathSchema extends WebSocketPathSchema> = Prettify<
+  Omit<PathSchema, WebSocketPathMessageField> & {
+    [Field in WebSocketPathMessageField]: Field extends keyof PathSchema ? Default<PathSchema[Field]> : never;
+  }
+>;
+
 /** @see {@link https://zimic.dev/docs/ws/api/websocket-schema `WebSocketSchema` API reference} */
 export type WebSocketSchema<Schema extends BaseWebSocketSchema = BaseWebSocketSchema> = Branded<
-  Schema,
+  { [Path in keyof Schema]: NormalizedWebSocketPathSchema<Schema[Path]> },
   'WebSocketSchema'
 >;
 
@@ -103,10 +119,25 @@ export type InferPathParams<
 >;
 
 /** @see {@link https://zimic.dev/docs/ws/api/websocket-schema#websocketschemamessage-1 `WebSocketSchemaMessage` API reference} */
+export namespace WebSocketSchemaMessage {
+  /** @see {@link https://zimic.dev/docs/ws/api/websocket-schema#websocketschemamessageserver `WebSocketSchemaMessage.Server` API reference} */
+  export type Server<
+    Schema extends WebSocketSchema,
+    Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketSchemaPath.Literal<Schema>,
+  > = Schema[Path]['message' | 'serverMessage'];
+
+  /** @see {@link https://zimic.dev/docs/ws/api/websocket-schema#websocketschemamessageclient `WebSocketSchemaMessage.Client` API reference} */
+  export type Client<
+    Schema extends WebSocketSchema,
+    Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketSchemaPath.Literal<Schema>,
+  > = Schema[Path]['message' | 'clientMessage'];
+}
+
+/** @see {@link https://zimic.dev/docs/ws/api/websocket-schema#websocketschemamessage-1 `WebSocketSchemaMessage` API reference} */
 export type WebSocketSchemaMessage<
   Schema extends WebSocketSchema,
   Path extends WebSocketSchemaPath.Literal<Schema> = WebSocketSchemaPath.Literal<Schema>,
-> = Schema[Path]['message'];
+> = Schema[Path][WebSocketPathMessageField];
 
 type WebSocketPathConnectionSchema<PathSchema extends WebSocketPathSchema> = 'connection' extends keyof PathSchema
   ? Default<PathSchema['connection']>

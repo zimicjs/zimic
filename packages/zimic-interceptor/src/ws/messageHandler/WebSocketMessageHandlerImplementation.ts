@@ -13,7 +13,10 @@ import {
 import WebSocketTimesCheckError from '../errors/WebSocketTimesCheckError';
 import WebSocketTimesDeclarationPointer from '../errors/WebSocketTimesDeclarationPointer';
 import { ReceivedWebSocketMessageData, WebSocketInterceptorClient } from '../interceptor/types/messages';
-import { WebSocketInterceptorPathMessage } from '../interceptor/types/schema';
+import {
+  WebSocketInterceptorPathClientMessage,
+  WebSocketInterceptorPathServerMessage,
+} from '../interceptor/types/schema';
 import {
   InternalWebSocketInterceptorClient,
   InternalWebSocketInterceptorServer,
@@ -69,7 +72,7 @@ export interface WebSocketMessageHandlerApplyContext<
 class WebSocketMessageHandlerImplementation<
   Schema extends WebSocketSchema,
   Path extends string = string,
-  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path> = WebSocketInterceptorPathMessage<
+  RestrictedMessage extends WebSocketInterceptorPathClientMessage<Schema, Path> = WebSocketInterceptorPathClientMessage<
     Schema,
     Path
   >,
@@ -89,7 +92,7 @@ class WebSocketMessageHandlerImplementation<
 
   private numberOfMatchedMessages = 0;
   private unmatchedMessageGroups: UnmatchedWebSocketInterceptorMessageGroup<
-    WebSocketInterceptorPathMessage<Schema, Path>
+    WebSocketInterceptorPathClientMessage<Schema, Path>
   >[] = [];
   private savedMessageIndex: WebSocketInterceptorMessageHandlerIndex<Schema, Path, RestrictedMessage>;
 
@@ -241,7 +244,7 @@ class WebSocketMessageHandlerImplementation<
   }
 
   async matchesMessage(
-    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
+    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathClientMessage<Schema, Path>>,
     context: WebSocketMessageHandlerApplyContext<Schema, Path>,
   ): Promise<WebSocketMessageHandlerMessageMatch> {
     const clearGeneration = this.#clearGeneration;
@@ -281,9 +284,9 @@ class WebSocketMessageHandlerImplementation<
   }
 
   private async matchesRestrictions(
-    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
+    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathClientMessage<Schema, Path>>,
     context: WebSocketMessageHandlerApplyContext<Schema, Path>,
-  ): Promise<WebSocketMessageHandlerRestrictionMatch<WebSocketInterceptorPathMessage<Schema, Path>>> {
+  ): Promise<WebSocketMessageHandlerRestrictionMatch<WebSocketInterceptorPathClientMessage<Schema, Path>>> {
     const senderMatch = this.matchesSenderRestriction(context.sender);
 
     if (!senderMatch.success) {
@@ -318,7 +321,7 @@ class WebSocketMessageHandlerImplementation<
 
   private matchesSenderRestriction(
     sender: InternalWebSocketInterceptorClient<Schema, Path>,
-  ): WebSocketMessageHandlerRestrictionMatch<WebSocketInterceptorPathMessage<Schema, Path>> {
+  ): WebSocketMessageHandlerRestrictionMatch<WebSocketInterceptorPathClientMessage<Schema, Path>> {
     if (this.senderRestriction === undefined) {
       return { success: true };
     }
@@ -354,7 +357,7 @@ class WebSocketMessageHandlerImplementation<
   }
 
   private async matchesStaticMessageRestriction(
-    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
+    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathClientMessage<Schema, Path>>,
     restriction: WebSocketMessageHandlerStaticRestriction<RestrictedMessage>,
     options: WebSocketMessageHandlerStaticRestrictionOptions,
   ) {
@@ -390,7 +393,7 @@ class WebSocketMessageHandlerImplementation<
   }
 
   private assumeMessageMatchesRestrictions(
-    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
+    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathClientMessage<Schema, Path>>,
   ) {
     return message as ReceivedWebSocketMessageData<RestrictedMessage>;
   }
@@ -400,8 +403,8 @@ class WebSocketMessageHandlerImplementation<
   }
 
   markMessageAsUnmatched(
-    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
-    options: { diff: WebSocketMessageHandlerRestrictionDiffs<WebSocketInterceptorPathMessage<Schema, Path>> },
+    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathClientMessage<Schema, Path>>,
+    options: { diff: WebSocketMessageHandlerRestrictionDiffs<WebSocketInterceptorPathClientMessage<Schema, Path>> },
   ) {
     const shouldSaveUnmatchedMessages =
       this.interceptor.messageSaving.enabled &&
@@ -417,9 +420,9 @@ class WebSocketMessageHandlerImplementation<
   // was counted in. Returns the response to send, which is `undefined` if none is declared, or `null` if the message was
   // not handled.
   async applyDeclarations(
-    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
+    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathClientMessage<Schema, Path>>,
     context: WebSocketMessageHandlerApplyContext<Schema, Path>,
-  ): Promise<{ response: WebSocketInterceptorPathMessage<Schema, Path> | undefined } | null> {
+  ): Promise<{ response: WebSocketInterceptorPathServerMessage<Schema, Path> | undefined } | null> {
     const clearGeneration = this.#clearGeneration;
     const restrictedMessage = this.assumeMessageMatchesRestrictions(message);
 
@@ -449,14 +452,14 @@ class WebSocketMessageHandlerImplementation<
   }
 
   sendResponse(
-    response: WebSocketInterceptorPathMessage<Schema, Path>,
+    response: WebSocketInterceptorPathServerMessage<Schema, Path>,
     context: WebSocketMessageHandlerApplyContext<Schema, Path>,
   ) {
     context.sender.send(response);
   }
 
   saveInterceptedMessage(
-    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
+    message: ReceivedWebSocketMessageData<WebSocketInterceptorPathClientMessage<Schema, Path>>,
     context: WebSocketMessageHandlerApplyContext<Schema, Path>,
   ) {
     this.interceptor.messageStore.save(this.savedMessageIndex, this.assumeMessageMatchesRestrictions(message), context);

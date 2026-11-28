@@ -556,7 +556,7 @@ describe('Exports', () => {
       expectTypeOf<WebSocketInterceptorClient<never>>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorServer<never>>().not.toBeAny();
       expectTypeOf<WebSocketInterceptorServerSendOptions<never>>().not.toBeAny();
-      expectTypeOf<WebSocketInterceptorProtocol<never>>().not.toBeAny();
+      expectTypeOf<WebSocketInterceptorProtocol<never, never>>().not.toBeAny();
 
       expectTypeOf<WebSocketMessageHandler<never>>().not.toBeAny();
       expectTypeOf<LocalWebSocketMessageHandler<never>>().not.toBeAny();

@@ -94,7 +94,7 @@ In actual URLs, do not include the backslashes. They are only used to escape the
 
 ## Declaring messages
 
-Each path has a required `message` property, which defines the messages exchanged by the clients connected to that path. Declare messages sent in either direction as a union.
+Each path can have a `message` property, which defines the messages that both the server and the clients connected to that path send. Declare multiple messages as a union.
 
 ```ts
 import { WebSocketSchema } from '@zimic/ws';
@@ -107,9 +107,30 @@ type Schema = WebSocketSchema<{
 }>;
 ```
 
+### Declaring message directions
+
+Messages that only one side sends are declared in the `serverMessage` and `clientMessage` properties. The server sends `message` and `serverMessage`, and clients send `message` and `clientMessage`. All three properties are optional, and a path without any of them has no messages.
+
+```ts
+import { WebSocketSchema } from '@zimic/ws';
+
+type Schema = WebSocketSchema<{
+  '/rooms/:roomId': {
+    // Sent by the server and the clients
+    message: { type: 'typing'; data: { username: string } };
+    // Sent only by the server
+    // highlight-next-line
+    serverMessage: { type: 'presence'; data: { username: string; online: boolean } };
+    // Sent only by the clients
+    // highlight-next-line
+    clientMessage: { type: 'message'; data: { text: string } };
+  };
+}>;
+```
+
 ### Supported message data
 
-`message` accepts values compatible with native WebSocket message data:
+`message`, `serverMessage`, and `clientMessage` accept values compatible with native WebSocket message data:
 
 - JSON-compatible values
 - `string`
@@ -133,7 +154,7 @@ type Schema = WebSocketSchema<{
 
 ### `WebSocketMessageData`
 
-[`WebSocketMessageData`](/docs/zimic-ws/api/1-websocket-schema.md#websocketmessagedata) represents the data passed to `send()` and received in message events for a message type. To get the messages of a path, use [`WebSocketSchemaMessage`](/docs/zimic-ws/api/1-websocket-schema.md#websocketschemamessage-1).
+[`WebSocketMessageData`](/docs/zimic-ws/api/1-websocket-schema.md#websocketmessagedata) represents the data passed to `send()` and received in message events for a message type. To get the messages of a path, use [`WebSocketSchemaMessage`](/docs/zimic-ws/api/1-websocket-schema.md#websocketschemamessage-1). To get only the messages one side sends, use [`WebSocketSchemaMessage.Server`](/docs/zimic-ws/api/1-websocket-schema.md#websocketschemamessageserver) or [`WebSocketSchemaMessage.Client`](/docs/zimic-ws/api/1-websocket-schema.md#websocketschemamessageclient).
 
 JSON-compatible messages become their stringified representation. `string`, `Blob`, and `BufferSource` messages keep the same type.
 
@@ -197,7 +218,7 @@ type Schema = WebSocketSchema<{
 
 ## Using schemas with clients
 
-Pass the schema as a type argument when creating a [`WebSocketClient`](/docs/zimic-ws/api/2-websocket-client.mdx). The second type argument is the path the client connects to, which types the messages it sends and receives. It is optional if the schema has a single path. If the schema has multiple paths, omitting it is a type error.
+Pass the schema as a type argument when creating a [`WebSocketClient`](/docs/zimic-ws/api/2-websocket-client.mdx). The second type argument is the path the client connects to, which types the messages it sends and receives. The client sends `message` and `clientMessage`, and receives `message` and `serverMessage`. The path is optional if the schema has a single path. If the schema has multiple paths, omitting it is a type error.
 
 ```ts
 import { WebSocketClient } from '@zimic/ws';
@@ -219,7 +240,7 @@ URLs are plain strings, so they are not checked against the path type argument o
 
 ## Using schemas with servers
 
-Pass the same schema to [`WebSocketServer`](/docs/zimic-ws/api/3-websocket-server.mdx) to type clients accepted by the server. A server accepts connections to any path of its schema, so its clients are typed with the messages of all paths.
+Pass the same schema to [`WebSocketServer`](/docs/zimic-ws/api/3-websocket-server.mdx) to type clients accepted by the server. A server accepts connections to any path of its schema, so its clients are typed with the messages of all paths. Each client of the server sends `message` and `serverMessage`, and receives `message` and `clientMessage`.
 
 ```ts
 import { createServer } from 'node:http';

@@ -77,7 +77,7 @@ export function declareEventsSocketIOProtocolTests(options: EventsSocketIOProtoc
     it.each<{
       eventDescription: string;
       emit: (socket: Socket) => void;
-      expectedMessage: Extract<WebSocketSchemaMessage<ChatSchema>, { type: string }>;
+      expectedMessage: WebSocketSchemaMessage.Client<ChatSchema>;
     }>([
       {
         eventDescription: 'one argument',

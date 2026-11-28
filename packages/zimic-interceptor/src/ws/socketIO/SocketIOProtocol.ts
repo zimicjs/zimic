@@ -25,8 +25,11 @@ function printInvalidMessage(message: object) {
   }
 }
 
-class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInterceptorProtocol<Message> {
-  private context!: WebSocketInterceptorProtocolContext<Message>;
+class SocketIOProtocol<
+  ServerMessage extends SocketIOMessage,
+  ClientMessage extends SocketIOMessage,
+> implements WebSocketInterceptorProtocol<ServerMessage, ClientMessage> {
+  private context!: WebSocketInterceptorProtocolContext<ServerMessage, ClientMessage>;
   private engine?: SocketIOEngine;
 
   private isRunning = false;
@@ -45,7 +48,7 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInte
     return this.options.parser;
   }
 
-  async start(context: WebSocketInterceptorProtocolContext<Message>) {
+  async start(context: WebSocketInterceptorProtocolContext<ServerMessage, ClientMessage>) {
     if (this.isRunning) {
       throw new SharedSocketIOProtocolError();
     }
@@ -81,7 +84,7 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInte
     return this.engine?.claimConnection(connection);
   }
 
-  openClient(options: WebSocketInterceptorProtocolClientOptions<Message>) {
+  openClient(options: WebSocketInterceptorProtocolClientOptions<ServerMessage, ClientMessage>) {
     return this.context.openClient(options);
   }
 
@@ -106,7 +109,7 @@ class SocketIOProtocol<Message extends SocketIOMessage> implements WebSocketInte
     } satisfies SocketIOMessage);
   }
 
-  createMessagePacket(message: Message): Packet {
+  createMessagePacket(message: ServerMessage): Packet {
     // Messages come from user code that may bypass the schema types.
     const untypedMessage: unknown = message;
 

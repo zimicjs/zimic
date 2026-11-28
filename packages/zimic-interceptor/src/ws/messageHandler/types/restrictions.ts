@@ -10,7 +10,7 @@ import {
   UnparsedWebSocketJSONPrimitive,
   WebSocketInterceptorClient,
 } from '@/ws/interceptor/types/messages';
-import { WebSocketInterceptorPathMessage } from '@/ws/interceptor/types/schema';
+import { WebSocketInterceptorPathClientMessage } from '@/ws/interceptor/types/schema';
 
 import { WebSocketMessageHandlerMessageContext } from './public';
 
@@ -42,7 +42,7 @@ export interface WebSocketMessageHandlerStaticRestrictionOptions {
 type WebSocketMessageHandlerComputedBooleanRestriction<
   Schema extends WebSocketSchema,
   Path extends string = string,
-  Message extends WebSocketMessageSchema = WebSocketInterceptorPathMessage<Schema, Path>,
+  Message extends WebSocketMessageSchema = WebSocketInterceptorPathClientMessage<Schema, Path>,
 > = (
   message: ReceivedWebSocketMessageData<Message>,
   context: WebSocketMessageHandlerMessageContext<Schema, Path>,
@@ -52,7 +52,7 @@ type WebSocketMessageHandlerComputedBooleanRestriction<
 export type WebSocketMessageHandlerComputedTypeGuardRestriction<
   Schema extends WebSocketSchema,
   Path extends string = string,
-  Message extends WebSocketMessageSchema = WebSocketInterceptorPathMessage<Schema, Path>,
+  Message extends WebSocketMessageSchema = WebSocketInterceptorPathClientMessage<Schema, Path>,
   PredicateMessage extends ReceivedWebSocketMessageData<Message> = ReceivedWebSocketMessageData<Message>,
 > = (
   message: ReceivedWebSocketMessageData<Message>,
@@ -67,7 +67,7 @@ export type WebSocketMessageHandlerComputedTypeGuardRestriction<
 export type WebSocketMessageHandlerComputedRestriction<
   Schema extends WebSocketSchema,
   Path extends string = string,
-  Message extends WebSocketMessageSchema = WebSocketInterceptorPathMessage<Schema, Path>,
+  Message extends WebSocketMessageSchema = WebSocketInterceptorPathClientMessage<Schema, Path>,
   PredicateMessage extends ReceivedWebSocketMessageData<Message> = ReceivedWebSocketMessageData<Message>,
 > =
   | WebSocketMessageHandlerComputedBooleanRestriction<Schema, Path, Message>
@@ -81,7 +81,7 @@ export type WebSocketMessageHandlerComputedRestriction<
 export type WebSocketMessageHandlerRestriction<
   Schema extends WebSocketSchema,
   Path extends string = string,
-  Message extends WebSocketMessageSchema = WebSocketInterceptorPathMessage<Schema, Path>,
+  Message extends WebSocketMessageSchema = WebSocketInterceptorPathClientMessage<Schema, Path>,
 > =
   WebSocketMessageHandlerStaticRestriction<Message> | WebSocketMessageHandlerComputedRestriction<Schema, Path, Message>;
 
@@ -91,10 +91,9 @@ export type WebSocketMessageHandlerRestrictionOptionsArguments<
   Path extends string,
   Message extends WebSocketMessageSchema,
   Restriction,
-> =
-  Restriction extends WebSocketMessageHandlerComputedRestriction<Schema, Path, Message>
-    ? []
-    : [options?: WebSocketMessageHandlerStaticRestrictionOptions];
+> = [Restriction] extends [WebSocketMessageHandlerComputedRestriction<Schema, Path, Message>]
+  ? []
+  : [options?: WebSocketMessageHandlerStaticRestrictionOptions];
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.

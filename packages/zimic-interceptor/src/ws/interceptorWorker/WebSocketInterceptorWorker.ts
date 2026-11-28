@@ -89,7 +89,7 @@ const UNHANDLED_CONNECTION_HANDLING: WebSocketConnectionHandling = Object.freeze
 
 // Only protocols such as Socket.IO authenticate clients, so plain WebSocket handshakes have no `auth`.
 type WebSocketConnectionHandshake = Pick<WebSocketInterceptorConnectionRequest, 'url' | 'protocols'> &
-  Partial<Pick<WebSocketInterceptorProtocolClientOptions<unknown>, 'auth'>>;
+  Partial<Pick<WebSocketInterceptorProtocolClientOptions<unknown, unknown>, 'auth'>>;
 
 abstract class WebSocketInterceptorWorker {
   platform: WebSocketInterceptorPlatform | null = null;
@@ -406,9 +406,9 @@ abstract class WebSocketInterceptorWorker {
   }
 
   // As with a pending WebSocket connection, an interceptor that lets the client go while it is decided does not list it.
-  async openProtocolClient<Message>(
+  async openProtocolClient<ServerMessage, ClientMessage>(
     interceptor: AnyWebSocketInterceptorImplementation,
-    options: WebSocketInterceptorProtocolClientOptions<Message>,
+    options: WebSocketInterceptorProtocolClientOptions<ServerMessage, ClientMessage>,
   ): Promise<WebSocketInterceptorProtocolOpenClientResult> {
     function isHolding(candidate: AnyWebSocketInterceptorImplementation) {
       return candidate === interceptor && !options.signal.aborted;
@@ -435,7 +435,7 @@ abstract class WebSocketInterceptorWorker {
       send: (message) => {
         if (interceptor.clients.includes(client)) {
           // Clients are schema-erased and user code may bypass types, so protocols validate what they send.
-          options.send(message as Message);
+          options.send(message as ServerMessage);
         }
       },
       close: (code, reason) => {

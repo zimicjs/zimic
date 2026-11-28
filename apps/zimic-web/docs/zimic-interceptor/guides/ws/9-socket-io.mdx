@@ -69,6 +69,8 @@ interface ClientToServerEvents {
 type Schema = SocketIOSchema<ServerToClientEvents, ClientToServerEvents>;
 ```
 
+`SocketIOSchema` declares the events of `ServerToClientEvents` as [server messages](/docs/zimic-ws/guides/1-schemas.md#declaring-message-directions) and the events of `ClientToServerEvents` as client messages. Handlers match only client events, and the interceptor sends only server events. The server sends the [acknowledgements](#acknowledging-events) of client events, so acks are server messages. If you declare a single events map, such as `SocketIOSchema<Events>`, both sides send its events.
+
 Then, pass `createSocketIOProtocol()` as the [`protocol`](/docs/zimic-interceptor/api/ws/1-create-websocket-interceptor.mdx) of a WebSocket interceptor. The `baseURL` is the Socket.IO endpoint, including its path, which is `/socket.io` by default. Create one protocol for each interceptor.
 
 <Tabs groupId="zimic-websocket-interceptor-type">

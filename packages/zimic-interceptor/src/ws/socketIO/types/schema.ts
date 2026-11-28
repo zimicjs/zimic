@@ -33,8 +33,8 @@ type SocketIOEventAckId<EventParameters extends unknown[]> = number extends Even
       ? { ackId?: number }
       : unknown;
 
-// `never` rejects an `ackId` that object literals would accept from other union members. A client event of the same
-// name may still carry one, so the protocol also rejects it at runtime.
+// Interceptors send server events, which expect no acknowledgement from clients. User code may bypass this type, so the
+// protocol also rejects an `ackId` at runtime.
 type SocketIOServerEventMessages<Events extends object> = {
   [Type in keyof Events & string]: { type: Type; ackId?: never } & SocketIOArguments<
     SocketIOEventArguments<SocketIOEventParameters<Events[Type]>>
@@ -65,16 +65,15 @@ type SocketIOAckMessages<Events extends object> = {
  */
 export type SocketIOSchema<
   ServerToClientEvents extends object = SocketIOEventsMap,
-  ClientToServerEvents extends object = SocketIOEventsMap,
+  ClientToServerEvents extends object = ServerToClientEvents,
   Auth extends Record<string, unknown> = Record<string, unknown>,
 > = WebSocketSchema<{
   '/': {
     // Socket.IO clients request no subprotocols. Declaring none also makes the connection share a key with
     // `WebSocketConnectionSchema`, whose keys are all optional, so TypeScript accepts it.
     connection: { auth: Auth; error: { message: string; data?: unknown }; protocols?: never };
-    message:
-      | SocketIOServerEventMessages<ServerToClientEvents>
-      | SocketIOClientEventMessages<ClientToServerEvents>
-      | SocketIOAckMessages<ClientToServerEvents>;
+    // The server acknowledges client events, so acks are server messages.
+    serverMessage: SocketIOServerEventMessages<ServerToClientEvents> | SocketIOAckMessages<ClientToServerEvents>;
+    clientMessage: SocketIOClientEventMessages<ClientToServerEvents>;
   };
 }>;

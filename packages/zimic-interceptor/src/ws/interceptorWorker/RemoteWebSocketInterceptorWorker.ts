@@ -148,7 +148,7 @@ class RemoteWebSocketInterceptorWorker extends WebSocketInterceptorWorker {
 
   private async sendToClient<Schema extends WebSocketSchema>(
     client: InternalWebSocketInterceptorClient<Schema>,
-    data: WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+    data: WebSocketMessageData<WebSocketSchemaMessage.Server<Schema>>,
   ) {
     const clientId = this.findClientId(client);
 

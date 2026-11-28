@@ -11,7 +11,11 @@ import {
   WebSocketSchemaPath,
 } from '@zimic/ws';
 
-import { DeclaredWebSocketInterceptorPath, WebSocketInterceptorPathMessage } from './schema';
+import {
+  DeclaredWebSocketInterceptorPath,
+  WebSocketInterceptorPathClientMessage,
+  WebSocketInterceptorPathServerMessage,
+} from './schema';
 
 /**
  * WebSocket interceptors are experimental. The API is subject to change without a major version bump. Use with caution.
@@ -29,7 +33,7 @@ export type ReceivedWebSocketMessageData<Message extends WebSocketMessageSchema>
  * @see {@link https://zimic.dev/docs/interceptor/guides/ws/unhandled-messages Unhandled messages}
  */
 export type UnhandledWebSocketInterceptorMessage<Schema extends WebSocketSchema = WebSocketSchema> =
-  ReceivedWebSocketMessageData<WebSocketSchemaMessage<Schema>>;
+  ReceivedWebSocketMessageData<WebSocketSchemaMessage.Client<Schema>>;
 
 /**
  * The top-level JSON values that text messages keep as text, because only objects and arrays are parsed. Top-level
@@ -52,7 +56,7 @@ type UnparsedWebSocketJSONPrimitiveText<Message extends UnparsedWebSocketJSONPri
 export interface InterceptedWebSocketInterceptorMessage<
   Schema extends WebSocketSchema,
   Path extends string = string,
-  RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path> = WebSocketInterceptorPathMessage<
+  RestrictedMessage extends WebSocketInterceptorPathClientMessage<Schema, Path> = WebSocketInterceptorPathClientMessage<
     Schema,
     Path
   >,
@@ -219,8 +223,8 @@ export interface BaseWebSocketInterceptorClient<Schema extends WebSocketSchema, 
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor-client#clientsend `client.send()` API reference} */
   send: (
     data:
-      | WebSocketInterceptorPathMessage<Schema, Path>
-      | WebSocketMessageData<WebSocketInterceptorPathMessage<Schema, Path>>,
+      | WebSocketInterceptorPathServerMessage<Schema, Path>
+      | WebSocketMessageData<WebSocketInterceptorPathServerMessage<Schema, Path>>,
   ) => void;
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor-client#clientclose `client.close()` API reference} */
@@ -257,7 +261,7 @@ export interface WebSocketInterceptorServer<Schema extends WebSocketSchema = Web
 
   /** @see {@link https://zimic.dev/docs/interceptor/api/websocket-interceptor#interceptorserver `interceptor.server` API reference} */
   send: (
-    data: WebSocketSchemaMessage<Schema> | WebSocketMessageData<WebSocketSchemaMessage<Schema>>,
+    data: WebSocketSchemaMessage.Server<Schema> | WebSocketMessageData<WebSocketSchemaMessage.Server<Schema>>,
     options?: WebSocketInterceptorServerSendOptions<Schema>,
   ) => void;
 }

@@ -28,7 +28,7 @@ import type {
 import type { UnhandledMessageStrategy, WebSocketInterceptorType } from './types/options';
 import type { WebSocketInterceptorProtocol, WebSocketInterceptorProtocolContext } from './types/protocol';
 import type { WebSocketInterceptorConnectionSaving, WebSocketInterceptorMessageSaving } from './types/public';
-import type { WebSocketInterceptorPathMessage } from './types/schema';
+import type { WebSocketInterceptorPathClientMessage } from './types/schema';
 import {
   createWebSocketInterceptorServer,
   InternalWebSocketInterceptorClient,
@@ -49,6 +49,11 @@ export type WebSocketMessageHandlerConstructor =
 
 export type WebSocketConnectionHandlerConstructor =
   typeof LocalWebSocketConnectionHandler | typeof RemoteWebSocketConnectionHandler;
+
+type WebSocketInterceptorImplementationProtocol<Schema extends WebSocketSchema> = WebSocketInterceptorProtocol<
+  WebSocketSchemaMessage.Server<Schema>,
+  WebSocketSchemaMessage.Client<Schema>
+>;
 
 class WebSocketInterceptorImplementation<
   Schema extends WebSocketSchema,
@@ -77,7 +82,7 @@ class WebSocketInterceptorImplementation<
   #server: InternalWebSocketInterceptorServer<Schema>;
   #clients: InternalWebSocketInterceptorClient<Schema>[] = [];
 
-  readonly protocol: WebSocketInterceptorProtocol<WebSocketSchemaMessage<Schema>> | undefined;
+  readonly protocol: WebSocketInterceptorImplementationProtocol<Schema> | undefined;
 
   private createWorker: () => WebSocketInterceptorWorker;
   private deleteWorker: () => void;
@@ -95,7 +100,7 @@ class WebSocketInterceptorImplementation<
     messageSaving?: Partial<WebSocketInterceptorMessageSaving>;
     connectionSaving?: Partial<WebSocketInterceptorConnectionSaving>;
     onUnhandledMessage?: UnhandledMessageStrategy<Schema>;
-    protocol: WebSocketInterceptorProtocol<WebSocketSchemaMessage<Schema>> | undefined;
+    protocol: WebSocketInterceptorImplementationProtocol<Schema> | undefined;
     MessageHandler: MessageHandlerConstructor;
     ConnectionHandler: WebSocketConnectionHandlerConstructor;
     createWorker: () => WebSocketInterceptorWorker;
@@ -143,7 +148,10 @@ class WebSocketInterceptorImplementation<
     );
   }
 
-  private createProtocolContext(): WebSocketInterceptorProtocolContext<WebSocketSchemaMessage<Schema>> {
+  private createProtocolContext(): WebSocketInterceptorProtocolContext<
+    WebSocketSchemaMessage.Server<Schema>,
+    WebSocketSchemaMessage.Client<Schema>
+  > {
     return {
       interceptor: { type: this.type, baseURL: this.baseURLAsString },
       openClient: (options) => this.workerOrThrow.openProtocolClient(this, options),
@@ -328,9 +336,10 @@ class WebSocketInterceptorImplementation<
     return handler;
   }
 
-  registerMessageHandler<Path extends string, RestrictedMessage extends WebSocketInterceptorPathMessage<Schema, Path>>(
-    handler: InternalWebSocketMessageHandler<Schema, Path, RestrictedMessage>,
-  ) {
+  registerMessageHandler<
+    Path extends string,
+    RestrictedMessage extends WebSocketInterceptorPathClientMessage<Schema, Path>,
+  >(handler: InternalWebSocketMessageHandler<Schema, Path, RestrictedMessage>) {
     if (!this.isRunning || this.isStopping) {
       throw new NotRunningWebSocketInterceptorError();
     }
