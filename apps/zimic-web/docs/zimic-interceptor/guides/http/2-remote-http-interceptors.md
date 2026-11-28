@@ -212,7 +212,7 @@ If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy ru
 
 :::
 
-The handler declares the expected request with `.with()` and `.times()`, and [`interceptor.checkTimes()`](#checking-expectations) verifies it after each test, so the test does not need to read the requests. For checks that a restriction cannot express, see [inspecting intercepted requests](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#inspecting-intercepted-requests).
+For checks that a restriction cannot express, see [inspecting intercepted requests](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#inspecting-intercepted-requests).
 
 ## Interceptor server authentication
 

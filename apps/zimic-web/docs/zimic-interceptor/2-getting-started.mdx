@@ -474,7 +474,7 @@ test('example', async () => {
 
 The remote example awaits each handler declaration because [remote interceptor operations are asynchronous](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#mocking-requests).
 
-The handler declares the expected request with `.with()` and `.times()`, and [`interceptor.checkTimes()`](#http-checking-expectations) verifies it after each test, so the test does not need to read the requests. For checks that a restriction cannot express, see [inspecting intercepted requests](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#inspecting-intercepted-requests).
+For checks that a restriction cannot express, see [inspecting intercepted requests](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#inspecting-intercepted-requests).
 
   </TabItem>
   <TabItem value="websocket" label="WebSocket">
@@ -765,7 +765,7 @@ test('example', async () => {
 
 The remote example awaits each handler declaration because [remote interceptor operations are asynchronous](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md#mocking-messages).
 
-The handlers declare what the test expects with `.with()` and `.times()`, and [`interceptor.checkTimes()`](#websocket-checking-expectations) verifies them after each test, so the test does not need to read the connections or messages. For checks that a restriction cannot express, see [inspecting messages and connections](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#inspecting-messages-and-connections).
+For checks that a restriction cannot express, see [inspecting messages and connections](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#inspecting-messages-and-connections).
 
   </TabItem>
 </Tabs>

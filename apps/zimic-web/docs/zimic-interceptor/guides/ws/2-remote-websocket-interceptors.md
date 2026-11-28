@@ -209,7 +209,7 @@ If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy ru
 
 :::
 
-The handler declares the expected message with `.with()` and `.times()`, and [`interceptor.checkTimes()`](#checking-expectations) verifies it after each test, so the test does not need to read the messages. For checks that a restriction cannot express, see [inspecting messages and connections](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#inspecting-messages-and-connections).
+For checks that a restriction cannot express, see [inspecting messages and connections](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#inspecting-messages-and-connections).
 
 ## Interceptor server authentication
 
