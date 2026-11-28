@@ -17,7 +17,7 @@
     "@zimic/interceptor: handler.with() matches partially by default. Use `exact: true` when extra headers, search params, body fields, or text must cause a mismatch. In WebSocket message handlers, pass it as a second argument, `handler.with(restriction, { exact: true })`.",
     "@zimic/interceptor: Experimental WebSocket interceptors are imported from @zimic/interceptor/experimental/ws, and the Socket.IO protocol from @zimic/interceptor/experimental/ws/socket.io.",
     "@zimic/interceptor: Socket.IO interceptors use the Socket.IO endpoint as baseURL, such as 'ws://localhost:3000/socket.io', and clients set `path` to match. Local Socket.IO interceptors require the `polling` option. Clients restricted to `transports: ['websocket']` need remote interceptors.",
-    "@zimic/ws: new WebSocketClient(url) does not connect. Call await client.open() before client.send(), which throws InvalidStateError while connecting.",
+    "@zimic/ws: new WebSocketClient(url) does not connect. Call await client.open() before client.send(), which discards messages until the client has a socket.",
     "@zimic/fetch: The package follows the Fetch API: JSON request bodies must be serialized with JSON.stringify and sent with an explicit `content-type: application/json` header. Schema content-type inference affects types only.",
     "@zimic/fetch: The package does not throw on non-2xx responses. Check response.ok, throw response.error when needed, and narrow caught errors with fetch.isResponseError(error, method, path).",
     "@zimic/http, @zimic/fetch, @zimic/interceptor: Declare path params in schema keys as '/users/:userId'. When calling fetch, pass the concrete path, such as `/users/${id}`."
