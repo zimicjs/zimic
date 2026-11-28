@@ -104,7 +104,7 @@ Configures if intercepted connections are saved and how they are handled.
 
 The strategy to use for [unhandled messages](/docs/zimic-interceptor/guides/ws/7-unhandled-messages.md). If a client message reaches the interceptor, but no matching handler exists, this strategy will be used. If a function is provided, it will be called with the unhandled message.
 
-**Type**: `UnhandledMessageStrategy<Schema> | undefined`
+**Type**: `UnhandledMessageStrategy | undefined`
 
 - **log**: `boolean | undefined` (default: `true`)
 

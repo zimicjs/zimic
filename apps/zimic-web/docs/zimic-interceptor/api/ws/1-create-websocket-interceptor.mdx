@@ -72,7 +72,7 @@ createWebSocketInterceptor<Schema>(options);
 
        The safe number of connections to save in memory before logging warnings in the console. If `connectionSaving.enabled` is `true` and the interceptor is not regularly cleared with [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear), the connections may accumulate in memory and cause performance issues. This option does not limit the number of connections saved in memory, only when to log warnings.
 
-   - **onUnhandledMessage**: `UnhandledMessageStrategy<Schema> | undefined`
+   - **onUnhandledMessage**: `UnhandledMessageStrategy | undefined`
 
      The strategy to use for [unhandled messages](/docs/zimic-interceptor/guides/ws/7-unhandled-messages.md). If a client message reaches the interceptor, but no matching handler exists, this strategy will be used. If a function is provided, it will be called with the unhandled message.
      - **log**: `boolean | undefined` (default: `true`)

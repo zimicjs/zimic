@@ -58,7 +58,7 @@ const interceptor = createWebSocketInterceptor<Schema>({
 
 ## Dynamically ignoring unhandled messages
 
-You can also provide a function to `onUnhandledMessage` that receives the unhandled message and returns the strategy to use. This allows you to dynamically determine whether to log the message based on its contents. The message is typed with the messages of the interceptor schema and is parsed as in [message handlers](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx).
+You can also provide a function to `onUnhandledMessage` that receives the unhandled message and returns the strategy to use. This allows you to dynamically determine whether to log the message based on its contents. The message is parsed as in [message handlers](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx). Its type is not narrowed by the interceptor schema, so check its shape before reading its fields.
 
 ```ts
 import { createWebSocketInterceptor } from '@zimic/interceptor/experimental/ws';
@@ -75,8 +75,10 @@ const interceptor = createWebSocketInterceptor<Schema>({
 
   // highlight-start
   async onUnhandledMessage(message) {
+    const isPing = typeof message === 'object' && 'type' in message && message.type === 'ping';
+
     // Ignore only unhandled heartbeats and log all other unhandled messages
-    return { log: message.type !== 'ping' };
+    return { log: !isPing };
   },
   // highlight-end
 });
