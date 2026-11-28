@@ -472,7 +472,7 @@ The same handler, now cleared of any declaration and saved connections.
 
 ## `handler.connections`
 
-The connection attempts that matched this handler, whether accepted or rejected. This is useful to allow additional validation in tests, if you are not using [`handler.times()`](#handlertimes) or you need more advanced checks.
+The connection attempts that matched this handler, whether accepted or rejected. Prefer [declarative assertions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx), and read the saved connections only for [checks that a restriction cannot express](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#inspecting-messages-and-connections).
 
 **Type**: `readonly WebSocketInterceptorConnectionRequest<Schema, Path>[]`
 

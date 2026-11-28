@@ -481,7 +481,7 @@ The same handler, now cleared of any declaration and saved messages. Its message
 
 ## `handler.messages`
 
-The client-to-server messages that matched this handler, along with sender and receiver handles. This is useful to allow additional validation in tests, if you are not using [`handler.times()`](#handlertimes) or you need more advanced checks.
+The client-to-server messages that matched this handler, along with sender and receiver handles. Prefer [declarative assertions](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx), and read the saved messages only for [checks that a restriction cannot express](/docs/zimic-interceptor/guides/ws/5-declarative-assertions.mdx#inspecting-messages-and-connections).
 
 **Type**: `readonly InterceptedWebSocketInterceptorMessage<Schema, Path, RestrictedMessage>[]`
 

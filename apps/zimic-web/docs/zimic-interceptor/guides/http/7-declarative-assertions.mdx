@@ -386,3 +386,41 @@ afterEach(async () => {
 
   </TabItem>
 </Tabs>
+
+## Inspecting intercepted requests
+
+Assert your requests with [restrictions](#restrictions) and the [number of requests](#number-of-requests) instead of saving handlers and reading their requests. If the application does not make the expected requests, [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorchecktimes) fails. With request saving enabled, the error also lists the unmatched requests with a diff of the expected and received data.
+
+Read [`handler.requests`](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx#handlerrequests) only for checks that a restriction cannot express, such as comparing two requests. Saved requests require [`requestSaving.enabled`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorrequestsaving), which is `true` by default when `process.env.NODE_ENV` is `test`.
+
+<Tabs groupId="zimic-http-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+const handler = interceptor.post('/users').respond({ status: 503 }).times(2);
+
+// Run the application, which retries the failed request...
+
+// highlight-start
+const [request, retriedRequest] = handler.requests;
+expect(retriedRequest.body).toEqual(request.body);
+// highlight-end
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+const handler = await interceptor.post('/users').respond({ status: 503 }).times(2);
+
+// Run the application, which retries the failed request...
+
+// highlight-start
+const [request, retriedRequest] = handler.requests;
+expect(retriedRequest.body).toEqual(request.body);
+// highlight-end
+```
+
+  </TabItem>
+</Tabs>

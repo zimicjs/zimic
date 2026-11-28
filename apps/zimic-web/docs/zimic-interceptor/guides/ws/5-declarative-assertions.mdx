@@ -431,3 +431,41 @@ afterEach(async () => {
 
   </TabItem>
 </Tabs>
+
+## Inspecting messages and connections
+
+Assert your messages and connections with [restrictions](#restrictions) and the [number of messages and connections](#number-of-messages-and-connections) instead of saving handlers and reading their messages or connections. If the application does not send the expected messages or open the expected connections, [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes) fails. With message or connection saving enabled, the error also lists the unmatched messages and connections with a diff of the expected and received data.
+
+Read [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages) and [`handler.connections`](/docs/zimic-interceptor/api/ws/4-websocket-connection-handler.mdx#handlerconnections) only for checks that a restriction cannot express, such as comparing two messages. They require [message and connection saving](/docs/zimic-interceptor/guides/ws/8-testing.mdx#saving-messages-and-connections).
+
+<Tabs groupId="zimic-websocket-interceptor-type">
+  <TabItem value="local" label="Local interceptor">
+
+```ts
+const handler = interceptor.message('/chat').with({ type: 'message' }).times(2);
+
+// Run the application, which sends the message again after reconnecting...
+
+// highlight-start
+const [message, resentMessage] = handler.messages;
+expect(resentMessage.data).toEqual(message.data);
+// highlight-end
+```
+
+  </TabItem>
+
+  <TabItem value="remote" label="Remote interceptor">
+
+```ts
+const handler = await interceptor.message('/chat').with({ type: 'message' }).times(2);
+
+// Run the application, which sends the message again after reconnecting...
+
+// highlight-start
+const [message, resentMessage] = handler.messages;
+expect(resentMessage.data).toEqual(message.data);
+// highlight-end
+```
+
+  </TabItem>
+</Tabs>

@@ -341,7 +341,7 @@ The same handler, now cleared of any response, restrictions, and intercepted req
 
 ## `handler.requests`
 
-The intercepted requests that matched this handler, along with the responses returned to each of them. This is useful to allow additional validation in tests, if you are not using [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx) or you need more advanced checks.
+The intercepted requests that matched this handler, along with the responses returned to each of them. Prefer [declarative assertions](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx), and read the saved requests only for [checks that a restriction cannot express](/docs/zimic-interceptor/guides/http/7-declarative-assertions.mdx#inspecting-intercepted-requests).
 
 **Type**: `InterceptedHttpInterceptorRequest<Path, MethodSchema, StatusCode>[]`
 
