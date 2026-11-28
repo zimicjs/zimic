@@ -190,9 +190,9 @@ As Engine.IO servers, the protocol answers invalid polling requests with status 
 - A `POST` without a session ID receives `{ code: 2, message: 'Bad handshake method' }`.
 - A `POST` with an unknown session ID receives `{ code: 1, message: 'Session ID unknown' }`.
 
-## Handling events
+## Handling event messages
 
-Handlers receive events as `{ type, data, args?, ackId? }`. `type` is the event name, `data` is the first argument, and `args` holds the remaining arguments, omitted when there are none. Restrictions, responses, sends, and [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages) use the same shape.
+Message handlers receive each Socket.IO event as an event message, `{ type, data, args?, ackId? }`. `type` is the event name, `data` is the first argument, and `args` holds the remaining arguments, omitted when there are none. Restrictions, responses, sends, and [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages) use the same shape.
 
 :::info INFO: <span>`args` is not `...args`</span>
 
@@ -228,9 +228,9 @@ await interceptor
 
 Binary arguments arrive as `ArrayBuffer`. Handlers can send `ArrayBuffer`s and typed arrays, but not `Blob`s.
 
-### Acknowledging events
+### Acknowledging event messages
 
-When a client passes an ack callback, the event carries an `ackId`. To call the callback, respond or send an ack message `{ ackId, data, args? }`, whose `data` and `args` are the arguments of the callback. Events declared with a required ack callback always have an `ackId`.
+When a client passes an ack callback, the event message carries an `ackId`. To call the callback, respond or send an ack message `{ ackId, data, args? }`, whose `data` and `args` are the arguments of the callback. Event messages of events declared with a required ack callback always have an `ackId`.
 
 <Tabs groupId="zimic-websocket-interceptor-type">
   <TabItem value="local" label="Local interceptor">
@@ -258,9 +258,9 @@ await interceptor
   </TabItem>
 </Tabs>
 
-### Sending events
+### Sending event and ack messages
 
-[`interceptor.server.send()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorserver) and [`client.send()`](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx#clientsend) send Socket.IO events and acks, as described in [Sending server messages](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#sending-server-messages).
+[`interceptor.server.send()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorserver) and [`client.send()`](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx#clientsend) send event messages and ack messages, as described in [Sending server messages](/docs/zimic-interceptor/guides/ws/4-connections-and-sends.mdx#sending-server-messages).
 
 ```ts
 interceptor.server.send({ type: 'user:created', data: { id: '1' } });
@@ -306,7 +306,7 @@ As with the `connection` event of a Socket.IO server, an interceptor lists a [cl
 - [`client.close()`](/docs/zimic-interceptor/api/ws/5-websocket-interceptor-client.mdx#clientclose) disconnects the socket from the namespace, as `socket.disconnect()` in a Socket.IO server. Socket.IO has no close codes, so the code and reason are ignored. The socket receives the disconnect reason `'io server disconnect'` and does not reconnect automatically.
 - [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear) and [`interceptor.stop()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorstop) disconnect the sockets of the namespace and close the connections that no other namespace uses.
 
-A WebSocket interceptor with the Socket.IO protocol receives every connection to its base URL. Interceptors without a protocol on the same base URL do not.
+A WebSocket interceptor with the Socket.IO protocol receives every connection whose path is its base URL. Interceptors without a protocol on the same base URL do not.
 
 ## Custom parsers
 
