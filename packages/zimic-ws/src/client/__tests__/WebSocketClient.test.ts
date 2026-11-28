@@ -99,25 +99,27 @@ describe('WebSocketClient', () => {
       webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const openPromise = webSocketClient.open();
+      const openExpectation = expect(openPromise).rejects.toHaveProperty('type', 'error');
       expect(webSocketClient.readyState).toBe(webSocketClient.CONNECTING);
 
       await webSocketClient.close();
       expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
 
-      await expect(openPromise).rejects.toHaveProperty('type', 'error');
+      await openExpectation;
     });
 
     it('should wait for the socket to close if closed multiple times while connecting', async () => {
       webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const openPromise = webSocketClient.open();
+      const openExpectation = expect(openPromise).rejects.toHaveProperty('type', 'error');
       const firstClosePromise = webSocketClient.close();
 
       await webSocketClient.close();
       expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
 
       await firstClosePromise;
-      await expect(openPromise).rejects.toHaveProperty('type', 'error');
+      await openExpectation;
     });
 
     /* istanbul ignore else -- @preserve
@@ -404,8 +406,10 @@ describe('WebSocketClient', () => {
       webSocketClient = new WebSocketClient<Schema>(baseURL);
 
       const openPromise = webSocketClient.open();
+      const openExpectation = expect(openPromise).rejects.toHaveProperty('type', 'error');
+
       await webSocketClient.close();
-      await expect(openPromise).rejects.toHaveProperty('type', 'error');
+      await openExpectation;
 
       await webSocketClient.open();
       expect(webSocketClient.readyState).toBe(webSocketClient.OPEN);
@@ -477,12 +481,13 @@ describe('WebSocketClient', () => {
       });
 
       const openPromise = webSocketClient.open();
+      const openExpectation = expect(openPromise).rejects.toHaveProperty('type', 'error');
       expect(webSocketClient.readyState).toBe(webSocketClient.CONNECTING);
 
       await webSocketClient.close();
       expect(webSocketClient.readyState).toBe(webSocketClient.CLOSED);
 
-      await expect(openPromise).rejects.toHaveProperty('type', 'error');
+      await openExpectation;
     });
 
     it('should not throw an error if closed multiple times', async () => {
