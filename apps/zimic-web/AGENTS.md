@@ -11,6 +11,8 @@ The [zimic.dev](https://zimic.dev) documentation website, built with Docusaurus.
 
 ## Writing style
 
+- Name only concepts that exist in the API, so readers build a correct model of the library. Call a capability by the construct that provides it, such as a WebSocket interceptor with the Socket.IO protocol, not a Socket.IO interceptor.
+- Use one term for each concept across pages, matching the names in the API and its errors.
 - Integrate new capabilities into the existing narrative instead of appending sections or notes.
 - Mirror the analogous HTTP page, and add text only for behavior HTTP lacks.
 - Document each rule on one page and link to it from others. State runtime requirements only on the getting started page.
