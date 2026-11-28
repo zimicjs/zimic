@@ -204,7 +204,7 @@ test('example', async () => {
 });
 ```
 
-Remote interceptor operations are asynchronous because they communicate with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). Await each handler declaration, [`interceptor.clear()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorclear), and [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorchecktimes) before making requests that depend on them. Operations of [local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md#mocking-requests) are synchronous instead.
+Remote interceptor operations are asynchronous because they communicate with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). Await each handler declaration, [`interceptor.clear()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorclear), and [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorchecktimes) before making requests that depend on them. In [local interceptors](/docs/zimic-interceptor/guides/http/1-local-http-interceptors.md#mocking-requests), these operations are synchronous instead.
 
 :::tip TIP: <span>Finding missing awaits</span>
 

@@ -201,7 +201,7 @@ test('example', async () => {
 
 Remote interceptors handle messages in the same [order as local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md#mocking-messages).
 
-Remote interceptor operations are asynchronous because they communicate with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). Await each handler declaration, [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear), and [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes) before opening clients or sending messages that depend on them. Operations of [local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md#mocking-messages) are synchronous instead.
+Remote interceptor operations are asynchronous because they communicate with an [interceptor server](/docs/zimic-interceptor/cli/1-server.md). Await each handler declaration, [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear), and [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes) before opening clients or sending messages that depend on them. In [local interceptors](/docs/zimic-interceptor/guides/ws/1-local-websocket-interceptors.md#mocking-messages), these operations are synchronous instead.
 
 :::tip TIP: <span>Finding missing awaits</span>
 

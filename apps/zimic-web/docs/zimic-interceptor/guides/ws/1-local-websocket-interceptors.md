@@ -138,7 +138,7 @@ test('example', () => {
 
 Messages arrive in the order the client sent them. Zimic handles each message independently, so asynchronous restrictions, delays, effects, and responses can overlap and complete in any order.
 
-Local interceptor operations are synchronous because they do not communicate with an external server. Operations of [remote interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md#mocking-messages) are asynchronous instead.
+Handler declarations, [`interceptor.clear()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorclear), and [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/ws/2-websocket-interceptor.mdx#interceptorchecktimes) are synchronous in local interceptors because they do not communicate with an external server. In [remote interceptors](/docs/zimic-interceptor/guides/ws/2-remote-websocket-interceptors.md#mocking-messages), they are asynchronous instead.
 
 If you need to access the messages processed by the interceptor, use [`handler.messages`](/docs/zimic-interceptor/api/ws/3-websocket-message-handler.mdx#handlermessages).
 

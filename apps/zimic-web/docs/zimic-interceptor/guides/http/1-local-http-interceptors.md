@@ -135,7 +135,7 @@ test('example', async () => {
 });
 ```
 
-Local interceptor operations are synchronous because they do not communicate with an external server. Operations of [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#mocking-requests) are asynchronous instead.
+Handler declarations, [`interceptor.clear()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorclear), and [`interceptor.checkTimes()`](/docs/zimic-interceptor/api/http/2-http-interceptor.mdx#interceptorchecktimes) are synchronous in local interceptors because they do not communicate with an external server. In [remote interceptors](/docs/zimic-interceptor/guides/http/2-remote-http-interceptors.md#mocking-requests), they are asynchronous instead.
 
 If you need to access the requests processed by the interceptor, use [`handler.requests`](/docs/zimic-interceptor/api/http/3-http-request-handler.mdx#handlerrequests).
 
