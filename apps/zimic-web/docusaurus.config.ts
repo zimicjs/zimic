@@ -293,6 +293,10 @@ const config: Docusaurus.Config = {
               to: 'docs/examples',
             },
             {
+              label: 'Coding agents',
+              to: 'docs/agents',
+            },
+            {
               label: 'API',
               to: 'docs/api',
             },
